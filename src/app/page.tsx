@@ -8,6 +8,8 @@ import {
   MapPin,
   Terminal,
   Check,
+  Bot,
+  Monitor,
   Github,
   Linkedin,
   Briefcase,
@@ -52,6 +54,7 @@ export default function Home() {
   const navLinks = [
     { name: 'Home', href: '#home' },
     { name: 'About', href: '#about' },
+    { name: 'Projects', href: '#projects' },
     { name: 'Skills', href: '#skills' },
     { name: 'Experience', href: '#experience' },
     { name: 'Education', href: '#education' },
@@ -107,25 +110,34 @@ export default function Home() {
   };
 
   const differentiators = [
-    'Payments Domain Expertise (SEPA & Instant Payments)',
-    'ICON IPF Framework Specialist (3+ years)',
-    '5+ Years in Banking & Financial Services',
-    'CI/CD Pipeline Expertise (Jenkins, GitLab CI/CD)',
-    'Containerization (Docker, Kubernetes)',
-    'MCP & RAG-Based Test Tooling',
-    'Stakeholder Management & Mentorship',
+    'Source-grounded RAG — page-level citations, honest refusal',
+    'MCP servers connecting LLM tooling to real systems',
+    'PhD-level source analysis (Durham, 2017)',
+    'Banking QA: API, Kafka, database & UI validation',
+    'Payments domain (SEPA & Instant Payments)',
+    'CI/CD, Docker & self-hosted deployment on ARM',
   ];
 
   const skillGroups = [
     {
+      icon: Bot,
+      title: 'AI & LLM Engineering',
+      items: ['Python', 'RAG pipelines', 'Embeddings & vector retrieval', 'pgvector', 'Prompt design', 'MCP servers', 'Claude / Anthropic API', 'Streamlit', 'LLM evaluation & grounding checks'],
+    },
+    {
       icon: Terminal,
       title: 'Programming & Frameworks',
-      items: ['Java (OOP)', 'Ruby', 'Selenium WebDriver', 'TestNG', 'JUnit', 'Cucumber BDD', 'JBehave'],
+      items: ['Java (OOP)', 'Ruby', 'TestNG', 'JUnit', 'Cucumber BDD', 'JBehave'],
     },
     {
       icon: Layers,
-      title: 'API & Design Patterns',
-      items: ['REST Assured', 'Postman', 'REST APIs', 'JSON / XML', 'Page Object Model', 'BDD / TDD'],
+      title: 'API & Integration Testing',
+      items: ['REST Assured', 'Karate', 'Postman', 'REST APIs', 'JSON / XML', 'Kafka event validation'],
+    },
+    {
+      icon: Monitor,
+      title: 'Test & UI Automation',
+      items: ['Selenium WebDriver', 'Playwright', 'Page Object Model', 'BDD / TDD', 'E2E & exploratory'],
     },
     {
       icon: Database,
@@ -147,11 +159,6 @@ export default function Home() {
       title: 'Domain & Methodology',
       items: ['Financial Services', 'Payments & Banking', 'Agile Scrum', 'SDLC / STLC', 'Jira'],
     },
-    {
-      icon: Terminal,
-      title: 'AI-Assisted Testing Tooling',
-      items: ['Karate Framework', 'Playwright (Java)', 'MCP Servers', 'RAG Test Assistants'],
-    },
   ];
 
   const experience = [
@@ -160,10 +167,10 @@ export default function Home() {
       company: 'Barclays Investment Bank, UK',
       period: '02/2026 – Present',
       highlights: [
-        'Architected UI test automation using Playwright with Java for a global investment bank platform',
-        'Built the Karate Framework for API testing, streamlining backend and service-level test coverage',
         'Developed multiple MCP (Model Context Protocol) servers connecting LLM tooling to internal systems, including SQL, Atlassian, GitLab, and Playwright integrations',
         'Built a Karate Test Assistant RAG tool grounded in framework docs and test code to support API test authoring and debugging',
+        'Architected UI test automation using Playwright with Java for a global investment bank platform',
+        'Built the Karate Framework for API testing, streamlining backend and service-level test coverage',
       ],
       technologies: ['Playwright', 'Java', 'Karate Framework', 'MCP', 'RAG', 'SQL', 'GitLab'],
     },
@@ -218,10 +225,43 @@ export default function Home() {
   ];
 
   const stats = [
-    { value: '5+', label: 'Years in QA & Test Automation' },
-    { value: `${experience.length}`, label: 'Banking & Financial Services Employers' },
-    { value: '3+', label: 'Years as ICON IPF Framework SME' },
+    { value: '5+', label: 'Years in Banking QA & Test Automation' },
+    { value: 'PhD', label: 'Durham University, 2017' },
+    { value: '2', label: 'RAG Systems Built & Demonstrated' },
     { value: `${skillGroups.reduce((total, group) => total + group.items.length, 0)}+`, label: 'Tools & Technologies' },
+  ];
+
+  const projects = [
+    {
+      name: 'Source-Grounded RAG Research Assistant',
+      tag: 'Flagship · Open source',
+      repo: 'https://github.com/mattkari/source-grounded-rag',
+      repoLabel: 'github.com/mattkari/source-grounded-rag',
+      description:
+        'A scholarly research assistant built to reduce and expose hallucination. It answers only from an authorised corpus, cites at printed-page level, separates AI interpretation from source claims, and refuses plainly when evidence is insufficient — refusal phrased as a statement about the collection, not the world.',
+      evidence: [
+        'Live-verified behaviour: an answerable question returned SUFFICIENT with 7 definitions cited across 5 page ranges; an out-of-corpus question was refused as retrieval scores collapsed from 0.77 to 0.11',
+        'Presented at ITCC-2026 (conference deck + speaker notes)',
+        'Corpus swapped Sönmez → my own 288-page PhD thesis (294 chunks) via a branch and PR — the architecture is corpus-agnostic by design',
+      ],
+      status: 'In use for my own research; Medium case study in progress',
+      technologies: ['Python', 'Retrieval & embeddings', 'Anthropic API', 'Streamlit', 'Docker', 'Evaluation'],
+    },
+    {
+      name: 'Family Finance — Self-Hosted on Raspberry Pi 5',
+      tag: 'Private repo · Home infrastructure',
+      repo: null,
+      repoLabel: '',
+      description:
+        'A self-hosted household finance system that replaced a Google Sheets workflow: FastAPI, PostgreSQL/pgvector, Redis + Celery, React, deployed with Docker Compose on a Raspberry Pi 5. Six bank-statement formats are parsed with each row reconciled against the statement\u2019s own totals; transfers between the household\u2019s own accounts are detected and excluded so moving money is never counted as income.',
+      evidence: [
+        '354 backend and 214 frontend tests green in CI (repo is private — figures from the repository)',
+        'One real month verified: £9,174.62 of internal transfers correctly excluded from spending and income',
+        'HTTPS from a private CA on the home network; nightly paired backups of database and statement PDFs',
+      ],
+      status: 'Private by design (household financial data) — happy to walk through the architecture',
+      technologies: ['FastAPI', 'PostgreSQL + pgvector', 'Celery', 'React', 'Docker', 'Raspberry Pi'],
+    },
   ];
 
   const education = [
@@ -341,15 +381,16 @@ export default function Home() {
           </h1>
 
           <p className="text-xl sm:text-2xl text-blue-700 mb-4 font-medium">
-            QA Automation Specialist &amp; Senior Automation Tester
+            Test Automation Engineer moving into AI Engineering
           </p>
 
           <p className="text-lg text-blue-800/80 mb-12 max-w-3xl mx-auto leading-relaxed">
-            5+ years specializing in backend automation, API testing, and database
-            validation within Banking and Financial Services. Currently a Test
-            Automation Engineer at Barclays Investment Bank, building and scaling
-            test automation frameworks with Java, Selenium, Playwright, and BDD,
-            integrated into CI/CD pipelines. Based in Manchester, United Kingdom.
+            I build systems whose answers show their evidence. Five years of banking
+            test automation at Barclays Investment Bank and NatWest — API, Kafka,
+            database and UI validation — now combined with hands-on LLM engineering:
+            a source-grounded RAG research assistant with page-level citations and
+            honest refusal, presented at ITCC-2026. PhD, Durham University. Based in
+            Manchester, United Kingdom.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -391,18 +432,22 @@ export default function Home() {
 
           <div className="max-w-4xl mx-auto text-center space-y-6">
             <p className="text-lg text-blue-800 leading-relaxed">
-              Experienced QA Automation Engineer with 5+ years specializing in backend
-              automation, API testing, and database validation within Banking and
-              Financial Services. Proven expertise in developing and maintaining test
-              automation frameworks using Java, Selenium, and BDD methodologies, with
-              hands-on experience integrating automated tests into CI/CD pipelines.
+              My path to AI engineering runs through evidence. A PhD on the Qur'anic
+              concept of justice (Durham, 2017) trained me to separate what a source
+              says from what I infer — the exact discipline a trustworthy LLM system
+              needs. Five years in banking QA taught me what regulated systems demand:
+              traceability, reconciliation, and claims you can verify. I am now
+              building AI systems with the same standard — grounded in authorised
+              sources, citing at page level, and refusing when the evidence runs out.
             </p>
             <p className="text-lg text-blue-800 leading-relaxed">
-              Strong track record of collaborating with cross-functional teams to
-              design comprehensive test strategies, execute complex test scenarios,
-              and ensure software quality and reliability in Agile environments.
-              Demonstrated ability to lead testing initiatives, perform root cause
-              analysis, and drive continuous improvement in testing processes.
+              Day to day I am a Test Automation Engineer at Barclays Investment Bank,
+              building MCP servers that connect LLM tooling to internal systems and a
+              RAG test assistant for API test authoring. Outside work I build and
+              self-host my own systems on a Raspberry Pi 5 — including a multi-bank
+              statement ingestion pipeline with per-row reconciliation. My target for
+              2026: an AI engineering role where source grounding, evaluation and
+              honesty about limits are the product, not an afterthought.
             </p>
 
             <div className="pt-4 flex flex-wrap justify-center gap-3">
@@ -438,8 +483,71 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Projects */}
+      <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">
+              Selected Projects — AI Systems With Evidence
+            </h2>
+            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
+            <p className="text-blue-800/70 mt-4 max-w-2xl mx-auto">
+              Every claim below is backed by a repo, a verified run, or a public
+              presentation — the standard I apply to the systems themselves.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto space-y-6">
+            {projects.map((project) => (
+              <Card key={project.name} className="border-blue-200 hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <div>
+                      <CardTitle className="text-blue-900">{project.name}</CardTitle>
+                      <CardDescription className="text-blue-700 font-medium">
+                        {project.tag}
+                      </CardDescription>
+                    </div>
+                    {project.repo && (
+                      <a
+                        href={project.repo}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-600 font-medium text-sm whitespace-nowrap self-start sm:self-auto"
+                      >
+                        <Github size={16} />
+                        {project.repoLabel}
+                      </a>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-blue-800 leading-relaxed mb-5">{project.description}</p>
+                  <ul className="space-y-3 mb-5">
+                    {project.evidence.map((item) => (
+                      <li key={item} className="flex items-start gap-3">
+                        <Check className="text-blue-600 mt-1 flex-shrink-0" size={18} />
+                        <span className="text-blue-800">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="text-sm text-blue-600 font-medium mb-4">{project.status}</p>
+                  <div className="flex flex-wrap gap-2 pt-4 border-t border-blue-100">
+                    {project.technologies.map((tech) => (
+                      <Badge key={tech} variant="secondary" className="bg-blue-100 text-blue-800 font-normal">
+                        {tech}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Skills */}
-      <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-50">
+      <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Core Technical Skills</h2>
@@ -471,7 +579,7 @@ export default function Home() {
       </section>
 
       {/* Experience */}
-      <section id="experience" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+      <section id="experience" className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Professional Experience</h2>
@@ -772,7 +880,7 @@ export default function Home() {
 
             <div>
               <h3 className="text-2xl font-bold mb-2">Matt Karimov</h3>
-              <p className="text-blue-300">QA Automation Specialist &amp; Senior Automation Tester</p>
+              <p className="text-blue-300">Test Automation Engineer → AI Engineer</p>
             </div>
 
             <div className="flex flex-wrap justify-center gap-8 text-blue-200">

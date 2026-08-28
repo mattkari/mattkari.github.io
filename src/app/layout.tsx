@@ -5,9 +5,9 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Matt Karimov | QA Automation Specialist",
+  title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
   description:
-    "QA Automation Specialist and Senior Automation Tester with 5+ years in Banking and Financial Services. Test Automation Engineer at Barclays Investment Bank, based in Manchester.",
+    "Test Automation Engineer at Barclays Investment Bank moving into AI engineering. Source-grounded RAG research assistant with page-level citations and honest refusal, presented at ITCC-2026. PhD, Durham University. Based in Manchester.",
 };
 
 export default function RootLayout({
