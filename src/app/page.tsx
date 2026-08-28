@@ -10,6 +10,7 @@ import {
   Check,
   Bot,
   Monitor,
+  Globe,
   Github,
   Linkedin,
   Briefcase,
@@ -237,6 +238,8 @@ export default function Home() {
       tag: 'Flagship · Open source',
       repo: 'https://github.com/mattkari/source-grounded-rag',
       repoLabel: 'github.com/mattkari/source-grounded-rag',
+      liveUrl: null,
+      liveLabel: '',
       description:
         'A scholarly research assistant built to reduce and expose hallucination. It answers only from an authorised corpus, cites at printed-page level, separates AI interpretation from source claims, and refuses plainly when evidence is insufficient — refusal phrased as a statement about the collection, not the world.',
       evidence: [
@@ -252,6 +255,8 @@ export default function Home() {
       tag: 'Private repo · Home infrastructure',
       repo: null,
       repoLabel: '',
+      liveUrl: null,
+      liveLabel: '',
       description:
         'A self-hosted household finance system that replaced a Google Sheets workflow: FastAPI, PostgreSQL/pgvector, Redis + Celery, React, deployed with Docker Compose on a Raspberry Pi 5. Six bank-statement formats are parsed with each row reconciled against the statement\u2019s own totals; transfers between the household\u2019s own accounts are detected and excluded so moving money is never counted as income.',
       evidence: [
@@ -267,6 +272,8 @@ export default function Home() {
       tag: 'Private repo · Live 24/7 deployment',
       repo: null,
       repoLabel: '',
+      liveUrl: null,
+      liveLabel: '',
       description:
         'A position-aware trading bot for Binance Spot, dockerised and running continuously on a Raspberry Pi 5. A dual-mode strategy engine (trend-following in bull regimes, mean-reversion in bear) sits behind three mandatory macro gates and eight technical indicators, with ATR-based stops and three-tranche scaled exits. An LLM analyst (GLM via the Z.AI API) arbitrates borderline signals — but only borderline ones, and only at 80%+ stated confidence; hard RSI risk guards are rules the AI can never override. Two-way Telegram control for start/stop/status/live signals from a phone.',
       evidence: [
@@ -276,6 +283,24 @@ export default function Home() {
       ],
       status: 'Private (live trading and API keys) — architecture walkthrough on request',
       technologies: ['Python', 'ccxt / Binance Spot', 'GLM (Z.AI API)', 'Telegram Bot API', 'Docker', 'Raspberry Pi'],
+    },
+    {
+      name: 'EcoHaven Boots — Live E-Commerce Platform',
+      tag: 'In production · Real small business',
+      repo: null,
+      repoLabel: '',
+      liveUrl: 'https://ecohavenboots.co.uk',
+      liveLabel: 'ecohavenboots.co.uk',
+      description:
+        'A production e-commerce platform for a handmade leather baby boots business — customer storefront with search and filtering, cart, and Stripe checkout in GBP; an admin panel for product, order and media management behind iron-session auth. Built with Next.js 14 (App Router, server components) and TypeScript over Prisma, deployed as a Docker multi-stage build behind Nginx and a Cloudflare Tunnel, running on the Raspberry Pi 5.',
+      evidence: [
+        'Live right now at ecohavenboots.co.uk — a real public URL, not a screenshot',
+        'Payments correctness hardened in documented phases: Stripe webhook idempotency and payment_status gating, stock decrement on capture, consistent GBP pricing and shipping thresholds',
+        'Security hardening shipped: upload type validation and path-traversal sanitisation, required session secret (no fallback), 50MB body limits, sameSite cookies',
+        'Documented REST API surface: products, orders, admin auth, file upload, Stripe webhooks',
+      ],
+      status: 'Operating in production for a real business — source private',
+      technologies: ['Next.js 14', 'TypeScript', 'Prisma', 'Stripe', 'Docker', 'Nginx', 'Cloudflare Tunnel', 'Raspberry Pi'],
     },
   ];
 
@@ -523,6 +548,7 @@ export default function Home() {
                         {project.tag}
                       </CardDescription>
                     </div>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                     {project.repo && (
                       <a
                         href={project.repo}
@@ -534,6 +560,18 @@ export default function Home() {
                         {project.repoLabel}
                       </a>
                     )}
+                    {project.liveUrl && (
+                      <a
+                        href={project.liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-600 font-medium text-sm whitespace-nowrap self-start sm:self-auto"
+                      >
+                        <Globe size={16} />
+                        {project.liveLabel}
+                      </a>
+                    )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
