@@ -227,7 +227,7 @@ export default function Home() {
   const stats = [
     { value: '5+', label: 'Years in Banking QA & Test Automation' },
     { value: 'PhD', label: 'Durham University, 2017' },
-    { value: '2', label: 'RAG Systems Built & Demonstrated' },
+    { value: '3', label: 'LLM-Integrated Systems Built' },
     { value: `${skillGroups.reduce((total, group) => total + group.items.length, 0)}+`, label: 'Tools & Technologies' },
   ];
 
@@ -261,6 +261,21 @@ export default function Home() {
       ],
       status: 'Private by design (household financial data) — happy to walk through the architecture',
       technologies: ['FastAPI', 'PostgreSQL + pgvector', 'Celery', 'React', 'Docker', 'Raspberry Pi'],
+    },
+    {
+      name: 'AI-Assisted Crypto Trading Bot — Live on Raspberry Pi 5',
+      tag: 'Private repo · Live 24/7 deployment',
+      repo: null,
+      repoLabel: '',
+      description:
+        'A position-aware trading bot for Binance Spot, dockerised and running continuously on a Raspberry Pi 5. A dual-mode strategy engine (trend-following in bull regimes, mean-reversion in bear) sits behind three mandatory macro gates and eight technical indicators, with ATR-based stops and three-tranche scaled exits. An LLM analyst (GLM via the Z.AI API) arbitrates borderline signals — but only borderline ones, and only at 80%+ stated confidence; hard RSI risk guards are rules the AI can never override. Two-way Telegram control for start/stop/status/live signals from a phone.',
+      evidence: [
+        'Live Docker container with auto-restart, health checks and a 256MB memory limit — verified running on the Pi',
+        'Backtester mirrors the live strategy logic exactly and replays full history in under 4 seconds on the Pi',
+        'The AI is confidence-gated by design: it receives a 24-candle market summary and can only move borderline rule scores (3\u20135/7), never bypass a risk guard',
+      ],
+      status: 'Private (live trading and API keys) — architecture walkthrough on request',
+      technologies: ['Python', 'ccxt / Binance Spot', 'GLM (Z.AI API)', 'Telegram Bot API', 'Docker', 'Raspberry Pi'],
     },
   ];
 
