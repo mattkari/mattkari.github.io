@@ -269,16 +269,16 @@ export default function Home() {
     },
     {
       name: 'AI-Assisted Crypto Trading Bot — Live on Raspberry Pi 5',
-      tag: 'Private repo · Live 24/7 deployment',
+      tag: 'Private repo · Deployed on Raspberry Pi 5',
       repo: null,
       repoLabel: '',
       liveUrl: null,
       liveLabel: '',
       description:
-        'A position-aware trading bot for Binance Spot, dockerised and running continuously on a Raspberry Pi 5. A dual-mode strategy engine (trend-following in bull regimes, mean-reversion in bear) sits behind three mandatory macro gates and eight technical indicators, with ATR-based stops and three-tranche scaled exits. An LLM analyst (GLM via the Z.AI API) arbitrates borderline signals — but only borderline ones, and only at 80%+ stated confidence; hard RSI risk guards are rules the AI can never override. Two-way Telegram control for start/stop/status/live signals from a phone.',
+        'A position-aware trading bot for Binance Spot, dockerised and deployed on a Raspberry Pi 5 with start/stop control from Telegram. A dual-mode strategy engine (trend-following in bull regimes, mean-reversion in bear) sits behind three mandatory macro gates and eight technical indicators, with ATR-based stops and three-tranche scaled exits. An LLM analyst (GLM via the Z.AI API) arbitrates borderline signals — but only borderline ones, and only at 80%+ stated confidence; hard RSI risk guards are rules the AI can never override. Two-way Telegram control for start/stop/status/live signals from a phone.',
       evidence: [
-        'Live Docker container with auto-restart, health checks and a 256MB memory limit — verified running on the Pi',
-        'Backtester mirrors the live strategy logic exactly and replays full history in under 4 seconds on the Pi',
+        'Live Docker container with auto-restart and a Telegram health check — verified running and healthy on the Pi (up 6+ days, zero restarts)',
+        'Backtester mirrors the live strategy logic exactly: a 1,000-candle dual-mode replay (live fetch + both strategy modes compared) completes in ~12 seconds on the Pi',
         'The AI is confidence-gated by design: it receives a 24-candle market summary and can only move borderline rule scores (3\u20135/7), never bypass a risk guard',
       ],
       status: 'Private (live trading and API keys) — architecture walkthrough on request',
@@ -313,7 +313,7 @@ export default function Home() {
     {
       program: 'PhD in Governance and International Affairs',
       school: 'Durham University, UK',
-      year: '2018',
+      year: '2017',
     },
     {
       program: 'MA in Public Administration',
