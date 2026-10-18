@@ -22,7 +22,9 @@ blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444
 <h1>How I let an AI agent file my dental insurance claim (without giving it my password)</h1>
 <p class="meta">Matt Karimov · Test automation engineer · October 2026</p>
 
-<p>My wife needed a root canal. Our workplace dental plan covers part of it, but only if someone sits down with the insurer's claim portal, splits the dentist's statement into the right benefit categories, uploads the evidence and gets it all in before the deadline. Nobody in our house was looking forward to that job.</p>
+<p><strong>Disclaimer: this article is for educational purposes only.</strong> It describes a personal experiment with AI agents and browser automation. It isn't financial, legal or insurance advice, and it isn't endorsed by any insurer. Always check your own policy terms and your insurer's rules on automated access, and make sure everything you submit is accurate. You are responsible for any claim made in your name.</p>
+
+<p>A recent root canal left me with a dental insurance claim to make. A workplace dental plan covers part of the cost, but only if someone sits down with the insurer's claim portal, splits the dentist's statement into the right benefit categories, uploads the evidence and gets it all in before the deadline. I wasn't looking forward to that job.</p>
 
 <p>So I handed it to the AI agent I run at home. It did most of the work, and it left me a saved draft where all I had to do was enter my bank details and press Submit. This guide covers how I set that up, what went wrong along the way, and the rules I'd keep next time. I've left out the insurer's name and any personal details. Most claim portals work in a similar way, so the steps should carry over.</p>
 
@@ -36,7 +38,7 @@ blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444
 
 <h2>Step 1: Let the agent read the policy before it touches the portal</h2>
 <p>Give the agent the policy terms and the dentist's statement first, and ask for a written plan before it does anything: which statement line goes under which benefit, at what percentage, against how much of each annual limit you have left, and what refund to expect.</p>
-<p>For us, the plan put the first appointment under the <em>emergency</em> benefit (paid at 100%, because my wife was in pain and it hadn't been booked in advance) and the rest of the root canal under <em>routine and restorative</em> (paid at 80%, up to what was left of her annual limit). Having the expected refund written down at the start gave me something to check the insurer's eventual payout against.</p>
+<p>For us, the plan put the first appointment under the <em>emergency</em> benefit (paid at 100%, because it was for pain and hadn't been booked in advance) and the rest of the root canal under <em>routine and restorative</em> (paid at 80%, up to what was left of the annual limit). Having the expected refund written down at the start gave me something to check the insurer's eventual payout against.</p>
 <p>The emergency benefit needed proof that the visit really was an emergency, and the dentist's statement didn't say so. I asked the agent to draft a short, polite email to the practice requesting written confirmation, which I sent myself. The dentist replied the same evening. <strong>Sort out missing evidence before you start the claim, not halfway through it.</strong></p>
 
 <h2>Step 2: Put the login in a vault, never in the chat</h2>
@@ -103,6 +105,8 @@ Password: ********</pre>
 </ol>
 
 <p>Total time from me: about 30 minutes over an evening, most of it spent saving the login and answering the agent's questions. The admin I'd normally put off until the deadline was finished in one sitting.</p>
+
+<p><em>Educational purposes only: this is an account of one experiment, not advice. Check your own policy and your insurer's terms before trying anything similar.</em></p>
 
 <p><em>I'm a test automation engineer working on how to check AI systems properly, so I treated this partly as a test of where an agent needs hard limits. The answers were the password, the bank details, the declaration, and the honesty of the claim itself.</em></p>
 </article>
