@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How I built a "second brain" for test automation with Claude Code and Obsidian (and tested it like a QA engineer)</title>
+<meta name="description" content="Step-by-step guide to a Karpathy-style LLM knowledge base with Claude Code and Obsidian: rough notes compiled into a cited wiki, a secret guard, and the QA tests I ran on it.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/claude-code-second-brain/">
+<style>
+body{max-width:720px;margin:40px auto;padding:0 20px;font-family:Georgia,serif;font-size:19px;line-height:1.6;color:#222}
+h1{font-family:Arial,Helvetica,sans-serif;font-size:32px;line-height:1.25}
+h2{font-family:Arial,Helvetica,sans-serif;font-size:24px;margin-top:40px}
+code,pre{font-family:Menlo,Consolas,monospace;font-size:15px;background:#f4f4f4}
+pre{padding:12px;overflow-x:auto}
+blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444}
+.meta{color:#666;font-size:16px}
+table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;padding:4px 8px}
+</style>
+</head>
+<body>
+<article>
+<h1>How I built a "second brain" for test automation with Claude Code and Obsidian (and tested it like a QA engineer)</h1>
+<p><em>A step-by-step guide to an Andrej Karpathy-style LLM knowledge base: rough notes in, a linked wiki out, answers that cite their sources, and a guard that stops secrets reaching the model.</em></p>
+<p>Matt Karimov · Test automation engineer · October 2026</p>
+<hr />
+<p>Every test automation engineer I know carries a private pile of knowledge around in their head. Which environment falls over at 8am. Why the parallel runner is capped at six threads. The one locator that only works if you wait for the dashboard, not the login page. How to reset test data without raising a ticket.</p>
+<p>Most of it never gets written down properly. When it does, it lands in a chat thread or a scratch file that nobody, including me, can find three months later. AI coding assistants don't help here on their own: every session starts from zero, and you explain the same context again.</p>
+<p>Andrej Karpathy described a simple alternative: let an LLM maintain a personal wiki for you. You drop rough notes into a folder, and the model "compiles" them into linked, well-structured pages with an index. You then ask questions against that wiki rather than against your memory. No vector database, no embeddings, just markdown and a good index.</p>
+<p>I built this with <strong>Claude Code</strong> as the compiler and <strong>Obsidian</strong> as the viewer, and then did what I do for a living: I tested it. This article gives you every file and command you need to set it up yourself, plus what I learned from testing it.</p>
+<blockquote>
+<p><strong>Before you use this at work:</strong> check your employer's policy. Use only an AI tool your organisation has approved for internal material, keep the folder on approved storage, and never put customer data, credentials or production details into it. Everything in this article was built and tested on my own machine with made-up notes.</p>
+</blockquote>
+<hr />
+<h2>The idea in QA terms</h2>
+<p>If you work in test automation, the pattern maps neatly onto things you already know:</p>
+<table>
+<thead>
+<tr>
+<th>Knowledge base</th>
+<th>Software build</th>
+<th>Who writes it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>raw/</code>: your rough notes</td>
+<td>source code</td>
+<td>you only</td>
+</tr>
+<tr>
+<td><code>/compile</code></td>
+<td>the build</td>
+<td>Claude Code</td>
+</tr>
+<tr>
+<td><code>wiki/</code>: linked pages</td>
+<td>the build artefact</td>
+<td>Claude Code only</td>
+</tr>
+<tr>
+<td><code>/lint</code></td>
+<td>the test suite</td>
+<td>a script plus Claude</td>
+</tr>
+<tr>
+<td><code>/query</code></td>
+<td>running the product</td>
+<td>Claude Code, citing pages</td>
+</tr>
+</tbody>
+</table>
+<p>Two rules come straight from that table:</p>
+<ol>
+<li><strong>Raw notes are append-only.</strong> The model never edits them. They're your source of truth.</li>
+<li><strong>The wiki is disposable.</strong> Anything in <code>wiki/</code> can be regenerated from <code>raw/</code>, so the model can rewrite it freely, and you never edit it by hand.</li>
+</ol>
+<h2>Two ways to build it, and why I chose the manual one</h2>
+<p>There is a popular open-source kit, <a href="https://github.com/coleam00/claude-memory-compiler">claude-memory-compiler</a> by Cole Medin, that does this automatically. Claude Code hooks capture each session when it ends, a background job extracts the lessons into a daily log, and a nightly step compiles the wiki. I installed it on a personal project and it's clever.</p>
+<p>When I tested it, though, <strong>every session was being saved as "nothing worth saving"</strong>. Root cause: the background summariser was itself a Claude session, so the kit's own start-up hook injected old log text into it, including the literal marker <code>FLUSH_OK</code>. The model echoed the marker, and the code checked whether the reply <em>contained</em> <code>FLUSH_OK</code> rather than whether it <em>was</em> <code>FLUSH_OK</code>, so it threw away every real summary. Fixing it took two small changes: skip the start-up hook inside the summariser, and match the marker exactly. That's a classic QA lesson. The code ran without errors and still did nothing useful. Only checking the actual output caught it.</p>
+<p>For work, I still chose a <strong>manual</strong> design, for three reasons:</p>
+<ul>
+<li><strong>Nothing runs in the background.</strong> Auto-capture sends whole session transcripts to the model provider. At work I want to decide exactly what goes in.</li>
+<li><strong>Every compile is guarded.</strong> A plain script scans the notes for secrets <em>before</em> the model reads them.</li>
+<li><strong>It's easy to audit.</strong> Four slash commands, three small Python scripts, one rules file. No packages to install.</li>
+</ul>
+<p>The rest of this article builds the manual version, which I call a <strong>Work Brain</strong>.</p>
+<hr />
+<h2>What you need</h2>
+<ul>
+<li><strong>Claude Code</strong>, signed in with an account you're allowed to use for this material (<code>claude</code> in a terminal, or the IntelliJ or VS Code extension).</li>
+<li><strong>Python 3.8 or newer.</strong> Only the standard library is used. On Windows the command is often <code>py</code>.</li>
+<li><strong>Obsidian</strong> (optional, but it's what makes the wiki pleasant to read).</li>
+<li><strong>About 30 minutes.</strong></li>
+</ul>
+<p>The finished folder looks like this:</p>
+<pre><code>work-brain/
+├── CLAUDE.md                  &lt;- the rules Claude Code follows
+├── .claude/
+│   ├── settings.json          &lt;- permissions: what Claude may and may not touch
+│   └── commands/
+│       ├── compile.md         &lt;- /compile
+│       ├── query.md           &lt;- /query
+│       ├── lint.md            &lt;- /lint
+│       └── ingest.md          &lt;- /ingest
+├── tools/
+│   ├── guard.py               &lt;- secret scanner (runs before every compile)
+│   ├── lint.py                &lt;- structural checks + change detection
+│   └── new_note.py            &lt;- safe note writer (never overwrites)
+├── raw/                       &lt;- your notes
+└── wiki/
+    ├── index.md               &lt;- the retrieval entry point
+    └── log.md                 &lt;- append-only build log
+</code></pre>
+<p>You can download the whole template from my GitHub repository (link at the end), or create the files yourself from the snippets below.</p>
+<hr />
+<h2>Step 1: Create the folder</h2>
+<pre><code class="language-bash">mkdir -p work-brain/{.claude/commands,tools,raw,wiki} &amp;&amp; cd work-brain
+git init
+</code></pre>
+<p>Git is optional but useful: it gives you history for <code>raw/</code> and lets you see exactly what each compile changed in <code>wiki/</code>, the same way you'd review a diff.</p>
+<p>Create the two starting files in <code>wiki/</code>:</p>
+<pre><code class="language-bash">printf '# Index\n\n| Page | Type | Summary | Updated |\n|---|---|---|---|\n' &gt; wiki/index.md
+printf '# Build log (append only)\n' &gt; wiki/log.md
+</code></pre>
+<h2>Step 2: Write the rules file, CLAUDE.md</h2>
+<p>Claude Code reads <code>CLAUDE.md</code> automatically at the start of every session in that folder. This is where the whole design lives: who owns which folder, what may never be copied, and what a page looks like. Here's the core of mine (the full file is in the repository):</p>
+<pre><code class="language-markdown"># CLAUDE.md: Work Brain (LLM knowledge base, Karpathy pattern)
+
+You (Claude Code) are the compiler and librarian of this knowledge base.
+The human writes rough notes; you turn them into a linked, queryable wiki.
+
+## Ownership rule (non-negotiable)
+| Path | Only writer | Rule |
+|---|---|---|
+| raw/ | human | Never edit, rename or delete. Read only. |
+| wiki/ | Claude | Rewrite freely. Everything can be regenerated from raw/. |
+| wiki/index.md | Claude | Updated on every compile. The retrieval entry point. |
+| wiki/log.md | Claude | Append only. |
+| CLAUDE.md, tools/, .claude/ | human | Do not modify. |
+
+## Data rules (these override everything)
+1. No client or customer data (names, account numbers, sort codes, IBANs,
+   card numbers, addresses, dates of birth).
+2. No credentials (passwords, tokens, keys, connection strings, cookies).
+3. No production data or production hostnames. Test environments by role only.
+4. Colleagues are referred to by role, not name.
+5. If a raw note contains any of the above, do not copy it into the wiki.
+   Write the knowledge without the value (e.g. &quot;the SIT DB user is in the
+   team vault&quot;) and report the file and line to the human.
+6. Never use web tools in this repo. Knowledge comes from raw/ only.
+
+## Page types (folders under wiki/)
+| Folder | One page per |
+|---|---|
+| systems/ | service, component or environment |
+| howto/ | repeatable procedure |
+| decisions/ | decision with its reason (ADR-style) |
+| defects/ | recurring failure pattern and its fix |
+| concepts/ | idea, pattern or domain term |
+| qa/ | answered question filed back by /query |
+
+## Page format
+Every page has YAML front matter (title, type, tags, sources, created,
+updated, status: current | needs-check | superseded), then:
+a 2-4 sentence summary, Key points, Details, Related ([[links]]), Sources.
+
+Rules:
+- Links are Obsidian [[folder/slug]]. Every page links to at least one other page.
+- Prefer updating an existing page over creating a near-duplicate.
+- If two sources disagree, keep both claims and mark status: needs-check.
+  Never resolve a contradiction by guessing.
+- Write only what the sources say. Label your own inferences &quot;(inferred)&quot;.
+</code></pre>
+<p>The page types are the QA-specific part. A general-purpose second brain has "concepts" and "people". A testing one needs <strong>defects</strong> (recurring failure patterns and their fixes), <strong>how-tos</strong> (repeatable procedures like resetting test data) and <strong>decisions</strong> (why the suite is configured the way it is). Those three are where most lost knowledge comes from.</p>
+<h2>Step 3: Lock down permissions, .claude/settings.json</h2>
+<p>This is the part most guides skip. Instructions in <code>CLAUDE.md</code> are requests. Permissions in <code>settings.json</code> are enforced by Claude Code itself. I let Claude write only to <code>wiki/</code>, run only the three helper scripts, and I deny web access and any edits to my notes, the rules or the tools:</p>
+<pre><code class="language-json">{
+  &quot;permissions&quot;: {
+    &quot;allow&quot;: [
+      &quot;Read(./**)&quot;,
+      &quot;Edit(./wiki/**)&quot;,
+      &quot;Bash(python3 tools/guard.py:*)&quot;,
+      &quot;Bash(python3 tools/lint.py:*)&quot;,
+      &quot;Bash(python3 tools/new_note.py:*)&quot;,
+      &quot;Bash(python tools/guard.py:*)&quot;,
+      &quot;Bash(python tools/lint.py:*)&quot;,
+      &quot;Bash(python tools/new_note.py:*)&quot;,
+      &quot;Bash(py tools/guard.py:*)&quot;,
+      &quot;Bash(py tools/lint.py:*)&quot;,
+      &quot;Bash(py tools/new_note.py:*)&quot;
+    ],
+    &quot;deny&quot;: [
+      &quot;WebFetch&quot;,
+      &quot;WebSearch&quot;,
+      &quot;Edit(./raw/**)&quot;,
+      &quot;Edit(./CLAUDE.md)&quot;,
+      &quot;Edit(./tools/**)&quot;,
+      &quot;Edit(./.claude/**)&quot;
+    ]
+  }
+}
+</code></pre>
+<p>The three spellings of Python (<code>python3</code>, <code>python</code>, <code>py</code>) cover Linux, macOS and Windows. One detail I learned the hard way: in Claude Code, <code>Edit(path)</code> rules cover every file-writing tool, so don't add a separate <code>Write(path)</code> rule. Claude Code warns that it isn't matched.</p>
+<h2>Step 4: The guard, tools/guard.py</h2>
+<p>Before the model reads a single note, a plain script scans <code>raw/</code> for things that must never leave your machine. A regex gives the same answer every time; a model "being careful" might not. It exits with code 1 if it finds anything, and <code>/compile</code> refuses to continue. It never prints the full value, only the first three characters.</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;Sensitive-data guard. Stdlib only, Python 3.8+.
+Exit 0 = clean, 1 = findings (compile must stop).&quot;&quot;&quot;
+import re
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+
+PATTERNS = [
+    (&quot;private key&quot;, re.compile(r&quot;-----BEGIN [A-Z ]*PRIVATE KEY-----&quot;)),
+    (&quot;AWS access key&quot;, re.compile(r&quot;\b(AKIA|ASIA)[0-9A-Z]{16}\b&quot;)),
+    (&quot;JWT / bearer token&quot;, re.compile(r&quot;\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{5,}&quot;)),
+    (&quot;GitLab/GitHub token&quot;, re.compile(r&quot;\b(glpat-[A-Za-z0-9_-]{20,}|gh[pousr]_[A-Za-z0-9]{30,})\b&quot;)),
+    (&quot;password/secret assignment&quot;,
+     re.compile(r&quot;(?i)\b(password|passwd|pwd|secret|api[_-]?key|token|client[_-]?secret)\b\s*[:=]\s*\S{4,}&quot;)),
+    (&quot;connection string with credentials&quot;, re.compile(r&quot;(?i)\b[a-z][a-z0-9+.-]*://[^\s:/@]+:[^\s@]+@&quot;)),
+    (&quot;IBAN&quot;, re.compile(r&quot;\b[A-Z]{2}\d{2}(?: ?[A-Z0-9]{4}){3,7}(?: ?[A-Z0-9]{1,4})?\b&quot;)),
+    (&quot;sort code&quot;, re.compile(r&quot;\b\d{2}-\d{2}-\d{2}\b&quot;)),
+    (&quot;email address&quot;, re.compile(r&quot;\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b&quot;)),
+    (&quot;UK National Insurance number&quot;, re.compile(r&quot;\b[A-CEGHJ-PR-TW-Z]{2}\s?\d{2}\s?\d{2}\s?\d{2}\s?[A-D]\b&quot;)),
+]
+CARD = re.compile(r&quot;\b(?:\d[ -]?){13,19}\b&quot;)
+
+
+def luhn_ok(digits: str) -&gt; bool:
+    &quot;&quot;&quot;Only flag card-like numbers that pass the Luhn check (fewer false positives).&quot;&quot;&quot;
+    total, alt = 0, False
+    for ch in reversed(digits):
+        d = int(ch)
+        if alt:
+            d *= 2
+            if d &gt; 9:
+                d -= 9
+        total += d
+        alt = not alt
+    return total % 10 == 0
+
+
+def load_allow():
+    &quot;&quot;&quot;Known false positives: one regex per line in tools/guard-allow.txt.&quot;&quot;&quot;
+    f = ROOT / &quot;tools&quot; / &quot;guard-allow.txt&quot;
+    if not f.exists():
+        return []
+    return [re.compile(x.strip()) for x in f.read_text(encoding=&quot;utf-8&quot;).splitlines()
+            if x.strip() and not x.startswith(&quot;#&quot;)]
+
+
+def mask(s: str) -&gt; str:
+    s = s.strip()
+    return s[:3] + &quot;…&quot; if len(s) &gt; 3 else &quot;…&quot;
+
+
+def scan(folder: Path):
+    allow = load_allow()
+    findings = []
+    for path in sorted(folder.rglob(&quot;*.md&quot;)):
+        for n, line in enumerate(path.read_text(encoding=&quot;utf-8&quot;, errors=&quot;replace&quot;).splitlines(), 1):
+            if any(a.search(line) for a in allow):
+                continue
+            for label, rx in PATTERNS:
+                for m in rx.finditer(line):
+                    findings.append((path, n, label, mask(m.group(0))))
+            for m in CARD.finditer(line):
+                digits = re.sub(r&quot;\D&quot;, &quot;&quot;, m.group(0))
+                if 13 &lt;= len(digits) &lt;= 19 and luhn_ok(digits):
+                    findings.append((path, n, &quot;card number (Luhn valid)&quot;, mask(digits)))
+    return findings
+
+
+def main():
+    target = &quot;wiki&quot; if &quot;--wiki&quot; in sys.argv else &quot;raw&quot;
+    folder = ROOT / target
+    if not folder.exists():
+        print(f&quot;guard: {target}/ not found&quot;)
+        return 0
+    findings = scan(folder)
+    if not findings:
+        print(f&quot;guard: {target}/ clean&quot;)
+        return 0
+    print(f&quot;guard: {len(findings)} finding(s) in {target}/. Remove these before compiling:&quot;)
+    for path, n, label, shown in findings:
+        print(f&quot;  {path.relative_to(ROOT)}:{n}  {label}  ({shown})&quot;)
+    return 1
+
+
+if __name__ == &quot;__main__&quot;:
+    sys.exit(main())
+</code></pre>
+<p>Add patterns for your own organisation's identifiers, such as internal ticket formats or hostname conventions you don't want in prompts. Be honest about its limits, though: a regex can't recognise a client's name or a production hostname that looks like any other word. The guard is a safety net, not permission to be careless.</p>
+<h2>Step 5: Change detection, tools/lint.py</h2>
+<p>This script does two jobs where you want exact bookkeeping rather than the model's judgement.</p>
+<p><strong>Job 1: which notes need compiling?</strong> Each time Claude compiles a note, it writes the note's fingerprint (a short SHA-256 hash) into <code>wiki/log.md</code>. Next time, the script compares fingerprints. A note it has never seen is <code>new</code>. A note whose content has changed, such as an Obsidian daily note you added to in the afternoon, is <code>changed</code>. Anything else is skipped. This is what makes <code>/compile</code> safe to run as often as you like.</p>
+<pre><code class="language-python">SOURCE = re.compile(r&quot;^- Source:\s*(raw/\S+?)(?:\s*\(sha ([0-9a-f]{6,})\))?\s*$&quot;, re.M)
+
+
+def sha(path: Path) -&gt; str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()[:12]
+
+
+def compiled_sources() -&gt; dict:
+    &quot;&quot;&quot;raw path -&gt; set of hashes already compiled, read from wiki/log.md.&quot;&quot;&quot;
+    log = WIKI / &quot;log.md&quot;
+    out = {}
+    if log.exists():
+        for path, h in SOURCE.findall(log.read_text(encoding=&quot;utf-8&quot;)):
+            out.setdefault(path, set()).add(h or &quot;&quot;)
+    return out
+
+
+def uncompiled():
+    &quot;&quot;&quot;List of (raw path, current sha, 'new' | 'changed'). Empty notes are skipped.&quot;&quot;&quot;
+    done = compiled_sources()
+    raws = sorted(p for p in RAW.rglob(&quot;*.md&quot;) if p.name.lower() != &quot;readme.md&quot;) if RAW.exists() else []
+    todo = []
+    for p in raws:
+        if not p.read_text(encoding=&quot;utf-8&quot;, errors=&quot;replace&quot;).strip():
+            continue
+        rel, h = p.relative_to(ROOT).as_posix(), sha(p)
+        seen = done.get(rel)
+        if seen is None:
+            todo.append((rel, h, &quot;new&quot;))
+        elif h not in seen and &quot;&quot; not in seen:
+            todo.append((rel, h, &quot;changed&quot;))
+    return todo
+</code></pre>
+<p><strong>Job 2: is the wiki healthy?</strong> Running it with no arguments checks for broken <code>[[links]]</code>, orphan pages (nothing links to them), pages missing from the index, missing front matter, and very thin pages. It exits with code 1 on errors, so you could run it in CI if the wiki lives in a shared repository. The full script (about 140 lines) is in the repository.</p>
+<pre><code class="language-bash">python3 tools/lint.py --uncompiled   # what needs compiling
+python3 tools/lint.py                # full health report
+</code></pre>
+<h2>Step 6: The safe note writer, tools/new_note.py</h2>
+<p>When you'd rather paste a note into Claude Code than open Obsidian, <code>/ingest</code> uses this script. It opens the file in exclusive-create mode (<code>"x"</code>), so it physically cannot overwrite an existing note:</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;Create a NEW raw note from stdin. Refuses to overwrite: raw/ is append-only.&quot;&quot;&quot;
+import re
+import sys
+from datetime import date
+from pathlib import Path
+
+RAW = Path(__file__).resolve().parent.parent / &quot;raw&quot;
+
+
+def main():
+    if len(sys.argv) &lt; 2:
+        print(&quot;usage: new_note.py &lt;topic&gt;  (text on stdin)&quot;)
+        return 2
+    topic = &quot; &quot;.join(sys.argv[1:]).strip()
+    body = sys.stdin.read().strip()
+    if not body:
+        print(&quot;new_note: empty text, nothing saved&quot;)
+        return 2
+    slug = re.sub(r&quot;[^a-z0-9]+&quot;, &quot;-&quot;, topic.lower()).strip(&quot;-&quot;)[:50] or &quot;note&quot;
+    RAW.mkdir(exist_ok=True)
+    base = f&quot;{date.today().isoformat()}-{slug}&quot;
+    path, n = RAW / f&quot;{base}.md&quot;, 2
+    while path.exists():
+        path, n = RAW / f&quot;{base}-{n}.md&quot;, n + 1
+    with open(path, &quot;x&quot;, encoding=&quot;utf-8&quot;) as f:  # &quot;x&quot; = fail if it exists
+        f.write(f&quot;# {topic}\n\n{body}\n&quot;)
+    print(f&quot;saved {path.relative_to(RAW.parent).as_posix()}&quot;)
+    return 0
+
+
+if __name__ == &quot;__main__&quot;:
+    sys.exit(main())
+</code></pre>
+<h2>Step 7: The four slash commands</h2>
+<p>Any markdown file in <code>.claude/commands/</code> becomes a slash command in Claude Code. The front matter limits which tools that command may use, and <code>$ARGUMENTS</code> is whatever you type after the command.</p>
+<p><strong><code>.claude/commands/compile.md</code></strong>, the build:</p>
+<pre><code class="language-markdown">---
+description: Compile uncompiled raw notes into wiki pages (guard runs first)
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash(python tools/guard.py:*), Bash(python3 tools/guard.py:*), Bash(python tools/lint.py:*), Bash(python3 tools/lint.py:*)
+---
+
+Follow CLAUDE.md exactly.
+
+1. Run `python3 tools/guard.py` (use `python` if `python3` is not found).
+   - If it exits non-zero, **stop**. Show the findings and tell the human to remove those
+     values from the raw notes. Do not compile anything.
+2. Run `python3 tools/lint.py --uncompiled`. Each line is `raw/&lt;file&gt; (sha &lt;hash&gt;) new|changed`.
+   If it prints &quot;Nothing to compile&quot;, say so and stop.
+   - `new`: compile the whole note.
+   - `changed`: the note was compiled before and has had text added (e.g. an Obsidian daily
+     note). Read it in full, then fold only the new material into the pages.
+3. Read `wiki/index.md`, then the existing pages it points to that look relevant.
+4. For each uncompiled raw file, oldest first:
+   - Extract systems, how-tos, decisions, defects and concepts.
+   - Update existing pages where they cover the topic; create new pages only for new topics.
+   - Apply the data rules: never carry a sensitive value into the wiki.
+   - Mark disagreements between sources `status: needs-check`.
+5. Update `wiki/index.md` (one row per page, sorted by type then page).
+6. Append one entry per raw file to `wiki/log.md` with `- Source:`, `- Created:`, `- Updated:`
+   and `- Withheld:` lines. The Source line must copy the hash exactly as listed in step 2:
+   `- Source: raw/&lt;file&gt; (sha &lt;hash&gt;)`. Without it the note is offered for compile again.
+7. Run `python3 tools/lint.py` and fix any broken links you introduced.
+8. Report: files compiled, pages created, pages updated, anything withheld, anything marked
+   needs-check. Keep it short.
+
+$ARGUMENTS
+</code></pre>
+<p><strong><code>.claude/commands/query.md</code></strong>, grounded answers:</p>
+<pre><code class="language-markdown">---
+description: Answer a question from the wiki, cited to pages
+allowed-tools: Read, Glob, Grep, Write, Edit
+---
+
+Question: $ARGUMENTS
+
+Follow CLAUDE.md.
+
+1. Read `wiki/index.md` first. Pick the 3–10 pages most likely to answer the question.
+2. Read those pages in full. Use `raw/` only if the wiki is silent, and say so.
+3. Answer in plain language. After each claim, cite the page as `[[folder/slug]]`.
+4. If the wiki does not contain the answer, say **&quot;The wiki does not cover this&quot;** and name the
+   closest pages. Do not answer from general knowledge without labelling it `(not from wiki)`.
+5. If any cited page has `status: needs-check`, say so.
+6. End by asking: &quot;File this answer to wiki/qa/? (yes/no)&quot;. If the human says yes, write the
+   `qa/` page, add it to `wiki/index.md`, and append a `query` entry to `wiki/log.md`.
+</code></pre>
+<p>Step 4 is the line I care about most as a tester. An assistant that says "I don't know" when it doesn't know is worth far more than one that answers everything confidently.</p>
+<p><strong><code>.claude/commands/lint.md</code></strong>, the test suite:</p>
+<pre><code class="language-markdown">---
+description: Health-check the wiki (structure + contradictions)
+allowed-tools: Read, Glob, Grep, Edit, Bash(python tools/lint.py:*), Bash(python3 tools/lint.py:*), Bash(python tools/guard.py:*), Bash(python3 tools/guard.py:*)
+---
+
+1. Run `python3 tools/guard.py --wiki` (or `python`) and report any sensitive values found in `wiki/`.
+2. Run `python3 tools/lint.py` and show its report.
+3. Read the pages and look for **contradictions** between them (different values, steps or
+   decisions for the same thing). For each one, list both pages and the conflicting claims.
+   Do not fix contradictions; mark both pages `status: needs-check`.
+4. List pages whose `updated` date is more than 90 days old as &quot;possibly stale&quot;.
+5. Offer fixes for broken links and orphan pages. Apply them only if the human says yes.
+
+$ARGUMENTS
+</code></pre>
+<p>The script handles what can be checked mechanically. The model handles what needs reading comprehension, such as two pages giving different thread limits for the same suite.</p>
+<p><strong><code>.claude/commands/ingest.md</code></strong>, quick capture:</p>
+<pre><code class="language-markdown">---
+description: Save a new raw note (new file only, never edits)
+allowed-tools: Bash(python tools/new_note.py:*), Bash(python3 tools/new_note.py:*), Bash(python tools/guard.py:*), Bash(python3 tools/guard.py:*)
+---
+
+Save the text below as a new raw note. Do not use Write or Edit on `raw/`; use the script, which
+refuses to overwrite:
+
+    python3 tools/new_note.py &quot;&lt;short topic&gt;&quot; &lt;&lt;'EOF'
+    &lt;the text, verbatim&gt;
+    EOF
+
+(Use `python` if `python3` is not found.) Then run `python3 tools/guard.py` and report any
+findings. Do not compile. Reply with the saved file name in one line.
+
+Text:
+$ARGUMENTS
+</code></pre>
+<h2>Step 8: Connect Obsidian</h2>
+<ol>
+<li>In Obsidian, use <strong>Open folder as vault</strong> and choose <code>work-brain</code>, or put <code>work-brain</code> inside your existing vault as one folder.</li>
+<li>Go to <strong>Settings → Core plugins → Daily notes</strong> and set <strong>New file location</strong> to <code>work-brain/raw</code> and <strong>Date format</strong> to <code>YYYY-MM-DD</code>.</li>
+<li>In <strong>Settings → Files and links</strong>, turn on <strong>Use [[Wikilinks]]</strong>.</li>
+</ol>
+<p>Now your daily note <em>is</em> a raw note. Write rough bullets during the day and they're picked up at the next compile, including anything you add after the last one, thanks to the fingerprints from step 5.</p>
+<p>If your vault syncs through OneDrive or a similar service, mark the folder <strong>Always keep on this device</strong> so the scripts read real files rather than cloud placeholders. Remember that synced storage keeps old versions, so a secret you delete later still exists in the file history. That's another reason the guard runs <em>before</em> anything is written.</p>
+<h2>Step 9: First run</h2>
+<p>Start Claude Code in the folder:</p>
+<pre><code class="language-bash">cd work-brain
+python3 tools/lint.py     # expect: Pages: 0  Errors: 0
+python3 tools/guard.py    # expect: guard: raw/ clean
+claude
+</code></pre>
+<p>Inside Claude Code, type <code>/</code> and check that <code>compile</code>, <code>query</code>, <code>lint</code> and <code>ingest</code> appear. Then add a note. Here's one of the made-up notes I tested with:</p>
+<pre><code class="language-markdown"># karate parallel runs
+
+Karate suite was slow (40 min). Switched runner to Runner.path(&quot;classpath:features&quot;).parallel(6).
+Now 9 min on GitLab runner.
+Gotcha: features that share the same test customer collide in parallel. Tag them @serial and run
+them in a separate job.
+Decision: max 6 threads, because the SIT payments stub rate-limits above ~8 concurrent calls.
+</code></pre>
+<p>Then run:</p>
+<pre><code>/compile
+</code></pre>
+<p>From three short notes like this one, Claude produced five linked pages: a how-to (<em>Run Karate in parallel</em>), a decision (<em>Karate max six threads</em>), a defect (<em>Flaky Playwright login</em>), another how-to (<em>Reset SIT test data</em>) and a system page (<em>SIT environment</em>) that combined facts from all three notes. It also filled in <code>wiki/index.md</code>:</p>
+<pre><code class="language-markdown">| Page | Type | Summary | Updated |
+|---|---|---|---|
+| [[decisions/karate-max-six-threads]] | decision | Karate runs capped at 6 threads because the SIT payments stub rate-limits above ~8 concurrent calls | 2026-10-21 |
+| [[defects/flaky-playwright-login]] | defect | Login test flaked 1 in 10 on CI because of a late SSO redirect; fixed by waiting for the dashboard locator | 2026-10-21 |
+| [[howto/run-karate-in-parallel]] | howto | Parallel Karate runner (6 threads, 40 to 9 min); tag shared-customer features @serial in a separate job | 2026-10-21 |
+| [[systems/sit-environment]] | system | Shared SIT test environment: 08:00 batch job, payments stub limit, DB access via the team vault | 2026-10-21 |
+</code></pre>
+<p>That index is the whole retrieval system. When you run <code>/query</code>, Claude reads these one-line summaries first, opens only the relevant pages, and answers from those. Karpathy's point is that at personal scale, a few hundred pages, an LLM reading a well-kept index works better than a vector database, and there's nothing to keep in sync. Beyond that size you'd add search.</p>
+<p>Now ask it something:</p>
+<pre><code>/query Why is the Karate suite limited to 6 threads, and what do I do with features that share a test customer?
+</code></pre>
+<h2>Daily routine</h2>
+<table>
+<thead>
+<tr>
+<th>When</th>
+<th>What</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>During the day</td>
+<td>Write rough bullets in today's Obsidian daily note</td>
+</tr>
+<tr>
+<td>End of the day</td>
+<td><code>/compile</code></td>
+</tr>
+<tr>
+<td>Whenever you're stuck</td>
+<td><code>/query &lt;question&gt;</code></td>
+</tr>
+<tr>
+<td>Once a week</td>
+<td><code>/lint</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>Testing it like a QA engineer</h2>
+<p>I don't trust a tool because its output looks plausible. Before using this for anything real, I wrote down what <em>should</em> happen and checked each case. These are the tests I ran, all with made-up notes.</p>
+<p><strong>1. Negative test: does the guard block a secret?</strong>
+I put a fake password line in one note and ran <code>/compile</code>. The guard reported the file, line number and the type of finding (<code>password/secret assignment</code>), showing only the first three characters. Claude stopped, told me what to fix, and <strong>wrote nothing to <code>wiki/</code></strong>. Pass.</p>
+<p><strong>2. Does the knowledge survive without the secret?</strong>
+I replaced the line with "credentials are in the team vault (SIT entry)" and compiled again. The SIT environment page kept the useful fact ("SIT DB credentials are in the team vault, under the SIT entry. Ask the env team for a read-only DB role.") without any value. Afterwards I searched the whole folder for the fake password: zero hits. Pass.</p>
+<p><strong>3. Idempotence: does a second compile duplicate anything?</strong>
+Running <code>/compile</code> again with no new notes returned "Nothing to compile". Pass.</p>
+<p><strong>4. Change detection: is a growing daily note picked up?</strong>
+I added a line to a note that had already been compiled. <code>lint.py --uncompiled</code> listed it once as <code>changed</code>, Claude folded in only the new material, and the next check listed nothing. Pass.</p>
+<p><strong>5. Contradictions: does it guess?</strong>
+The added line said a flaky test had come back, contradicting an earlier "no more flakes in 50 runs". Claude kept both statements, explained the conflict, and marked the page <code>status: needs-check</code> instead of picking a winner. Pass.</p>
+<p><strong>6. Grounding: does it refuse when the wiki is silent?</strong>
+I asked how to reset Kafka consumer group offsets in UAT, which none of my notes mention. The answer began "The wiki does not cover this" and named the closest pages. Pass.</p>
+<p><strong>7. Structure: is the build clean?</strong>
+<code>lint.py</code> reported 0 errors after the compile, and <code>guard.py --wiki</code> reported the wiki clean.</p>
+<p>These are manual checks on a tiny sample, not a benchmark. They tell me the controls work as designed, not that the model will summarise every note perfectly. That's why the wiki cites its sources, so you can always check a page against the note it came from.</p>
+<h2>Rules I'd keep</h2>
+<ul>
+<li><strong>Ask first.</strong> Check your organisation's AI and data policy before you put any work notes into an AI tool, and use only the tools and accounts it approves.</li>
+<li><strong>Never write a secret in a note in the first place.</strong> The guard is a net, not a licence.</li>
+<li><strong>Enforce, don't just ask.</strong> Put the important rules in <code>settings.json</code> permissions, not only in <code>CLAUDE.md</code>.</li>
+<li><strong>Keep raw notes append-only.</strong> They're your source of truth; the wiki is a build artefact.</li>
+<li><strong>Never let the model settle a contradiction.</strong> Mark it and let a human decide.</li>
+<li><strong>Prefer "I don't know" to a confident guess.</strong> Make refusal an explicit step in <code>/query</code>.</li>
+<li><strong>Test the controls yourself.</strong> Plant a fake secret and confirm the compile stops before you trust it with real notes.</li>
+</ul>
+<h2>Limits</h2>
+<ul>
+<li>The guard catches patterns (keys, tokens, card numbers, IBANs, sort codes, emails, NI numbers). It can't recognise client names, internal project names or production hostnames.</li>
+<li>Compile quality depends on the notes. Vague notes produce vague pages, and the model can still misread one, so check pages against their sources.</li>
+<li>Index-based retrieval suits hundreds of pages, not tens of thousands.</li>
+<li>Every compile and query uses your Claude Code plan or API budget.</li>
+</ul>
+<h2>Why this matters for QA</h2>
+<p>Most of what makes a test automation engineer effective in a team is context, not code: why things are configured the way they are, which failures are known, and how to get unstuck. A second brain doesn't replace a team wiki, but it gives you a private place where that context accumulates instead of evaporating.</p>
+<p>Building it was also good practice for the job I want next, testing AI systems. The same questions apply to any LLM feature: does it refuse when it should, does it stay grounded in its sources, does it leak what it shouldn't, and do its controls hold when you deliberately try to break them?</p>
+<hr />
+<h2>Credits and links</h2>
+<ul>
+<li><strong>Andrej Karpathy</strong> for the LLM knowledge-base idea: raw sources compiled by an LLM into a markdown wiki with an index, queried and linted by the same model.</li>
+<li><strong>Cole Medin</strong> for <a href="https://github.com/coleam00/claude-memory-compiler">claude-memory-compiler</a> and his video <em>I Built Self-Evolving Claude Code Memory w/ Karpathy's LLM Knowledge Bases</em>, which got me started.</li>
+<li><strong>The Work Brain template</strong> from this article, with all files and the made-up example notes: <a href="https://github.com/mattkari/source-grounded-rag/tree/main/work-brain">github.com/mattkari/source-grounded-rag/tree/main/work-brain</a></li>
+</ul>
+<p><em>I'm a test automation engineer working towards AI quality and LLM evaluation. If you build your own version or find a hole in mine, I'd like to hear about it.</em></p>
+</article>
+</body>
+</html>
