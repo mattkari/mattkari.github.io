@@ -28,6 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
+import { formatDate, sortedArticles } from '@/lib/articles';
 
 const LINKEDIN_URL = 'https://www.linkedin.com/in/mattkari';
 const GITHUB_URL = 'https://github.com/mattkari';
@@ -56,6 +57,7 @@ export default function Home() {
     { name: 'Home', href: '#home' },
     { name: 'About', href: '#about' },
     { name: 'Projects', href: '#projects' },
+    { name: 'Writing', href: '#writing' },
     { name: 'Skills', href: '#skills' },
     { name: 'Experience', href: '#experience' },
     { name: 'Education', href: '#education' },
@@ -595,6 +597,41 @@ export default function Home() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Writing */}
+      <section id="writing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Writing</h2>
+            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
+            <p className="text-blue-800/70 mt-4 max-w-2xl mx-auto">
+              Tested, step-by-step guides on AI quality, AI agents and test automation.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto grid gap-6 md:grid-cols-2">
+            {sortedArticles.slice(0, 4).map((a) => (
+              <a
+                key={a.slug}
+                href={`/articles/${a.slug}/`}
+                className="block border border-blue-200 rounded-xl p-6 hover:shadow-lg hover:border-blue-400 transition bg-blue-50/40"
+              >
+                <p className="text-sm text-blue-600 mb-2">
+                  <time dateTime={a.date}>{formatDate(a.date)}</time> · {a.readingMinutes} min read
+                </p>
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">{a.title}</h3>
+                <p className="text-blue-800 text-sm leading-relaxed">{a.summary}</p>
+              </a>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <a href="/writing" className="text-blue-700 hover:text-blue-600 font-medium underline">
+              All articles
+            </a>
           </div>
         </div>
       </section>
