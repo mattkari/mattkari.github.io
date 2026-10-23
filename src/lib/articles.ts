@@ -11,6 +11,16 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'crypto-signal-engine',
+    title:
+      'I turned my crypto trading bot into a signal engine that cannot trade. Here\'s how it reads BTC, ETH and ADA',
+    summary:
+      'A read-only signal engine on a Raspberry Pi: indicators, three gates and a condition score, a Telegram bot, live data from 23 Oct 2026, tests that prove it cannot trade, and two bugs found while writing it up.',
+    date: '2026-10-23',
+    readingMinutes: 11,
+    tags: ['Python', 'Telegram bot', 'Testing', 'Crypto'],
+  },
+  {
     slug: 'claude-code-second-brain',
     title:
       'How I built a "second brain" for test automation with Claude Code and Obsidian (and tested it like a QA engineer)',
