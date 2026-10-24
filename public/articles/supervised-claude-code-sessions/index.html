@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three Claude Code Sessions, One Orchestrator, One Auditor: My Day-to-Day AI Workflow as a Test Automation Engineer</title>
+<meta name="description" content="Three parallel Claude Code sessions (an orchestrator plus Karate and Playwright specialists), an end-of-day compile into a shared wiki, and Microsoft Copilot as the auditor.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/supervised-claude-code-sessions/">
+<meta property="og:title" content="Three Claude Code Sessions, One Orchestrator, One Auditor: My Day-to-Day AI Workflow as a Test Automation Engineer">
+<meta property="og:description" content="Three parallel Claude Code sessions (an orchestrator plus Karate and Playwright specialists), an end-of-day compile into a shared wiki, and Microsoft Copilot as the auditor.">
+<style>
+body{max-width:720px;margin:40px auto;padding:0 20px;font-family:Georgia,serif;font-size:19px;line-height:1.6;color:#222}
+h1{font-family:Arial,Helvetica,sans-serif;font-size:32px;line-height:1.25}
+h2{font-family:Arial,Helvetica,sans-serif;font-size:24px;margin-top:40px}
+code,pre{font-family:Menlo,Consolas,monospace;font-size:15px;background:#f4f4f4}
+pre{padding:12px;overflow-x:auto}
+blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444}
+.meta{color:#666;font-size:16px}
+table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;padding:4px 8px}
+h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin-top:28px}
+.footnote{font-size:16px}
+</style>
+</head>
+<body>
+<article>
+<nav style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin-bottom:24px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></nav>
+<h1>Three Claude Code Sessions, One Orchestrator, One Auditor: My Day-to-Day AI Workflow as a Test Automation Engineer</h1>
+<p>Matt Karimov · Test automation engineer · October 2026</p>
+<p><em>How I run Karate API and Playwright UI automation in parallel Claude Code sessions, let a third session orchestrate them, compile what each one learns into a shared wiki at the end of the day, and keep Microsoft Copilot as the auditor above it all.</em></p>
+<hr />
+<h2>Why I'm writing this down</h2>
+<p>On a normal day I work on two automation frameworks at once: a Karate suite for APIs and a Playwright suite for the UI. For a long time my AI help was one chat window and one coding assistant, and I spent half my effort re-explaining context.</p>
+<p>Then, in one working day, I found a setup that holds context for each workstream separately, lets the sessions coordinate, and leaves a written record of what was learned. This article is that full process: the tools, the two "second brains" behind it, the three-session workflow, and the end-of-day loop that ties it together.</p>
+<p>It is one engineer's setup, tested over its first full working day. Treat it as a pattern to adapt, not a product.</p>
+<hr />
+<h2>1. Current AI tooling setup</h2>
+<p>I have three AI tools available at work, and each earned a different job:</p>
+<ul>
+<li><strong>Microsoft Copilot: my primary chatbot and auditor.</strong> Copilot supports several models, including other vendors' thinking models, but I run it with Claude models. I don't use it for agentic coding. Its strength is that it's integrated with work email, Confluence, OneDrive and OneNote through built-in retrieval (RAG). It can search across everything I have access to, so it already behaves like a "second brain" for organisational knowledge.</li>
+<li><strong>GitLab Duo: coding assistance in IntelliJ and VS Code.</strong> It's hooked into both IDEs. In practice I found it less efficient than Copilot for day-to-day questions, so it's no longer my first choice.</li>
+<li><strong>Claude Code: my daily tool for agentic coding.</strong> This is the tool that reads the repo, runs commands, edits files and iterates, and it's what made the workflow below possible.</li>
+</ul>
+<p>The split matters: <strong>Copilot knows the organisation; Claude Code knows the code.</strong> Neither replaces the other.</p>
+<hr />
+<h2>2. Second-brain architecture: two brains, two jobs</h2>
+<h3>The Copilot brain (organisational knowledge)</h3>
+<ul>
+<li><strong>OneNote:</strong> one section per project (Karate, Playwright), holding notes, decisions and how-tos.</li>
+<li><strong>Confluence:</strong> wiki pages written with deliberate keywords, so Copilot's search finds them as context.</li>
+<li><strong>Copilot memory:</strong> set up with my working preferences, so I don't repeat them in every chat.</li>
+</ul>
+<p>This brain is about <em>finding</em> things: a decision from last month, a page someone else wrote, an email thread.</p>
+<h3>The Claude Code brain (Karpathy-style markdown files)</h3>
+<p>Following Andrej Karpathy's idea that at personal scale an LLM reading well-kept markdown beats a search database (I set out a fuller version of this in an earlier article: Karimov, 2026c), Claude Code gets two plain files:</p>
+<ul>
+<li><strong><code>skills.md</code>:</strong> how I work and how to do recurring tasks (conventions, commands, the "right way" in each framework).</li>
+<li><strong><code>learnings.md</code>:</strong> what we discovered: fixes, gotchas, flaky-test causes, repeatable actions.</li>
+</ul>
+<p>Both are <strong>loaded into context at the start of every new session</strong>, so a fresh Claude Code session starts knowing what yesterday's session learned.</p>
+<h3>Before Claude Code</h3>
+<p>Before Claude Code, I ran all my "agentic" work through Copilot by having it generate PowerShell commands that I executed myself. It worked, but I was the loop: copy, run, paste back. Amazon Bedrock with Claude Code wasn't available to me at work, so Claude Code became the agentic layer.</p>
+<hr />
+<h2>3. The multi-session Claude Code workflow (today's discovery)</h2>
+<h3>The three sessions</h3>
+<p>I run three Claude Code sessions in parallel, each in the tool that suits its workstream:</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Where it runs</th>
+<th>Role</th>
+<th>Workstream</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Standalone PowerShell</strong> window</td>
+<td><strong>Orchestrator</strong>; also builds the second brain</td>
+<td>Coordination + wiki</td>
+</tr>
+<tr>
+<td>2</td>
+<td>PowerShell terminal <strong>inside VS Code</strong></td>
+<td>Independent coder, API specialist</td>
+<td><strong>Karate</strong> API automation framework</td>
+</tr>
+<tr>
+<td>3</td>
+<td>PowerShell terminal <strong>inside IntelliJ</strong></td>
+<td>Independent coder, UI specialist</td>
+<td><strong>Playwright</strong> UI automation (183 test cases automated to date)</td>
+</tr>
+</tbody>
+</table>
+<p>All three are PowerShell. The difference is where they live: the two specialists run in the integrated terminal of the IDE that suits their framework, so the code, the test runner and the agent share one window.</p>
+<p>Each session has <strong>its own context window</strong>, but the two frameworks are not walled off from each other. They test the same system from two sides, and they stay in sync on purpose.</p>
+<p>The Playwright suite isn't "UI only". It works with the real API traffic underneath the browser, using the patterns from my article <a href="https://mattkari.github.io/articles/playwright-java-real-api-traffic/">Testing the Screen and the Services Behind It</a> (Karimov, 2026a), which is based on my <a href="https://github.com/mattkari/pricingtool/blob/main/docs/playwright-java-real-api-traffic-guide.md">Playwright Java real API traffic guide</a> (Karimov, 2026b): <code>waitForResponse</code> to pair each UI action with the call it triggers, and a background network recorder that logs every request for diagnostics. I mainly use three ways of working:</p>
+<ol>
+<li><strong>Seed via API, validate via UI.</strong> Create the test data through the API (for example, a test record), then check the UI shows it correctly. A two-phase wait first polls the same search endpoint the grid uses, so a failure tells you whether the data or the UI broke (Karimov, 2026a, use case 4).</li>
+<li><strong>Trigger via UI, capture the API call.</strong> Click through the real UI flow and capture the request and response it fires: the server-generated ID, the payload contract, the status code (Karimov, 2026a, use cases 1, 2 and 8).</li>
+<li><strong>Seed via UI, validate via the UI flow.</strong> Create the data through the screens themselves and follow it through the end-to-end journey, the way a user would, closing with a reload check that catches an optimistic update that never saved (Karimov, 2026a, use case 5).</li>
+</ol>
+<p>This is why the two sessions belong together. The Karate session knows the API contracts in depth. The Playwright session sees how the UI calls those microservices, and the network and routing logic behind each screen. Between them I understand how the UI integrates with the services underneath, which neither framework shows on its own.</p>
+<p>So the sessions are <strong>independent but learning from each other</strong>. Each works in its own repo and its own context, and what one discovers reaches the other through the shared wiki. When Karate maps a new endpoint, the Playwright session can use it to seed data. When Playwright captures an unexpected call or status code, the Karate session can turn it into an API test.</p>
+<p>I don't think of the two specialist sessions as junior assistants. Each is an <strong>independent coder that specialises in one area</strong>: it plans, writes, runs and fixes its own work inside its lane. The orchestrator coordinates them; it doesn't do their thinking for them.</p>
+<h3>Choosing the model per task</h3>
+<p>Every session plans on the strongest model and codes on the cheapest model that can do the job:</p>
+<ul>
+<li><strong>Claude Opus 5.5 for planning:</strong> breaking down a feature, designing a test strategy, deciding how a change fits the framework.</li>
+<li><strong>Claude Sonnet 5.5 for most coding:</strong> implementing tests, refactoring, debugging failures.</li>
+<li><strong>Claude Haiku 5.5 for simple, repetitive work:</strong> small edits, boilerplate, renames, quick lookups.</li>
+</ul>
+<p>I switch per task, not per day. Planning on a weaker model produces plans that fall apart halfway; coding everything on the strongest model wastes budget on work a smaller model does just as well.</p>
+<h3>How the sessions talk to each other</h3>
+<p>Separate context windows don't mean separate islands. <strong>The sessions communicate via PowerShell commands</strong>: the orchestrator session passes instructions across to the other two, and they report back through files on disk.</p>
+<p>The rule that keeps this safe: <strong>one writer per file.</strong> Each worker session writes only its own notes; only the orchestrator writes the compiled wiki. Three agents writing to the same file is a merge conflict between agents, and it's worse than one between people.</p>
+<h3>End-of-day knowledge capture flow</h3>
+<p>This loop turns a busy day into something I keep:</p>
+<ol>
+<li><strong>Karate session (VS Code):</strong> asked to summarise the day's learnings and extract repeatable actions into a markdown file.</li>
+<li><strong>Orchestrator (PowerShell):</strong> instructs the VS Code session to save that file into the <code>raw/</code> directory.</li>
+<li><strong>Playwright session (IntelliJ):</strong> does the same for the UI automation learnings, into <code>raw/</code>.</li>
+<li><strong>Orchestrator:</strong> compiles all the raw files into a <strong>single wiki</strong>.</li>
+</ol>
+<pre><code class="language-text">   VS Code (Karate) ──summary.md──┐
+                                  ├──► raw/ ──► Orchestrator compiles ──► wiki/
+IntelliJ (Playwright) ─summary.md─┘                (PowerShell session)
+                                                        │
+              every session can query the wiki ◄────────┘
+</code></pre>
+<p>After compiling, <strong>the second brain can be queried from all sessions</strong>. Tomorrow's Playwright session can ask which endpoint today's Karate session used to create a test record, seed its data through that endpoint, and check the result in the UI. The answer comes from the wiki, not from my memory.</p>
+<p>This is the Karpathy pattern in practice: <code>raw/</code> is the source, the compile step is the build, and the wiki is the artefact. As a QA engineer I think of it like a build pipeline: notes go in, a tested, linked knowledge base comes out.</p>
+<h3>The supervision model: auditor, orchestrator, specialists</h3>
+<ul>
+<li><strong>Microsoft Copilot, running Claude Opus, is the auditor.</strong> It has the most context of anything in the setup, because its built-in RAG reaches Confluence, OneNote, OneDrive and email. I take plans and finished work to it and ask whether they fit how things are actually done here. It checks; it doesn't build.</li>
+<li><strong>The standalone PowerShell session is the orchestrator.</strong> It passes instructions to the two specialists and owns the wiki.</li>
+<li><strong>The VS Code and IntelliJ sessions are independent specialists.</strong> Each owns its framework end to end.</li>
+</ul>
+<p>The auditor's role may not be permanent. Copilot audits well today because it can see organisational knowledge the Claude Code sessions can't. As the compiled wiki grows and gets richer, more of that context will live in files every session can read, and I may retire Copilot from the auditor seat. The wiki is slowly replacing the reason the auditor exists.</p>
+<p>And above all of them: <strong>me.</strong> Merges, pushes and anything irreversible stay with the human.</p>
+<hr />
+<h2>4. Rules that make it work</h2>
+<ul>
+<li><strong>One workstream per session, shared knowledge.</strong> Each session owns its own framework and repo; they meet in the wiki, not in each other's code.</li>
+<li><strong>One writer per artefact.</strong> Workers write their own raw notes; only the orchestrator writes the wiki.</li>
+<li><strong>Summaries are claims; diffs and test runs are evidence.</strong> When a session says "all tests pass", check the run.</li>
+<li><strong>Capture before you close.</strong> The end-of-day summary is the step that makes tomorrow faster. Skip it and the day's learning dies with the context window.</li>
+<li><strong>Keep the MD files clean.</strong> No credentials, no client data, no production details. Learnings stay at technique level, such as "wait for the dashboard locator after SSO", never anything that identifies a system or a customer.</li>
+<li><strong>The human presses merge.</strong> Agents propose; I approve.</li>
+</ul>
+<hr />
+<h2>5. Honest limitations</h2>
+<ul>
+<li><strong>One day of evidence.</strong> The three-session pattern held up across a full working day, morning to evening. That is a promising start, not a long-term result.</li>
+<li><strong>The auditor depends on Copilot's RAG.</strong> Until the wiki holds that organisational context, removing Copilot would remove the widest view in the setup.</li>
+<li><strong>Coordination is still partly manual.</strong> The orchestrator passes instructions, but I'm still deciding when each step happens.</li>
+<li><strong>Shared memory is only what's written down.</strong> If a learning isn't in <code>raw/</code> or the wiki, the other sessions don't know it.</li>
+<li><strong>Token cost multiplies.</strong> Three sessions each read their own context. It pays off on full-day work, not on a quick fix.</li>
+<li><strong>Policy comes first.</strong> Use only tools your organisation has approved, on its accounts, and check what may go into notes before you start.</li>
+</ul>
+<hr />
+<h2>6. Key takeaways</h2>
+<ul>
+<li><strong>Separate Claude Code sessions each have their own context window, but they can still communicate.</strong> The orchestrator passes instructions, and files on disk carry the results.</li>
+<li><strong>Copilot (with Claude models) acts as the auditor, because its RAG gives it the most context; the Claude Code sessions are independent specialists</strong>, with one session acting as orchestrator.</li>
+<li><strong>Plan on Opus, code on Sonnet or Haiku.</strong> Pick the model per task, not per day.</li>
+<li><strong>Multi-session orchestration enables parallel workstreams with shared knowledge output.</strong> API and UI automation progress side by side and feed one wiki.</li>
+<li><strong>The frameworks are independent but learn from each other.</strong> Playwright seeds via API, triggers via UI and captures the calls, while Karate goes deep on the contracts, so together they show how the UI integrates with the microservices underneath.</li>
+<li><strong>The end-of-day compile is the multiplier.</strong> Each session's learnings become every session's starting context the next morning.</li>
+<li><strong>It held up across a full working day, morning to evening.</strong> Next I'll run it for a few weeks and report back on what breaks.</li>
+</ul>
+<hr />
+<p><em>Tools: Microsoft Copilot with Claude models (chat, built-in RAG, auditor), Claude Code on Opus 5.5 / Sonnet 5.5 / Haiku 5.5 (three PowerShell sessions: standalone, inside VS Code, inside IntelliJ), GitLab Duo (IDE assistance), OneNote, Confluence, and two markdown files, <code>skills.md</code> and <code>learnings.md</code>. Related: my earlier article on building a Claude Code second brain with Obsidian, https://mattkari.github.io/articles/claude-code-second-brain/</em></p>
+<hr />
+<h2>References</h2>
+<ul>
+<li>Karimov, D. (2026a). <em>Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java</em>. https://mattkari.github.io/articles/playwright-java-real-api-traffic/</li>
+<li>Karimov, D. (2026b). <em>Playwright Java: Real API Traffic Guide</em>. pricingtool repository. https://github.com/mattkari/pricingtool/blob/main/docs/playwright-java-real-api-traffic-guide.md</li>
+<li>Karimov, D. (2026c). <em>How I built a "second brain" for test automation with Claude Code and Obsidian (and tested it like a QA engineer)</em>. https://mattkari.github.io/articles/claude-code-second-brain/</li>
+</ul>
+<hr><p class="meta"><a href="/writing">More articles</a> · <a href="/">About me</a></p>
+</article>
+</body>
+</html>
