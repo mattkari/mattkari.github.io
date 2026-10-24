@@ -11,6 +11,15 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'supervised-claude-code-sessions',
+    title: 'Three Claude Code Sessions, One Orchestrator, One Auditor: My Day-to-Day AI Workflow as a Test Automation Engineer',
+    summary:
+      'Three parallel Claude Code sessions (a PowerShell orchestrator plus Karate and Playwright specialists), Opus for planning and Sonnet or Haiku for coding, an end-of-day compile into a shared wiki, and Microsoft Copilot as the auditor.',
+    date: '2026-10-24',
+    readingMinutes: 10,
+    tags: ['Claude Code', 'AI workflow', 'Test automation', 'Second brain'],
+  },
+  {
     slug: 'playwright-java-real-api-traffic',
     title: 'Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java',
     summary:
