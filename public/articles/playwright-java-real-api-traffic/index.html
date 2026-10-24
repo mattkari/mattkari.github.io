@@ -31,10 +31,10 @@ h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin-top:28px}
 <hr />
 <h2>Introduction</h2>
 <p>A UI test usually tells you one thing: whether the screen looked right at the end. It does not tell you which call the screen made, what it sent, what came back, or which background request failed quietly and left a dropdown empty. For a long time I treated those as two separate worlds. The Karate suite looked after the APIs, and the Playwright suite looked after the screens. In practice, however, the most interesting defects sit between the two: a field mapped wrongly on the way out, a value rounded differently on the way back, a grid that shows a record before the search index has it.</p>
-<p>This article explores how Playwright Java can observe the real traffic underneath the browser, so that a UI test also becomes a test of how the UI integrates with the microservices, the network and the routing logic behind each screen. It is based on the guide I keep in my pricing tool repository, the <em>Playwright Java: Real API Traffic Guide</em> (Karimov, 2026).<sup id="fnref:guide"><a class="footnote-ref" href="#fn:guide">1</a></sup> Every pattern, rule and code sample below comes from that guide. I have kept all of them, and I have arranged them around the way I actually work.</p>
+<p>This article explores how Playwright Java can observe the real traffic underneath the browser, so that a UI test also becomes a test of how the UI integrates with the microservices, the network and the routing logic behind each screen. It is based on a guide I keep in one of my GitHub repositories, the <em>Playwright Java: Real API Traffic Guide</em> (Karimov, 2026).<sup id="fnref:guide"><a class="footnote-ref" href="#fn:guide">1</a></sup> Every pattern, rule and code sample below comes from that guide. I have kept all of them, and I have arranged them around the way I actually work.</p>
 <p>Three ways of working run through everything that follows:</p>
 <ol>
-<li><strong>Seed via API, then validate via UI.</strong> Create the data through the API (for example, a pricing case), then check the screen shows it correctly.</li>
+<li><strong>Seed via API, then validate via UI.</strong> Create the data through the API (for example, a test record), then check the screen shows it correctly.</li>
 <li><strong>Trigger via UI, then capture the API call.</strong> Drive the real UI flow, and capture the request and response it fires: the server-generated ID, the payload contract, the status code.</li>
 <li><strong>Seed via UI, then validate through the UI flow.</strong> Create the data through the screens themselves and follow it through the end-to-end journey, as a user would.</li>
 </ol>
@@ -73,7 +73,7 @@ h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin-top:28px}
 <li>Java 17, Playwright Java, Cucumber-JVM + PicoContainer, AssertJ, Jackson, Awaitility.</li>
 <li><code>assertThat(...)</code> is AssertJ (static import). Playwright assertions are always written <code>PlaywrightAssertions.assertThat(...)</code> to avoid the name clash.</li>
 <li><code>UiSession</code> is the per-scenario holder exposing <code>page()</code> and <code>context()</code>. The context is created with <code>setBaseURL(...)</code>, so relative paths work in <code>navigate</code> and <code>context().request()</code>.</li>
-<li>The <code>/api/pricing-cases...</code> endpoints, JSON field names and page objects (<code>form</code>, <code>grid</code>, <code>details</code>) are placeholders. Swap in your real ones from DevTools → Network.</li>
+<li>The <code>/api/records...</code> endpoints, JSON field names and page objects (<code>form</code>, <code>grid</code>, <code>details</code>) are illustrative placeholders, not a real system's API. Swap in your real ones from DevTools → Network.</li>
 </ul>
 <hr />
 <h2>Part 1: waitForResponse in depth</h2>
@@ -82,10 +82,10 @@ h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin-top:28px}
 <p>The waiter is registered before the callback runs, so a response that arrives during <code>click()</code> is caught. Waiting after the click is a race. A fast API answers during the click, the event is dispatched and gone, and you then wait 30 seconds for a response that has already happened (guide §1.1). Such timeouts look intermittent, but they are not: they are a race the test lost.</p>
 <pre><code class="language-java">// WRONG: race condition, intermittent 30s timeouts
 form.submit();
-Response r = page.waitForResponse(&quot;**/api/pricing-cases&quot;, () -&gt; {});
+Response r = page.waitForResponse(&quot;**/api/records&quot;, () -&gt; {});
 
 // RIGHT: waiter is armed before the click
-Response r = page.waitForResponse(&quot;**/api/pricing-cases&quot;, () -&gt; form.submit());
+Response r = page.waitForResponse(&quot;**/api/records&quot;, () -&gt; form.submit());
 </code></pre>
 <h3>1.2 Three ways to match</h3>
 <p>There are three ways to tell Playwright which response you mean (guide §1.2):</p>
@@ -100,12 +100,12 @@ Response r = page.waitForResponse(&quot;**/api/pricing-cases&quot;, () -&gt; for
 <tbody>
 <tr>
 <td>Glob <code>String</code></td>
-<td><code>"**/api/pricing-cases*"</code></td>
+<td><code>"**/api/records*"</code></td>
 <td>Quick one-off. Must match the whole URL; <code>*</code> stops at <code>/</code>.</td>
 </tr>
 <tr>
 <td><code>Pattern</code></td>
-<td><code>Pattern.compile(".*/api/pricing-cases/\\d+$")</code></td>
+<td><code>Pattern.compile(".*/api/records/\\d+$")</code></td>
 <td>Path has IDs or a variable query string.</td>
 </tr>
 <tr>
@@ -123,7 +123,7 @@ Response r = page.waitForResponse(&quot;**/api/pricing-cases&quot;, () -&gt; for
 }
 
 Response created = page.waitForResponse(
-    call(&quot;POST&quot;, &quot;/api/pricing-cases&quot;),
+    call(&quot;POST&quot;, &quot;/api/records&quot;),
     () -&gt; form.submit());
 </code></pre>
 <p>Do <strong>not</strong> put the status in the predicate (<code>&amp;&amp; r.status() == 201</code>). If the API returns 500, the predicate never matches and you get a vague 30-second timeout. Match first, then assert the status, and you get an immediate failure that shows the real 500. That is to say, the predicate decides <em>which</em> call; the assertion decides whether it was <em>right</em>.</p>
@@ -178,8 +178,8 @@ String caseId = body.path(&quot;id&quot;).asText();
 BigDecimal margin = body.path(&quot;margin&quot;).decimalValue();   // exact, thanks to USE_BIG_DECIMAL_FOR_FLOATS
 
 // Or map to a DTO (Jackson 2.12+ supports records)
-record PricingCaseDto(String id, String reference, String status, BigDecimal margin) {}
-PricingCaseDto dto = Json.MAPPER.readValue(created.text(), PricingCaseDto.class);
+record RecordDto(String id, String reference, String status, BigDecimal margin) {}
+RecordDto dto = Json.MAPPER.readValue(created.text(), RecordDto.class);
 
 // Both sides of the call from one wait
 String correlationId = created.headerValue(&quot;x-correlation-id&quot;);
@@ -206,7 +206,7 @@ assertThat(sent.postData()).contains(&quot;\&quot;action\&quot;:\&quot;APPROVE\&
 
 Request done = page.waitForRequestFinished(
     new Page.WaitForRequestFinishedOptions()
-        .setPredicate(r -&gt; r.url().contains(&quot;/api/pricing-cases/search&quot;)),
+        .setPredicate(r -&gt; r.url().contains(&quot;/api/records/search&quot;)),
     () -&gt; grid.applyFilter(ref));
 log.info(&quot;search took {} ms&quot;, done.timing().responseEnd);
 </code></pre>
@@ -214,8 +214,8 @@ log.info(&quot;search took {} ms&quot;, done.timing().responseEnd);
 <p>Nest the waits. Both waiters are armed before <code>submit()</code> runs, so the order in which the responses arrive does not matter (guide §1.5):</p>
 <pre><code class="language-java">AtomicReference&lt;Response&gt; refreshed = new AtomicReference&lt;&gt;();
 
-Response created = page.waitForResponse(call(&quot;POST&quot;, &quot;/api/pricing-cases&quot;), () -&gt;
-    refreshed.set(page.waitForResponse(call(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;),
+Response created = page.waitForResponse(call(&quot;POST&quot;, &quot;/api/records&quot;), () -&gt;
+    refreshed.set(page.waitForResponse(call(&quot;GET&quot;, &quot;/api/records/search&quot;),
         () -&gt; form.submit())));
 
 assertThat(created.status()).isEqualTo(201);
@@ -224,14 +224,14 @@ assertThat(refreshed.get().status()).isEqualTo(200);
 <p>For three or more calls, nesting becomes unreadable. Use the recorder from Part 2 instead.</p>
 <h3>1.6 Navigation</h3>
 <p>Wrap <code>navigate</code> the same way, so you wait for the data a page needs rather than for the page load itself:</p>
-<pre><code class="language-java">Response data = page.waitForResponse(call(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;),
-    () -&gt; page.navigate(&quot;/pricing-cases&quot;));
+<pre><code class="language-java">Response data = page.waitForResponse(call(&quot;GET&quot;, &quot;/api/records/search&quot;),
+    () -&gt; page.navigate(&quot;/records&quot;));
 </code></pre>
 <p>This is more precise than <code>LoadState.NETWORKIDLE</code>, which Playwright discourages for tests. It only waits for 500 ms of network silence and says nothing about <em>which</em> call you needed (guide §1.6).</p>
 <h3>1.7 Timeouts</h3>
 <p>The default is the page's default timeout (30 s). In Java you can override it per call. Note that the options argument comes <strong>before</strong> the callback:</p>
 <pre><code class="language-java">Response r = page.waitForResponse(
-    call(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;),
+    call(&quot;GET&quot;, &quot;/api/records/search&quot;),
     new Page.WaitForResponseOptions().setTimeout(15_000),
     () -&gt; grid.applyFilter(ref));
 
@@ -426,9 +426,9 @@ page.setDefaultTimeout(20_000);   // all actions and waits on this page
 }
 </code></pre>
 <p>This is what <code>summary()</code> looks like in a failed scenario's report:</p>
-<pre><code class="language-text">#1 GET /api/pricing-cases/search -&gt; 200 in 184 ms
-#2 POST /api/pricing-cases -&gt; 201 in 412 ms
-#3 GET /api/pricing-cases/search -&gt; 200 in 2310 ms
+<pre><code class="language-text">#1 GET /api/records/search -&gt; 200 in 184 ms
+#2 POST /api/records -&gt; 201 in 412 ms
+#3 GET /api/records/search -&gt; 200 in 2310 ms
 #4 GET /api/reference-data/currencies FAILED (net::ERR_CONNECTION_REFUSED)
 </code></pre>
 <p>Four lines like these can say more than a screenshot. Line #4, for example, is a failure the UI would only ever show as an empty currency dropdown.</p>
@@ -439,7 +439,7 @@ grid.applyFilter(ref);
 PlaywrightAssertions.assertThat(grid.rowFor(ref)).isVisible();   // sync first (2.2)
 
 List&lt;ApiCall&gt; searches = recorder.since(mark).stream()
-    .filter(c -&gt; c.path().equals(&quot;/api/pricing-cases/search&quot;))
+    .filter(c -&gt; c.path().equals(&quot;/api/records/search&quot;))
     .toList();
 assertThat(searches).hasSize(1);
 assertThat(Urls.query(searches.get(0).url())).containsEntry(&quot;reference&quot;, ref);
@@ -550,8 +550,8 @@ assertThat(Urls.query(searches.get(0).url())).containsEntry(&quot;reference&quot
 </code></pre>
 <p>Because <code>expect</code> converts a <code>TimeoutError</code> into an <code>AssertionError</code>, do not call it inside an Awaitility loop that is meant to retry on timeouts. Use <code>waitForResponse</code> directly there (use case 4).</p>
 <p>When a wait times out, the failure now explains itself:</p>
-<pre><code class="language-text">java.lang.AssertionError: No POST /api/pricing-cases within 15000 ms. API calls during the action:
-#7 POST /api/pricing-cases/validate -&gt; 400 in 95 ms
+<pre><code class="language-text">java.lang.AssertionError: No POST /api/records within 15000 ms. API calls during the action:
+#7 POST /api/records/validate -&gt; 400 in 95 ms
 </code></pre>
 <p>In this example the UI never sent the create call, because client-side validation failed first. A bare <code>TimeoutError</code> would not have told you that (guide §3.2). To put it simply, the failure message now says what happened, not only what did not.</p>
 <h3>3.3 NetworkHooks</h3>
@@ -671,10 +671,10 @@ assertThat(Urls.query(searches.get(0).url())).containsEntry(&quot;reference&quot
 </ul>
 <h3>1. Capture server-generated IDs from a UI action</h3>
 <p>Take the ID from the real create response instead of scraping it from the page. It then feeds your DB, Kafka and API checks.</p>
-<pre><code class="language-java">@When(&quot;I create a pricing case for client {string}&quot;)
+<pre><code class="language-java">@When(&quot;I create a record for client {string}&quot;)
 public void createCase(String client) {
     form.fillClient(client);
-    Response resp = traffic.expect(&quot;POST&quot;, &quot;/api/pricing-cases&quot;, 201, () -&gt; form.submit());
+    Response resp = traffic.expect(&quot;POST&quot;, &quot;/api/records&quot;, 201, () -&gt; form.submit());
     JsonNode body = traffic.json(resp);
     ctx.setCaseId(body.path(&quot;id&quot;).asText());
     ctx.setCaseRef(body.path(&quot;reference&quot;).asText());
@@ -682,7 +682,7 @@ public void createCase(String client) {
 </code></pre>
 <h3>2. Verify the UI → API request contract</h3>
 <p>Assert what the UI actually sent. Frontend refactors silently break field names, rounding and date formats.</p>
-<pre><code class="language-java">Response resp = traffic.expect(&quot;POST&quot;, &quot;/api/pricing-cases&quot;, 201, () -&gt; form.submit());
+<pre><code class="language-java">Response resp = traffic.expect(&quot;POST&quot;, &quot;/api/records&quot;, 201, () -&gt; form.submit());
 JsonNode sent = traffic.json(resp.request().postData());
 
 assertThat(sent.path(&quot;currency&quot;).asText()).isEqualTo(&quot;GBP&quot;);
@@ -692,7 +692,7 @@ assertThat(sent.has(&quot;internalNotes&quot;)).isFalse();                      
 </code></pre>
 <h3>3. API response ↔ UI rendering consistency</h3>
 <p>Compare what the API returned with what the user sees, field by field.</p>
-<pre><code class="language-java">Response resp = traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/[^/]+&quot;, 200, () -&gt; grid.openCase(ref));
+<pre><code class="language-java">Response resp = traffic.expect(&quot;GET&quot;, &quot;/api/records/[^/]+&quot;, 200, () -&gt; grid.openCase(ref));
 JsonNode c = traffic.json(resp);
 
 PlaywrightAssertions.assertThat(details.status()).hasText(StatusLabels.of(c.path(&quot;status&quot;).asText()));
@@ -743,9 +743,9 @@ void roundsLikeTheBrowser() {
 <li><strong>Phase B</strong> then drives the UI once and asserts the row's content.</li>
 </ul>
 <p>If Phase A times out, the data never reached the read side. If Phase B fails after Phase A passed, it is a UI, cache or permissions bug.</p>
-<pre><code class="language-java">@Given(&quot;a pricing case exists for client {string}&quot;)
+<pre><code class="language-java">@Given(&quot;a record exists for client {string}&quot;)
 public void seedCase(String client) {
-    APIResponse created = session.context().request().post(&quot;/api/pricing-cases&quot;,
+    APIResponse created = session.context().request().post(&quot;/api/records&quot;,
         RequestOptions.create().setData(Map.of(&quot;client&quot;, client, &quot;currency&quot;, &quot;GBP&quot;)));
     PlaywrightAssertions.assertThat(created).isOK();
     ctx.setCaseRef(traffic.json(created).path(&quot;reference&quot;).asText());
@@ -765,14 +765,14 @@ public void filterForCase() {
         .until(() -&gt; searchReturns(ref));
 
     // Phase B: render once.
-    traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;, 200, () -&gt; grid.applyFilter(ref));
+    traffic.expect(&quot;GET&quot;, &quot;/api/records/search&quot;, 200, () -&gt; grid.applyFilter(ref));
     Locator row = grid.rowFor(ref);
     PlaywrightAssertions.assertThat(row).isVisible();
     PlaywrightAssertions.assertThat(row).containsText(ctx.client());   // content, not just presence
 }
 
 private boolean searchReturns(String ref) {
-    APIResponse r = session.page().request().get(&quot;/api/pricing-cases/search&quot;,
+    APIResponse r = session.page().request().get(&quot;/api/records/search&quot;,
         RequestOptions.create()
             .setQueryParam(&quot;reference&quot;, ref)
             .setTimeout(5_000));                     // well below atMost
@@ -797,7 +797,7 @@ private boolean searchReturns(String ref) {
     .ignoreException(TimeoutError.class)                 // only a missed response is retryable
     .until(() -&gt; {
         Response r = session.page().waitForResponse(
-            call(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;),           // helper from 1.2
+            call(&quot;GET&quot;, &quot;/api/records/search&quot;),           // helper from 1.2
             new Page.WaitForResponseOptions().setTimeout(5_000), // well below atMost
             () -&gt; grid.applyFilter(ref));
         if (r.status() != 200) {
@@ -892,10 +892,10 @@ await(&quot;rename committed to DB&quot;)
 <p>Finish with <code>session.page().reload()</code> and a <code>hasText(newName)</code> check on the scenario title, which catches an optimistic update that never saved. This reload is where my third way of working, <em>validate through the UI flow</em>, closes the loop.</p>
 <h3>6. Wait for the data a page needs</h3>
 <p>Replace sleeps and <code>networkidle</code> with the one call the page depends on, and keep its data for later assertions.</p>
-<pre><code class="language-java">@When(&quot;I open the pricing cases page&quot;)
-public void openPricingCases() {
-    Response data = traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;, 200,
-        () -&gt; session.page().navigate(&quot;/pricing-cases&quot;));
+<pre><code class="language-java">@When(&quot;I open the records page&quot;)
+public void openRecords() {
+    Response data = traffic.expect(&quot;GET&quot;, &quot;/api/records/search&quot;, 200,
+        () -&gt; session.page().navigate(&quot;/records&quot;));
     ctx.setGridData(traffic.json(data));
 }
 
@@ -907,7 +907,7 @@ public void gridMatchesApi() {
 <p>For a virtualised grid that renders only the visible rows, compare against what is on screen rather than the full count.</p>
 <h3>7. Filters, sorting and pagination</h3>
 <p>Assert the query string the UI built, then check the UI shows the matching data. The classic bug this catches is paging that silently drops the sort or the filter.</p>
-<pre><code class="language-java">Response sorted = traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;, 200,
+<pre><code class="language-java">Response sorted = traffic.expect(&quot;GET&quot;, &quot;/api/records/search&quot;, 200,
     () -&gt; grid.sortBy(&quot;Created&quot;, &quot;desc&quot;));
 assertThat(Urls.query(sorted.url()))
     .containsEntry(&quot;sort&quot;, &quot;createdAt,desc&quot;)
@@ -915,17 +915,17 @@ assertThat(Urls.query(sorted.url()))
 PlaywrightAssertions.assertThat(grid.cell(0, &quot;Reference&quot;))
     .hasText(traffic.json(sorted).path(&quot;items&quot;).get(0).path(&quot;reference&quot;).asText());
 
-Response page2 = traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;, 200, () -&gt; grid.nextPage());
+Response page2 = traffic.expect(&quot;GET&quot;, &quot;/api/records/search&quot;, 200, () -&gt; grid.nextPage());
 assertThat(Urls.query(page2.url()))
     .containsEntry(&quot;page&quot;, &quot;1&quot;)
     .containsEntry(&quot;sort&quot;, &quot;createdAt,desc&quot;);   // sort must survive paging
 </code></pre>
 <h3>8. Real error paths: backend validation → UI message</h3>
 <p>No mocking is needed. Submit data the backend rejects, then assert both the error response and how the UI presents it.</p>
-<pre><code class="language-java">recorder.allowError(&quot;POST&quot;, &quot;/api/pricing-cases&quot;, 422);   // expected: keeps the guard (9) quiet
+<pre><code class="language-java">recorder.allowError(&quot;POST&quot;, &quot;/api/records&quot;, 422);   // expected: keeps the guard (9) quiet
 
 form.fillMargin(&quot;99&quot;);                                      // allowed by the UI, over the backend limit
-Response r = traffic.expect(&quot;POST&quot;, &quot;/api/pricing-cases&quot;, 422, () -&gt; form.submit());
+Response r = traffic.expect(&quot;POST&quot;, &quot;/api/records&quot;, 422, () -&gt; form.submit());
 JsonNode error = traffic.json(r).path(&quot;errors&quot;).get(0);
 
 assertThat(error.path(&quot;field&quot;).asText()).isEqualTo(&quot;margin&quot;);
@@ -943,19 +943,19 @@ PlaywrightAssertions.assertThat(grid.rowFor(ref)).isVisible();
 
 Map&lt;String, Long&gt; perEndpoint = recorder.since(mark).stream()
     .collect(Collectors.groupingBy(c -&gt; c.method() + &quot; &quot; + c.path(), Collectors.counting()));
-assertThat(perEndpoint).containsEntry(&quot;GET /api/pricing-cases/search&quot;, 1L);  // no double fetch
+assertThat(perEndpoint).containsEntry(&quot;GET /api/records/search&quot;, 1L);  // no double fetch
 </code></pre>
 <h3>10. Latency budgets and compliance headers</h3>
 <p>This runs one pass over everything recorded. Soft assertions report every violation at once instead of stopping at the first.</p>
-<pre><code class="language-java">@Then(&quot;pricing APIs met their latency and header rules&quot;)
-public void pricingApiRules() {
+<pre><code class="language-java">@Then(&quot;record APIs met their latency and header rules&quot;)
+public void recordApiRules() {
     session.page().title();                       // flush queued events (2.2)
-    List&lt;ApiCall&gt; pricing = recorder.calls().stream()
-        .filter(c -&gt; !c.failed() &amp;&amp; c.path().startsWith(&quot;/api/pricing-cases&quot;))
+    List&lt;ApiCall&gt; records = recorder.calls().stream()
+        .filter(c -&gt; !c.failed() &amp;&amp; c.path().startsWith(&quot;/api/records&quot;))
         .toList();
 
     SoftAssertions soft = new SoftAssertions();
-    for (ApiCall c : pricing) {
+    for (ApiCall c : records) {
         soft.assertThat(c.durationMs()).as(&quot;latency &quot; + c).isLessThan(3_000);
         soft.assertThat(c.header(&quot;cache-control&quot;)).as(&quot;cache-control &quot; + c).contains(&quot;no-store&quot;);
         soft.assertThat(c.url()).as(&quot;no PII in URL &quot; + c)
