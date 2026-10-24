@@ -1,0 +1,1017 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java</title>
+<meta name="description" content="How Playwright Java can test the services behind the screen: waitForResponse, a NetworkRecorder, Cucumber + PicoContainer wiring, and ten API + UI patterns against real microservices.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/playwright-java-real-api-traffic/">
+<meta property="og:title" content="Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java">
+<meta property="og:description" content="How Playwright Java can test the services behind the screen: waitForResponse, a NetworkRecorder, Cucumber + PicoContainer wiring, and ten API + UI patterns against real microservices.">
+<style>
+body{max-width:720px;margin:40px auto;padding:0 20px;font-family:Georgia,serif;font-size:19px;line-height:1.6;color:#222}
+h1{font-family:Arial,Helvetica,sans-serif;font-size:32px;line-height:1.25}
+h2{font-family:Arial,Helvetica,sans-serif;font-size:24px;margin-top:40px}
+code,pre{font-family:Menlo,Consolas,monospace;font-size:15px;background:#f4f4f4}
+pre{padding:12px;overflow-x:auto}
+blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444}
+.meta{color:#666;font-size:16px}
+table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;padding:4px 8px}
+h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin-top:28px}
+.footnote{font-size:16px}
+</style>
+</head>
+<body>
+<article>
+<nav style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin-bottom:24px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></nav>
+<h1>Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java</h1>
+<p>Matt Karimov · Test automation engineer · October 2026</p>
+<p><em>A test automation engineer's guide to <code>waitForResponse</code>, a network recorder, and ten API-and-UI patterns that run against real microservices, with nothing mocked.</em></p>
+<hr />
+<h2>Introduction</h2>
+<p>A UI test usually tells you one thing: whether the screen looked right at the end. It does not tell you which call the screen made, what it sent, what came back, or which background request failed quietly and left a dropdown empty. For a long time I treated those as two separate worlds. The Karate suite looked after the APIs, and the Playwright suite looked after the screens. In practice, however, the most interesting defects sit between the two: a field mapped wrongly on the way out, a value rounded differently on the way back, a grid that shows a record before the search index has it.</p>
+<p>This article explores how Playwright Java can observe the real traffic underneath the browser, so that a UI test also becomes a test of how the UI integrates with the microservices, the network and the routing logic behind each screen. It is based on the guide I keep in my pricing tool repository, the <em>Playwright Java: Real API Traffic Guide</em> (Karimov, 2026).<sup id="fnref:guide"><a class="footnote-ref" href="#fn:guide">1</a></sup> Every pattern, rule and code sample below comes from that guide. I have kept all of them, and I have arranged them around the way I actually work.</p>
+<p>Three ways of working run through everything that follows:</p>
+<ol>
+<li><strong>Seed via API, then validate via UI.</strong> Create the data through the API (for example, a pricing case), then check the screen shows it correctly.</li>
+<li><strong>Trigger via UI, then capture the API call.</strong> Drive the real UI flow, and capture the request and response it fires: the server-generated ID, the payload contract, the status code.</li>
+<li><strong>Seed via UI, then validate through the UI flow.</strong> Create the data through the screens themselves and follow it through the end-to-end journey, as a user would.</li>
+</ol>
+<p>These three are related but not the same. The first proves that data reaches the screen. The second proves that the screen speaks to the services correctly. The third proves that the journey holds together. Taken together, they show what neither a pure API suite nor a pure UI suite shows on its own.</p>
+<p>It should be noted that this article does not argue that UI tests should replace API tests. Rather, it claims that a UI test which can see the network catches a class of defect that both suites, run separately, will miss.</p>
+<h2>Scope and conventions</h2>
+<p>The scope is deliberately narrow. Two tools do the work (guide, "Scope and conventions"):</p>
+<ul>
+<li><code>waitForResponse</code> synchronises each UI action with the real API call it triggers, and lets you read that call's data.</li>
+<li>Network events record every call in the background, for diagnostics and guards.</li>
+</ul>
+<p>Nothing here is mocked. Every request reaches the real microservices.</p>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Job</th>
+<th>Typical question it answers</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>waitForResponse</code> / <code>waitForRequest</code></td>
+<td>Synchronise + capture one call</td>
+<td>"What ID did the POST return?" "Did the filter send the right params?"</td>
+</tr>
+<tr>
+<td>Network events (<code>onRequestFinished</code>, <code>onRequestFailed</code>)</td>
+<td>Record all calls passively</td>
+<td>"Which call failed silently?" "How many times did search fire?"</td>
+</tr>
+</tbody>
+</table>
+<p>The conventions used in every snippet are as follows:</p>
+<ul>
+<li>Java 17, Playwright Java, Cucumber-JVM + PicoContainer, AssertJ, Jackson, Awaitility.</li>
+<li><code>assertThat(...)</code> is AssertJ (static import). Playwright assertions are always written <code>PlaywrightAssertions.assertThat(...)</code> to avoid the name clash.</li>
+<li><code>UiSession</code> is the per-scenario holder exposing <code>page()</code> and <code>context()</code>. The context is created with <code>setBaseURL(...)</code>, so relative paths work in <code>navigate</code> and <code>context().request()</code>.</li>
+<li>The <code>/api/pricing-cases...</code> endpoints, JSON field names and page objects (<code>form</code>, <code>grid</code>, <code>details</code>) are placeholders. Swap in your real ones from DevTools → Network.</li>
+</ul>
+<hr />
+<h2>Part 1: waitForResponse in depth</h2>
+<p><code>waitForResponse</code> runs your action and returns once a matching response arrives. In other words, you get the real <code>Response</code> back: status, headers, body, and the <code>Request</code> that produced it (guide §1). This is the tool behind my second way of working, <em>trigger via UI, then capture the API call</em>.</p>
+<h3>1.1 The golden rule: the action goes inside the callback</h3>
+<p>The waiter is registered before the callback runs, so a response that arrives during <code>click()</code> is caught. Waiting after the click is a race. A fast API answers during the click, the event is dispatched and gone, and you then wait 30 seconds for a response that has already happened (guide §1.1). Such timeouts look intermittent, but they are not: they are a race the test lost.</p>
+<pre><code class="language-java">// WRONG: race condition, intermittent 30s timeouts
+form.submit();
+Response r = page.waitForResponse(&quot;**/api/pricing-cases&quot;, () -&gt; {});
+
+// RIGHT: waiter is armed before the click
+Response r = page.waitForResponse(&quot;**/api/pricing-cases&quot;, () -&gt; form.submit());
+</code></pre>
+<h3>1.2 Three ways to match</h3>
+<p>There are three ways to tell Playwright which response you mean (guide §1.2):</p>
+<table>
+<thead>
+<tr>
+<th>Matcher</th>
+<th>Example</th>
+<th>Use when</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Glob <code>String</code></td>
+<td><code>"**/api/pricing-cases*"</code></td>
+<td>Quick one-off. Must match the whole URL; <code>*</code> stops at <code>/</code>.</td>
+</tr>
+<tr>
+<td><code>Pattern</code></td>
+<td><code>Pattern.compile(".*/api/pricing-cases/\\d+$")</code></td>
+<td>Path has IDs or a variable query string.</td>
+</tr>
+<tr>
+<td><code>Predicate&lt;Response&gt;</code></td>
+<td><code>r -&gt; r.request().method().equals("POST") &amp;&amp; ...</code></td>
+<td>Default choice: lets you match on method as well as path.</td>
+</tr>
+</tbody>
+</table>
+<p>Match on <strong>method + path</strong> with a small reusable predicate. The same URL is often hit by POST and then by GET, and a path regex ignores the host and the query string:</p>
+<pre><code class="language-java">static Predicate&lt;Response&gt; call(String method, String pathRegex) {
+    Pattern path = Pattern.compile(pathRegex);
+    return r -&gt; r.request().method().equals(method)
+             &amp;&amp; path.matcher(URI.create(r.url()).getPath()).matches();
+}
+
+Response created = page.waitForResponse(
+    call(&quot;POST&quot;, &quot;/api/pricing-cases&quot;),
+    () -&gt; form.submit());
+</code></pre>
+<p>Do <strong>not</strong> put the status in the predicate (<code>&amp;&amp; r.status() == 201</code>). If the API returns 500, the predicate never matches and you get a vague 30-second timeout. Match first, then assert the status, and you get an immediate failure that shows the real 500. That is to say, the predicate decides <em>which</em> call; the assertion decides whether it was <em>right</em>.</p>
+<h3>1.3 Reading the response</h3>
+<p>Once you have the response, these are the methods you will use most (guide §1.3):</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>status()</code>, <code>statusText()</code>, <code>ok()</code></td>
+<td>HTTP status; <code>ok()</code> is true for 200–299</td>
+</tr>
+<tr>
+<td><code>headers()</code>, <code>headerValue(name)</code></td>
+<td>Response headers (lower-case names)</td>
+</tr>
+<tr>
+<td><code>text()</code>, <code>body()</code></td>
+<td>Body as <code>String</code> or <code>byte[]</code>; waits for the body to download</td>
+</tr>
+<tr>
+<td><code>url()</code></td>
+<td>Final URL, including the query string</td>
+</tr>
+<tr>
+<td><code>request()</code></td>
+<td>The <code>Request</code>: <code>method()</code>, <code>postData()</code>, <code>headers()</code>, <code>timing()</code></td>
+</tr>
+</tbody>
+</table>
+<p>Playwright Java has no <code>json()</code> method, so parse with Jackson. Step methods can declare <code>throws Exception</code>, which Cucumber accepts:</p>
+<pre><code class="language-java">// One mapper for the whole framework (Jackson 2.15+)
+public final class Json {
+    public static final ObjectMapper MAPPER = JsonMapper.builder()
+        .enable(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS)   // money never goes through double
+        .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)  // additive API changes don't break UI tests
+        .disable(JsonNodeFeature.STRIP_TRAILING_BIGDECIMAL_ZEROES)   // keep &quot;1.50&quot; when the UI shows scale
+        .build();
+    private Json() {}
+}
+
+assertThat(created.status()).isEqualTo(201);
+
+// Tree access for a couple of fields
+JsonNode body = Json.MAPPER.readTree(created.text());
+String caseId = body.path(&quot;id&quot;).asText();
+BigDecimal margin = body.path(&quot;margin&quot;).decimalValue();   // exact, thanks to USE_BIG_DECIMAL_FOR_FLOATS
+
+// Or map to a DTO (Jackson 2.12+ supports records)
+record PricingCaseDto(String id, String reference, String status, BigDecimal margin) {}
+PricingCaseDto dto = Json.MAPPER.readValue(created.text(), PricingCaseDto.class);
+
+// Both sides of the call from one wait
+String correlationId = created.headerValue(&quot;x-correlation-id&quot;);
+String sentPayload   = created.request().postData();
+</code></pre>
+<p>The three settings each fix a Jackson default:</p>
+<ul>
+<li>Untyped decimals are read as <code>double</code> unless <code>USE_BIG_DECIMAL_FOR_FLOATS</code> is on. For money, that matters.</li>
+<li>Trailing zeros are stripped from tree <code>BigDecimal</code>s since 2.15, so "1.50" becomes "1.5" unless you disable <code>STRIP_TRAILING_BIGDECIMAL_ZEROES</code>.</li>
+<li>Unknown properties fail in Jackson 2.x (Jackson 3 already ignores them).</li>
+</ul>
+<p>Keep strict parsing where the contract itself is under test, such as the field set of a PATCH body.</p>
+<h3>1.4 waitForRequest and waitForRequestFinished</h3>
+<p>The two other waits each have their own place (guide §1.4):</p>
+<ul>
+<li><code>waitForRequest</code> returns as soon as the request is <strong>sent</strong>. Use it when only the outgoing payload matters, or when the call is fire-and-forget (an audit event, telemetry).</li>
+<li>If you need both sides, prefer <code>waitForResponse</code> plus <code>response.request()</code>: one wait covers both.</li>
+<li><code>waitForRequestFinished</code> returns after the body has fully downloaded, which is when <code>timing()</code> is populated.</li>
+</ul>
+<pre><code class="language-java">Request sent = page.waitForRequest(
+    r -&gt; r.method().equals(&quot;POST&quot;) &amp;&amp; r.url().endsWith(&quot;/api/audit-events&quot;),
+    () -&gt; details.approve());
+assertThat(sent.postData()).contains(&quot;\&quot;action\&quot;:\&quot;APPROVE\&quot;&quot;);
+
+Request done = page.waitForRequestFinished(
+    new Page.WaitForRequestFinishedOptions()
+        .setPredicate(r -&gt; r.url().contains(&quot;/api/pricing-cases/search&quot;)),
+    () -&gt; grid.applyFilter(ref));
+log.info(&quot;search took {} ms&quot;, done.timing().responseEnd);
+</code></pre>
+<h3>1.5 One action that triggers several calls</h3>
+<p>Nest the waits. Both waiters are armed before <code>submit()</code> runs, so the order in which the responses arrive does not matter (guide §1.5):</p>
+<pre><code class="language-java">AtomicReference&lt;Response&gt; refreshed = new AtomicReference&lt;&gt;();
+
+Response created = page.waitForResponse(call(&quot;POST&quot;, &quot;/api/pricing-cases&quot;), () -&gt;
+    refreshed.set(page.waitForResponse(call(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;),
+        () -&gt; form.submit())));
+
+assertThat(created.status()).isEqualTo(201);
+assertThat(refreshed.get().status()).isEqualTo(200);
+</code></pre>
+<p>For three or more calls, nesting becomes unreadable. Use the recorder from Part 2 instead.</p>
+<h3>1.6 Navigation</h3>
+<p>Wrap <code>navigate</code> the same way, so you wait for the data a page needs rather than for the page load itself:</p>
+<pre><code class="language-java">Response data = page.waitForResponse(call(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;),
+    () -&gt; page.navigate(&quot;/pricing-cases&quot;));
+</code></pre>
+<p>This is more precise than <code>LoadState.NETWORKIDLE</code>, which Playwright discourages for tests. It only waits for 500 ms of network silence and says nothing about <em>which</em> call you needed (guide §1.6).</p>
+<h3>1.7 Timeouts</h3>
+<p>The default is the page's default timeout (30 s). In Java you can override it per call. Note that the options argument comes <strong>before</strong> the callback:</p>
+<pre><code class="language-java">Response r = page.waitForResponse(
+    call(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;),
+    new Page.WaitForResponseOptions().setTimeout(15_000),
+    () -&gt; grid.applyFilter(ref));
+
+page.setDefaultTimeout(20_000);   // all actions and waits on this page
+</code></pre>
+<p>On expiry it throws <code>com.microsoft.playwright.TimeoutError</code>. The message names the wait but not what actually happened on the network (guide §1.7). The helper in Part 3 fixes that.</p>
+<hr />
+<h2>Part 2: Network events and a NetworkRecorder</h2>
+<p>Part 1 answers questions about one call. Part 2 answers questions about all of them. Network events let you record every API call in the background without changing any test step. A <code>NetworkRecorder</code> built on two of these events gives you a per-scenario call log, with queries and guards on top of it (guide §2).</p>
+<h3>2.1 The four events</h3>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>Fires when</th>
+<th>Handler receives</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>onRequest</code></td>
+<td>Request is issued</td>
+<td><code>Request</code> (no response yet)</td>
+</tr>
+<tr>
+<td><code>onResponse</code></td>
+<td>Status + headers arrive</td>
+<td><code>Response</code> (body may still be downloading)</td>
+</tr>
+<tr>
+<td><code>onRequestFinished</code></td>
+<td>Body fully downloaded</td>
+<td><code>Request</code>: <code>response()</code> and <code>timing()</code> complete</td>
+</tr>
+<tr>
+<td><code>onRequestFailed</code></td>
+<td>No HTTP response at all</td>
+<td><code>Request</code>: <code>failure()</code> holds the error text</td>
+</tr>
+</tbody>
+</table>
+<p>Every request ends in exactly one of <em>finished</em> or <em>failed</em>. Interestingly, an HTTP 500 counts as <strong>finished</strong>, because the status is just a number. <em>Failed</em> means there was no response at all: connection refused, DNS failure, a CORS block, or a request aborted by navigation. The recorder therefore needs only those two events (guide §2.1).</p>
+<p>Register the handlers on the <code>BrowserContext</code>, not on the <code>Page</code>: context events also cover popups and new tabs.</p>
+<h3>2.2 Threading model (Java-specific)</h3>
+<p>This is the least obvious part of Playwright Java. Handlers run on your test thread, and only while that thread is inside a Playwright call (an action, an assertion, a <code>waitFor...</code>). Between calls, events queue up (guide §2.2). Three consequences follow:</p>
+<ol>
+<li>A plain <code>ArrayList</code> in the recorder is safe; no locking is needed.</li>
+<li>After your last action, <strong>sync first</strong> (a <code>PlaywrightAssertions</code> check or a <code>waitForResponse</code>), then read the recorder. Otherwise the last call may not have been dispatched yet.</li>
+<li>Never read the recorder from an Awaitility background thread; use <code>.pollInSameThread()</code>.</li>
+</ol>
+<h3>2.3 The data model: ApiCall</h3>
+<p>Each recorded call becomes one small record:</p>
+<pre><code class="language-java">public record ApiCall(int seq, String method, String url, String path, int status,
+                      double durationMs, String requestBody, String responseBody,
+                      Map&lt;String, String&gt; responseHeaders, String failure) {
+
+    public boolean failed() { return failure != null; }
+
+    public String header(String name) {
+        return responseHeaders.getOrDefault(name.toLowerCase(Locale.ROOT), &quot;&quot;);
+    }
+
+    @Override public String toString() {
+        return failed()
+            ? &quot;#%d %s %s FAILED (%s)&quot;.formatted(seq, method, path, failure)
+            : &quot;#%d %s %s -&gt; %d in %.0f ms&quot;.formatted(seq, method, path, status, durationMs);
+    }
+}
+</code></pre>
+<h3>2.4 Masking sensitive data</h3>
+<p>Recorded bodies end up in CI artifacts and test reports, so mask them before storing. The recorder deliberately never stores request headers, which keeps <code>Authorization</code> and cookies out of the log entirely (guide §2.4).</p>
+<pre><code class="language-java">public class BodyMasker {
+    private static final Pattern SENSITIVE = Pattern.compile(
+        &quot;(\&quot;(?:accountNumber|sortCode|iban|email|dateOfBirth|password|accessToken|refreshToken)\&quot;\\s*:\\s*)\&quot;[^\&quot;]*\&quot;&quot;,
+        Pattern.CASE_INSENSITIVE);
+
+    public String mask(String body) {
+        return body == null ? null : SENSITIVE.matcher(body).replaceAll(&quot;$1\&quot;***\&quot;&quot;);
+    }
+}
+</code></pre>
+<p>This pattern masks only string values; add a second pattern for numeric fields if you have them. Before attaching bodies to reports, check where those reports go (GitLab artifacts, Xray attachments). If in doubt, record metadata only (method, path, status, time) in CI and enable bodies locally. In regulated environments such as banking, this rule is non-negotiable.</p>
+<h3>2.5 The recorder</h3>
+<p>The full recorder, with its queries and its guard support:</p>
+<pre><code class="language-java">public class NetworkRecorder {
+
+    private static final int MAX_BODY_CHARS = 4_000;
+
+    private final List&lt;ApiCall&gt; calls = new ArrayList&lt;&gt;();
+    private final List&lt;Predicate&lt;ApiCall&gt;&gt; allowedErrors = new ArrayList&lt;&gt;();
+    private final BodyMasker masker = new BodyMasker();
+    private final Predicate&lt;String&gt; isApi = url -&gt; url.contains(&quot;/api/&quot;);
+
+    // Keep the handler instances: off...() needs the SAME object.
+    // A fresh this::recordFinished at detach time would not match.
+    private final Consumer&lt;Request&gt; onFinished = this::recordFinished;
+    private final Consumer&lt;Request&gt; onFailed = this::recordFailed;
+    private BrowserContext context;
+
+    public void start(BrowserContext context) {
+        this.context = context;
+        context.onRequestFinished(onFinished);
+        context.onRequestFailed(onFailed);
+    }
+
+    public void stop() {
+        if (context != null) {
+            context.offRequestFinished(onFinished);
+            context.offRequestFailed(onFailed);
+        }
+    }
+
+    private void recordFinished(Request req) {
+        if (!isApi.test(req.url())) return;
+        Response resp = req.response();
+        calls.add(new ApiCall(calls.size() + 1, req.method(), req.url(), Urls.path(req.url()),
+            resp.status(), req.timing().responseEnd,
+            clip(masker.mask(req.postData())), clip(masker.mask(bodyOf(resp))),
+            Map.copyOf(resp.headers()), null));
+    }
+
+    private void recordFailed(Request req) {
+        if (!isApi.test(req.url())) return;
+        calls.add(new ApiCall(calls.size() + 1, req.method(), req.url(), Urls.path(req.url()),
+            -1, -1, clip(masker.mask(req.postData())), null, Map.of(), req.failure()));
+    }
+
+    private static String bodyOf(Response resp) {
+        String type = resp.headers().getOrDefault(&quot;content-type&quot;, &quot;&quot;);
+        if (type.isEmpty()) return null;                       // e.g. redirects, 204s
+        if (!type.contains(&quot;json&quot;) &amp;&amp; !type.startsWith(&quot;text/&quot;)) return &quot;&lt;&quot; + type + &quot;&gt;&quot;;
+        try { return resp.text(); }
+        catch (PlaywrightException e) { return &quot;&lt;body unavailable&gt;&quot;; }
+    }
+
+    private static String clip(String s) {
+        return s == null || s.length() &lt;= MAX_BODY_CHARS ? s
+            : s.substring(0, MAX_BODY_CHARS) + &quot;...[clipped]&quot;;
+    }
+
+    // ---------- queries ----------
+    public List&lt;ApiCall&gt; calls()          { return List.copyOf(calls); }
+    public int mark()                     { return calls.size(); }
+    public List&lt;ApiCall&gt; since(int mark)  { return List.copyOf(calls.subList(mark, calls.size())); }
+
+    public List&lt;ApiCall&gt; find(String method, String pathRegex) {
+        Pattern p = Pattern.compile(pathRegex);
+        return calls.stream()
+            .filter(c -&gt; c.method().equals(method) &amp;&amp; p.matcher(c.path()).matches())
+            .toList();
+    }
+
+    // ---------- guard support (use case 9) ----------
+    public void allowError(String method, String pathRegex, int status) {
+        Pattern p = Pattern.compile(pathRegex);
+        allowedErrors.add(c -&gt; c.method().equals(method)
+            &amp;&amp; p.matcher(c.path()).matches() &amp;&amp; c.status() == status);
+    }
+
+    public List&lt;ApiCall&gt; unexpectedErrors() {
+        return calls.stream()
+            .filter(c -&gt; c.failed() || c.status() &gt;= 400)
+            .filter(c -&gt; !&quot;net::ERR_ABORTED&quot;.equals(c.failure()))  // cancelled by navigation (Chromium wording)
+            .filter(c -&gt; allowedErrors.stream().noneMatch(a -&gt; a.test(c)))
+            .toList();
+    }
+
+    public String summary() { return summary(calls); }
+
+    public static String summary(List&lt;ApiCall&gt; list) {
+        return list.isEmpty() ? &quot;(no API calls recorded)&quot;
+            : list.stream().map(ApiCall::toString).collect(Collectors.joining(&quot;\n&quot;));
+    }
+}
+</code></pre>
+<p>A small URL helper is used throughout:</p>
+<pre><code class="language-java">public final class Urls {
+    private Urls() {}
+
+    public static String path(String url) { return URI.create(url).getPath(); }
+
+    public static Map&lt;String, String&gt; query(String url) {
+        String q = URI.create(url).getRawQuery();
+        if (q == null) return Map.of();
+        return Arrays.stream(q.split(&quot;&amp;&quot;))
+            .map(kv -&gt; kv.split(&quot;=&quot;, 2))
+            .collect(Collectors.toMap(
+                kv -&gt; URLDecoder.decode(kv[0], StandardCharsets.UTF_8),
+                kv -&gt; kv.length &gt; 1 ? URLDecoder.decode(kv[1], StandardCharsets.UTF_8) : &quot;&quot;,
+                (a, b) -&gt; a + &quot;,&quot; + b));
+    }
+}
+</code></pre>
+<p>This is what <code>summary()</code> looks like in a failed scenario's report:</p>
+<pre><code class="language-text">#1 GET /api/pricing-cases/search -&gt; 200 in 184 ms
+#2 POST /api/pricing-cases -&gt; 201 in 412 ms
+#3 GET /api/pricing-cases/search -&gt; 200 in 2310 ms
+#4 GET /api/reference-data/currencies FAILED (net::ERR_CONNECTION_REFUSED)
+</code></pre>
+<p>Four lines like these can say more than a screenshot. Line #4, for example, is a failure the UI would only ever show as an empty currency dropdown.</p>
+<h3>2.6 Querying the recorder in a step</h3>
+<p>Use <code>mark()</code> before an action and <code>since(mark)</code> after it, so you look only at the calls that action caused (guide §2.6):</p>
+<pre><code class="language-java">int mark = recorder.mark();
+grid.applyFilter(ref);
+PlaywrightAssertions.assertThat(grid.rowFor(ref)).isVisible();   // sync first (2.2)
+
+List&lt;ApiCall&gt; searches = recorder.since(mark).stream()
+    .filter(c -&gt; c.path().equals(&quot;/api/pricing-cases/search&quot;))
+    .toList();
+assertThat(searches).hasSize(1);
+assertThat(Urls.query(searches.get(0).url())).containsEntry(&quot;reference&quot;, ref);
+</code></pre>
+<hr />
+<h2>Part 3: Wiring it into Cucumber + PicoContainer</h2>
+<p>The wiring takes small classes injected by PicoContainer. Because PicoContainer creates new instances per scenario, every scenario automatically gets a fresh recorder (guide §3).</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Responsibility</th>
+<th>Injected into</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UiSession</code></td>
+<td>Owns the per-scenario <code>BrowserContext</code> and <code>Page</code></td>
+<td>Everything below</td>
+</tr>
+<tr>
+<td><code>NetworkRecorder</code></td>
+<td>Records every API call (Part 2)</td>
+<td><code>ApiTraffic</code>, hooks, steps that query calls</td>
+</tr>
+<tr>
+<td><code>ApiTraffic</code></td>
+<td><code>waitForResponse</code> wrapper with status check, JSON parsing and diagnostics on timeout</td>
+<td>Step definitions</td>
+</tr>
+<tr>
+<td><code>NetworkHooks</code></td>
+<td>Starts recording, attaches the call log, runs the error guard</td>
+<td>(Cucumber hooks)</td>
+</tr>
+</tbody>
+</table>
+<h3>3.1 UiSession (minimal)</h3>
+<p>Keep your existing <code>Playwright</code>/<code>Browser</code> lifecycle if you share them per thread. Only the context needs to be per scenario.</p>
+<pre><code class="language-java">public class UiSession {
+    private Playwright playwright;
+    private BrowserContext context;
+    private Page page;
+
+    public void open() {
+        playwright = Playwright.create();
+        Browser browser = playwright.chromium().launch();
+        context = browser.newContext(new Browser.NewContextOptions()
+            .setBaseURL(System.getProperty(&quot;app.url&quot;)));
+        page = context.newPage();
+    }
+
+    public BrowserContext context() { return context; }
+    public Page page()              { return page; }
+    public void close()             { if (playwright != null) playwright.close(); }
+}
+</code></pre>
+<h3>3.2 ApiTraffic: the helper your steps call</h3>
+<p>This wrapper turns a vague <code>TimeoutError</code> into a message that lists the calls that <strong>did</strong> happen during the action:</p>
+<pre><code class="language-java">public class ApiTraffic {
+
+    private static final double TIMEOUT_MS = 15_000;
+    private final UiSession session;
+    private final NetworkRecorder recorder;
+    private final ObjectMapper mapper = Json.MAPPER;   // shared configuration from 1.3
+
+    public ApiTraffic(UiSession session, NetworkRecorder recorder) {
+        this.session = session;
+        this.recorder = recorder;
+    }
+
+    /** Runs the action, waits for METHOD + path, asserts the status. */
+    public Response expect(String method, String pathRegex, int expectedStatus, Runnable action) {
+        Pattern path = Pattern.compile(pathRegex);
+        int mark = recorder.mark();
+        Response resp;
+        try {
+            resp = session.page().waitForResponse(
+                r -&gt; r.request().method().equals(method)
+                     &amp;&amp; path.matcher(Urls.path(r.url())).matches(),
+                new Page.WaitForResponseOptions().setTimeout(TIMEOUT_MS),
+                action);
+        } catch (TimeoutError e) {
+            throw new AssertionError(&quot;No %s %s within %.0f ms. API calls during the action:%n%s&quot;
+                .formatted(method, pathRegex, TIMEOUT_MS,
+                           NetworkRecorder.summary(recorder.since(mark))), e);
+        }
+        if (resp.status() != expectedStatus) {
+            throw new AssertionError(&quot;%s %s returned %d, expected %d. Body: %s&quot;
+                .formatted(method, Urls.path(resp.url()), resp.status(),
+                           expectedStatus, abbreviate(resp.text())));
+        }
+        return resp;
+    }
+
+    public JsonNode json(String raw) {
+        try { return mapper.readTree(raw); }
+        catch (JsonProcessingException e) { throw new IllegalStateException(&quot;Not JSON: &quot; + abbreviate(raw), e); }
+    }
+    public JsonNode json(Response resp)    { return json(resp.text()); }
+    public JsonNode json(APIResponse resp) { return json(resp.text()); }
+
+    private static String abbreviate(String s) {
+        return s == null || s.length() &lt;= 500 ? s : s.substring(0, 500) + &quot;...&quot;;
+    }
+}
+</code></pre>
+<p>Because <code>expect</code> converts a <code>TimeoutError</code> into an <code>AssertionError</code>, do not call it inside an Awaitility loop that is meant to retry on timeouts. Use <code>waitForResponse</code> directly there (use case 4).</p>
+<p>When a wait times out, the failure now explains itself:</p>
+<pre><code class="language-text">java.lang.AssertionError: No POST /api/pricing-cases within 15000 ms. API calls during the action:
+#7 POST /api/pricing-cases/validate -&gt; 400 in 95 ms
+</code></pre>
+<p>In this example the UI never sent the create call, because client-side validation failed first. A bare <code>TimeoutError</code> would not have told you that (guide §3.2). To put it simply, the failure message now says what happened, not only what did not.</p>
+<h3>3.3 NetworkHooks</h3>
+<pre><code class="language-java">public class NetworkHooks {
+    private final UiSession session;
+    private final NetworkRecorder recorder;
+
+    public NetworkHooks(UiSession session, NetworkRecorder recorder) {
+        this.session = session;
+        this.recorder = recorder;
+    }
+
+    @Before(order = 10)                 // after the hook that opens UiSession (order 0)
+    public void startRecording() {
+        recorder.start(session.context());
+    }
+
+    // @After hooks: HIGHER order runs FIRST. Guard -&gt; attach -&gt; close context (order 0).
+    @After(order = 110)
+    public void failOnUnexpectedApiErrors(Scenario scenario) {
+        if (scenario.isFailed()) return;
+        session.page().title();         // cheap Playwright call: lets queued events dispatch (2.2)
+        List&lt;ApiCall&gt; bad = recorder.unexpectedErrors();
+        assertThat(bad).as(&quot;Unexpected API errors:%n%s&quot;, NetworkRecorder.summary(bad)).isEmpty();
+    }
+
+    @After(order = 100)
+    public void attachApiCalls(Scenario scenario) {
+        if (scenario.isFailed()) {
+            scenario.attach(recorder.summary(), &quot;text/plain&quot;, &quot;API calls&quot;);
+        }
+    }
+}
+</code></pre>
+<p>The guard runs before the attach hook. If the guard fails the scenario, the call log still gets attached. To attach the full JSON (bodies included) as well, serialise <code>recorder.calls()</code> with Jackson and attach it as <code>application/json</code> (guide §3.3).</p>
+<hr />
+<h2>Part 4: The 10 most common API + UI use cases</h2>
+<p>These ten patterns cover most API-to-UI checks in a suite that runs against real services. Use cases 1–8 are built on <code>waitForResponse</code> (through <code>ApiTraffic</code>); 9 and 10 are built on the recorder (guide §4).</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Use case</th>
+<th>Main tool</th>
+<th>What it catches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Capture IDs from UI actions</td>
+<td><code>waitForResponse</code></td>
+<td>Brittle scraping of IDs from the DOM</td>
+</tr>
+<tr>
+<td>2</td>
+<td>UI → API request contract</td>
+<td><code>response.request()</code></td>
+<td>Field mapping, rounding, date formats</td>
+</tr>
+<tr>
+<td>3</td>
+<td>API response ↔ UI rendering</td>
+<td><code>waitForResponse</code></td>
+<td>Wrong bindings, formatting errors</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Seed via API, verify in UI</td>
+<td><code>APIRequestContext</code> + Awaitility</td>
+<td>Eventual-consistency flakes</td>
+</tr>
+<tr>
+<td>5</td>
+<td>Act in UI, verify via API and DB</td>
+<td><code>waitForResponse</code> + <code>APIRequestContext</code></td>
+<td>Optimistic UI that never persisted</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Wait for the data a page needs</td>
+<td><code>waitForResponse</code> on <code>navigate</code></td>
+<td>Sleeps and <code>networkidle</code> flakiness</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Filters, sorting, pagination</td>
+<td><code>Urls.query(...)</code></td>
+<td>Dropped or wrong query params</td>
+</tr>
+<tr>
+<td>8</td>
+<td>Real error paths</td>
+<td><code>expect(..., 422, ...)</code> + <code>allowError</code></td>
+<td>Wrong or missing error messages</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Network health guard</td>
+<td>Recorder</td>
+<td>Silent failures, duplicate calls</td>
+</tr>
+<tr>
+<td>10</td>
+<td>Latency + compliance headers</td>
+<td>Recorder</td>
+<td>Slow endpoints, cacheable sensitive data, PII in URLs</td>
+</tr>
+</tbody>
+</table>
+<p>Read against my three ways of working, they fall into place as follows:</p>
+<ul>
+<li><strong>Seed via API, validate via UI:</strong> use case 4, with the literal anchors from use case 3.</li>
+<li><strong>Trigger via UI, capture the API call:</strong> use cases 1, 2, 5, 7 and 8.</li>
+<li><strong>Seed via UI, validate through the UI flow:</strong> use cases 3 and 6, and the reload check that closes use case 5.</li>
+<li><strong>Underneath all three:</strong> use cases 9 and 10, which watch every call whatever the scenario does.</li>
+</ul>
+<h3>1. Capture server-generated IDs from a UI action</h3>
+<p>Take the ID from the real create response instead of scraping it from the page. It then feeds your DB, Kafka and API checks.</p>
+<pre><code class="language-java">@When(&quot;I create a pricing case for client {string}&quot;)
+public void createCase(String client) {
+    form.fillClient(client);
+    Response resp = traffic.expect(&quot;POST&quot;, &quot;/api/pricing-cases&quot;, 201, () -&gt; form.submit());
+    JsonNode body = traffic.json(resp);
+    ctx.setCaseId(body.path(&quot;id&quot;).asText());
+    ctx.setCaseRef(body.path(&quot;reference&quot;).asText());
+}
+</code></pre>
+<h3>2. Verify the UI → API request contract</h3>
+<p>Assert what the UI actually sent. Frontend refactors silently break field names, rounding and date formats.</p>
+<pre><code class="language-java">Response resp = traffic.expect(&quot;POST&quot;, &quot;/api/pricing-cases&quot;, 201, () -&gt; form.submit());
+JsonNode sent = traffic.json(resp.request().postData());
+
+assertThat(sent.path(&quot;currency&quot;).asText()).isEqualTo(&quot;GBP&quot;);
+assertThat(sent.path(&quot;margin&quot;).decimalValue()).isEqualByComparingTo(&quot;1.25&quot;);  // not 1.2500001
+assertThat(sent.path(&quot;startDate&quot;).asText()).matches(&quot;\\d{4}-\\d{2}-\\d{2}&quot;);   // ISO, not dd/MM/yyyy
+assertThat(sent.has(&quot;internalNotes&quot;)).isFalse();                               // UI-only field must not leak
+</code></pre>
+<h3>3. API response ↔ UI rendering consistency</h3>
+<p>Compare what the API returned with what the user sees, field by field.</p>
+<pre><code class="language-java">Response resp = traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/[^/]+&quot;, 200, () -&gt; grid.openCase(ref));
+JsonNode c = traffic.json(resp);
+
+PlaywrightAssertions.assertThat(details.status()).hasText(StatusLabels.of(c.path(&quot;status&quot;).asText()));
+PlaywrightAssertions.assertThat(details.client()).hasText(c.path(&quot;clientName&quot;).asText());
+PlaywrightAssertions.assertThat(details.margin()).hasText(DisplaySpec.percent(c.path(&quot;margin&quot;).decimalValue()));
+PlaywrightAssertions.assertThat(details.limit()).hasText(DisplaySpec.gbp(c.path(&quot;limit&quot;).decimalValue()));
+</code></pre>
+<p>Most false failures here come from how the expected string is built, not from the locator. Build expected strings in one small <code>DisplaySpec</code> class. Write it from the requirements, not by copying front-end code, and unit-test it. Otherwise three defaults cause trouble (guide, use case 3):</p>
+<ul>
+<li><strong>Rounding.</strong> The browser's <code>Intl</code> formatting rounds halves away from zero. Java's <code>DecimalFormat</code> defaults to HALF_EVEN, so 1234.565 shows as £1,234.57 on screen but formats as 1,234.56 in Java.</li>
+<li><strong>Scale.</strong> Confirm whether the API sends a fraction (0.0125) or percentage points (1.25); a fraction needs <code>movePointRight(2)</code>.</li>
+<li><strong>Locale and timezone.</strong> CI agents often run in UTC, so pin them on the context (<code>setLocale("en-GB")</code>, <code>setTimezoneId("Europe/London")</code>) and use the same values in <code>DisplaySpec</code>.</li>
+</ul>
+<pre><code class="language-java">public final class DisplaySpec {
+
+    /** Spec: margin in percentage points, 2 dp, halves away from zero. */
+    public static String percent(BigDecimal points) {
+        return points.setScale(2, RoundingMode.HALF_UP).toPlainString() + &quot;%&quot;;
+    }
+
+    /** Spec: GBP with symbol and thousands separator, 2 dp, halves away from zero. */
+    public static String gbp(BigDecimal amount) {
+        NumberFormat f = NumberFormat.getCurrencyInstance(Locale.UK);
+        f.setRoundingMode(RoundingMode.HALF_UP);   // matches the browser's Intl default
+        return f.format(amount);
+    }
+
+    private DisplaySpec() {}
+}
+
+// Unit test with literal anchors, so the spec itself is checked
+@Test
+void roundsLikeTheBrowser() {
+    assertThat(DisplaySpec.gbp(new BigDecimal(&quot;1234.565&quot;))).isEqualTo(&quot;£1,234.57&quot;);
+    assertThat(DisplaySpec.percent(new BigDecimal(&quot;1.125&quot;))).isEqualTo(&quot;1.13%&quot;);
+}
+</code></pre>
+<p>Three more rules keep this pattern honest:</p>
+<ul>
+<li><strong>Assert through <code>hasText</code> on the locator</strong>, not <code>textContent()</code> plus <code>isEqualTo</code>. <code>hasText</code> retries and normalises whitespace, which absorbs the narrow no-break spaces JDK 20+ puts into some formatted strings.</li>
+<li><strong>Add literal anchors on seeded data.</strong> A case seeded with margin 1.125 must show exactly "1.13%". Derived values prove the right record reached the right field; literals prove the formatting rule.</li>
+<li><strong>Keep enum-to-label mappings in one lookup</strong> such as <code>StatusLabels</code> (for example <code>PENDING_APPROVAL</code> → "Pending approval"). Source the labels from the spec or i18n bundle, and throw on unmapped codes so that a missing translation fails loudly.</li>
+</ul>
+<h3>4. Seed via API, verify in UI (eventual consistency)</h3>
+<p>This is my first way of working, and it is the one most likely to go flaky. To this end, split the wait into two phases, so that a failure tells you which layer broke (guide, use case 4):</p>
+<ul>
+<li><strong>Phase A</strong> polls the same search endpoint the grid calls, as the logged-in user, until the seeded case appears.</li>
+<li><strong>Phase B</strong> then drives the UI once and asserts the row's content.</li>
+</ul>
+<p>If Phase A times out, the data never reached the read side. If Phase B fails after Phase A passed, it is a UI, cache or permissions bug.</p>
+<pre><code class="language-java">@Given(&quot;a pricing case exists for client {string}&quot;)
+public void seedCase(String client) {
+    APIResponse created = session.context().request().post(&quot;/api/pricing-cases&quot;,
+        RequestOptions.create().setData(Map.of(&quot;client&quot;, client, &quot;currency&quot;, &quot;GBP&quot;)));
+    PlaywrightAssertions.assertThat(created).isOK();
+    ctx.setCaseRef(traffic.json(created).path(&quot;reference&quot;).asText());
+    ctx.setClient(client);
+}
+
+@When(&quot;I filter the grid for that case&quot;)
+public void filterForCase() {
+    String ref = ctx.caseRef();
+
+    // Phase A: propagation. Same read path as the grid, same user, so entitlements apply.
+    await(&quot;case &quot; + ref + &quot; returned by search&quot;)
+        .atMost(Duration.ofSeconds(Long.getLong(&quot;sla.search.seconds&quot;, 60)))  // agreed SLA from config
+        .pollDelay(Duration.ZERO)
+        .pollInterval(Duration.ofSeconds(2))
+        .pollInSameThread()                          // page.request() is a Playwright object
+        .until(() -&gt; searchReturns(ref));
+
+    // Phase B: render once.
+    traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;, 200, () -&gt; grid.applyFilter(ref));
+    Locator row = grid.rowFor(ref);
+    PlaywrightAssertions.assertThat(row).isVisible();
+    PlaywrightAssertions.assertThat(row).containsText(ctx.client());   // content, not just presence
+}
+
+private boolean searchReturns(String ref) {
+    APIResponse r = session.page().request().get(&quot;/api/pricing-cases/search&quot;,
+        RequestOptions.create()
+            .setQueryParam(&quot;reference&quot;, ref)
+            .setTimeout(5_000));                     // well below atMost
+    if (r.status() != 200) {                         // terminal: fail now, don't keep polling
+        throw new IllegalStateException(&quot;Search returned &quot; + r.status() + &quot;: &quot; + r.text());
+    }
+    return traffic.json(r).findValuesAsText(&quot;reference&quot;).contains(ref);
+}
+</code></pre>
+<p>Three details matter:</p>
+<ul>
+<li><strong>Poll search, not GET by id.</strong> Search indexes such as Elasticsearch return a document by id in real time but only find it in search after a refresh. A passing GET by id proves nothing about the grid.</li>
+<li><strong>No <code>ignoreExceptions()</code>.</strong> It ignores every exception, so a 401, a JSON error or a closed browser turns into a slow timeout. Here an error status or a request timeout fails at once, and only "not found yet" retries.</li>
+<li><strong>Inner timeouts below <code>atMost</code>.</strong> With <code>pollInSameThread()</code>, Awaitility cannot interrupt a running check, so a 30-second default inside it can overrun a 60-second budget badly.</li>
+</ul>
+<p><strong>If you cannot call the search endpoint directly,</strong> re-run the grid's own search and read its response. Ignore only Playwright's <code>TimeoutError</code>, which is the one failure that genuinely means "try again":</p>
+<pre><code class="language-java">await(&quot;case &quot; + ref + &quot; returned by the grid's search&quot;)
+    .atMost(Duration.ofSeconds(Long.getLong(&quot;sla.search.seconds&quot;, 60)))
+    .pollDelay(Duration.ZERO)
+    .pollInterval(Duration.ofSeconds(3))
+    .pollInSameThread()
+    .ignoreException(TimeoutError.class)                 // only a missed response is retryable
+    .until(() -&gt; {
+        Response r = session.page().waitForResponse(
+            call(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;),           // helper from 1.2
+            new Page.WaitForResponseOptions().setTimeout(5_000), // well below atMost
+            () -&gt; grid.applyFilter(ref));
+        if (r.status() != 200) {
+            throw new IllegalStateException(&quot;Search returned &quot; + r.status() + &quot;: &quot; + r.text());
+        }
+        return Json.MAPPER.readTree(r.text()).findValuesAsText(&quot;reference&quot;).contains(ref);
+    });
+</code></pre>
+<p><strong>Auth for seeding.</strong> <code>context().request()</code> shares the browser's cookies, so the seed call runs as the logged-in UI user. If your services need a bearer token instead, create a separate <code>APIRequestContext</code> with <code>setExtraHTTPHeaders(Map.of("Authorization", "Bearer " + token))</code> and <code>dispose()</code> it after the scenario. Pass a <code>Map</code> or an object to <code>setData</code> so that it is sent as JSON; a <code>String</code> body goes out as <code>application/octet-stream</code> unless you set <code>Content-Type</code> yourself.</p>
+<h3>5. Act in UI, verify via API and database</h3>
+<p>The UI can show an optimistic value even when the save never persisted. Taking a scenario rename as the example, each layer catches something the others miss (guide, use case 5):</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>What only this layer catches</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Captured request</td>
+<td>UI → API contract: wrong field, extra fields, wrong media type</td>
+</tr>
+<tr>
+<td>Captured response</td>
+<td>Server rejected or altered the change</td>
+</tr>
+<tr>
+<td>Independent GET</td>
+<td>Server echoed the request without saving; PATCH behaving like PUT and wiping other fields</td>
+</tr>
+<tr>
+<td>Database</td>
+<td>Audit columns, version +1 (not +2 from a double submit), outbox or audit rows</td>
+</tr>
+<tr>
+<td>UI after reload</td>
+<td>Optimistic update on screen that never saved</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-java">Response patch = traffic.expect(&quot;PATCH&quot;, &quot;/api/scenarios/[^/]+&quot;, 200,
+    () -&gt; details.rename(newName));                       // Enter or Save inside the callback
+
+JsonNode sent = traffic.json(patch.request().postData());
+assertThat(sent.fieldNames()).toIterable().containsExactly(&quot;name&quot;);   // PATCH sends only the change
+assertThat(sent.path(&quot;name&quot;).asText()).isEqualTo(newName);
+assertThat(traffic.json(patch).path(&quot;name&quot;).asText()).isEqualTo(newName);
+
+// Independent re-read: assert ONCE if the contract is read-your-writes
+APIResponse fresh = session.context().request().get(&quot;/api/scenarios/&quot; + scenarioId,
+    RequestOptions.create().setHeader(&quot;Cache-Control&quot;, &quot;no-cache&quot;));
+PlaywrightAssertions.assertThat(fresh).isOK();
+assertThat(traffic.json(fresh).path(&quot;name&quot;).asText()).isEqualTo(newName);
+</code></pre>
+<p>If the API promises a synchronous write (a 200 or 204 that means "saved"), do not poll the GET: polling would hide a real read-after-write bug. Poll only where delay is the stated contract, such as a 202 or a separate read model. Then set <code>atMost</code> to the agreed SLA and use <code>pollInSameThread()</code>, because the call goes through Playwright. The GET shares the browser session, so it is independent of the UI but not of auth.</p>
+<p><strong>Database layer.</strong> Use it for what neither the UI nor the API shows: audit columns, the version number, and outbox or audit rows. A read-only <code>JdbcTemplate</code> fits better than JPA, which inherits the application's mapping and can serve cached entities. PicoContainer rebuilds per-scenario objects, so keep the connection pool outside it:</p>
+<pre><code class="language-java">// One pool per JVM, SELECT-only account, read-only connections
+public final class Db {
+    private static final HikariDataSource DS = create();
+    public static final JdbcTemplate JDBC = new JdbcTemplate(DS);
+
+    private static HikariDataSource create() {
+        HikariConfig c = new HikariConfig();
+        c.setJdbcUrl(System.getProperty(&quot;db.url&quot;));
+        c.setUsername(System.getProperty(&quot;db.user&quot;));
+        c.setPassword(System.getenv(&quot;DB_PASSWORD&quot;));
+        c.setReadOnly(true);
+        c.setMaximumPoolSize(4);
+        return new HikariDataSource(c);
+    }
+    private Db() {}
+}
+
+record ScenarioRow(String name, long version, String updatedBy) {}
+
+// versionBefore: read the same row before the rename
+await(&quot;rename committed to DB&quot;)
+    .pollDelay(Duration.ZERO)                                         // synchronous writes pass on the first check
+    .atMost(Duration.ofSeconds(Long.getLong(&quot;sla.db.seconds&quot;, 5)))   // the agreed SLA, not a blanket guess
+    .untilAsserted(() -&gt; {
+        ScenarioRow row = Db.JDBC.queryForObject(
+            &quot;select name, version, updated_by from scenario where id = ?&quot;,
+            (rs, i) -&gt; new ScenarioRow(rs.getString(1), rs.getLong(2), rs.getString(3)),
+            scenarioId);
+        assertThat(row.name()).isEqualTo(newName);
+        assertThat(row.version()).isEqualTo(versionBefore + 1);      // +2 means a double submit
+        assertThat(row.updatedBy()).isEqualTo(testUser);
+    });
+</code></pre>
+<p>With <code>pollDelay(ZERO)</code> this check is correct whether the write is synchronous or not: an instant write passes on the first poll. The timeout is what must come from the contract. A blanket 10–15 s on a synchronous write lets late-commit bugs pass. If nobody can give you an SLA yet, use a generous limit, log the elapsed time, and agree one from the numbers. JDBC checks do not touch Playwright, so they do not need <code>pollInSameThread()</code>.</p>
+<p>Finish with <code>session.page().reload()</code> and a <code>hasText(newName)</code> check on the scenario title, which catches an optimistic update that never saved. This reload is where my third way of working, <em>validate through the UI flow</em>, closes the loop.</p>
+<h3>6. Wait for the data a page needs</h3>
+<p>Replace sleeps and <code>networkidle</code> with the one call the page depends on, and keep its data for later assertions.</p>
+<pre><code class="language-java">@When(&quot;I open the pricing cases page&quot;)
+public void openPricingCases() {
+    Response data = traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;, 200,
+        () -&gt; session.page().navigate(&quot;/pricing-cases&quot;));
+    ctx.setGridData(traffic.json(data));
+}
+
+@Then(&quot;the grid shows every case returned by the API&quot;)
+public void gridMatchesApi() {
+    PlaywrightAssertions.assertThat(grid.rows()).hasCount(ctx.gridData().path(&quot;items&quot;).size());
+}
+</code></pre>
+<p>For a virtualised grid that renders only the visible rows, compare against what is on screen rather than the full count.</p>
+<h3>7. Filters, sorting and pagination</h3>
+<p>Assert the query string the UI built, then check the UI shows the matching data. The classic bug this catches is paging that silently drops the sort or the filter.</p>
+<pre><code class="language-java">Response sorted = traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;, 200,
+    () -&gt; grid.sortBy(&quot;Created&quot;, &quot;desc&quot;));
+assertThat(Urls.query(sorted.url()))
+    .containsEntry(&quot;sort&quot;, &quot;createdAt,desc&quot;)
+    .containsEntry(&quot;page&quot;, &quot;0&quot;);
+PlaywrightAssertions.assertThat(grid.cell(0, &quot;Reference&quot;))
+    .hasText(traffic.json(sorted).path(&quot;items&quot;).get(0).path(&quot;reference&quot;).asText());
+
+Response page2 = traffic.expect(&quot;GET&quot;, &quot;/api/pricing-cases/search&quot;, 200, () -&gt; grid.nextPage());
+assertThat(Urls.query(page2.url()))
+    .containsEntry(&quot;page&quot;, &quot;1&quot;)
+    .containsEntry(&quot;sort&quot;, &quot;createdAt,desc&quot;);   // sort must survive paging
+</code></pre>
+<h3>8. Real error paths: backend validation → UI message</h3>
+<p>No mocking is needed. Submit data the backend rejects, then assert both the error response and how the UI presents it.</p>
+<pre><code class="language-java">recorder.allowError(&quot;POST&quot;, &quot;/api/pricing-cases&quot;, 422);   // expected: keeps the guard (9) quiet
+
+form.fillMargin(&quot;99&quot;);                                      // allowed by the UI, over the backend limit
+Response r = traffic.expect(&quot;POST&quot;, &quot;/api/pricing-cases&quot;, 422, () -&gt; form.submit());
+JsonNode error = traffic.json(r).path(&quot;errors&quot;).get(0);
+
+assertThat(error.path(&quot;field&quot;).asText()).isEqualTo(&quot;margin&quot;);
+PlaywrightAssertions.assertThat(form.errorFor(&quot;margin&quot;)).containsText(error.path(&quot;message&quot;).asText());
+PlaywrightAssertions.assertThat(form.successToast()).not().isVisible();
+</code></pre>
+<p>Pick a value the UI accepts but the backend rejects. If client-side validation blocks it, no POST is ever sent, and the <code>ApiTraffic</code> timeout message will say so (3.2).</p>
+<h3>9. Network health guard</h3>
+<p>The <code>@After</code> hook in 3.3 already fails any scenario with an unexpected 4xx, 5xx or network failure. That catches background calls the UI hides, such as a reference-data 500 that only shows up as an empty dropdown. Declare the errors a scenario legitimately expects, and check for duplicate calls per action:</p>
+<pre><code class="language-java">recorder.allowError(&quot;GET&quot;, &quot;/api/limits/[^/]+&quot;, 404);     // new clients have no limit yet
+
+int mark = recorder.mark();
+grid.applyFilter(ref);
+PlaywrightAssertions.assertThat(grid.rowFor(ref)).isVisible();
+
+Map&lt;String, Long&gt; perEndpoint = recorder.since(mark).stream()
+    .collect(Collectors.groupingBy(c -&gt; c.method() + &quot; &quot; + c.path(), Collectors.counting()));
+assertThat(perEndpoint).containsEntry(&quot;GET /api/pricing-cases/search&quot;, 1L);  // no double fetch
+</code></pre>
+<h3>10. Latency budgets and compliance headers</h3>
+<p>This runs one pass over everything recorded. Soft assertions report every violation at once instead of stopping at the first.</p>
+<pre><code class="language-java">@Then(&quot;pricing APIs met their latency and header rules&quot;)
+public void pricingApiRules() {
+    session.page().title();                       // flush queued events (2.2)
+    List&lt;ApiCall&gt; pricing = recorder.calls().stream()
+        .filter(c -&gt; !c.failed() &amp;&amp; c.path().startsWith(&quot;/api/pricing-cases&quot;))
+        .toList();
+
+    SoftAssertions soft = new SoftAssertions();
+    for (ApiCall c : pricing) {
+        soft.assertThat(c.durationMs()).as(&quot;latency &quot; + c).isLessThan(3_000);
+        soft.assertThat(c.header(&quot;cache-control&quot;)).as(&quot;cache-control &quot; + c).contains(&quot;no-store&quot;);
+        soft.assertThat(c.url()).as(&quot;no PII in URL &quot; + c)
+            .doesNotContainPattern(&quot;(?i)(accountNumber|sortCode|dateOfBirth)=&quot;);
+    }
+    soft.assertAll();
+}
+</code></pre>
+<p>Shared test environments are noisy, so set generous budgets. The goal is to catch an order-of-magnitude regression (search going from 200 ms to 8 s after a dropped index), not 10% jitter. <code>durationMs</code> is measured from the browser's side, from request start to the last byte of the response (guide, use case 10).</p>
+<hr />
+<h2>Part 5: Gotchas checklist</h2>
+<p>Most flaky or misleading network checks trace back to one of these. I use the list when reviewing a new step definition (guide §5):</p>
+<ul>
+<li>[ ] The action runs <strong>inside</strong> the <code>waitFor...</code> callback, never before it (1.1).</li>
+<li>[ ] The predicate matches on method + path, never on status (1.2).</li>
+<li>[ ] Globs match the whole URL: <code>*</code> stops at <code>/</code> and <code>?</code> is a literal question mark. Use a <code>Pattern</code> or a predicate when there's a query string.</li>
+<li>[ ] Decimals are parsed as <code>BigDecimal</code> (<code>USE_BIG_DECIMAL_FOR_FLOATS</code>), and expected display strings come from a unit-tested <code>DisplaySpec</code> with pinned locale, timezone and rounding (1.3, use case 3).</li>
+<li>[ ] The recorder is read only after a sync point, since Java dispatches events only during Playwright calls. In <code>@After</code>, make a cheap call such as <code>page.title()</code> first (2.2).</li>
+<li>[ ] Any Awaitility block that touches <code>Page</code>, <code>Locator</code>, <code>Response</code> or the recorder uses <code>.pollInSameThread()</code>, and every Playwright timeout inside it is well below <code>atMost</code>.</li>
+<li>[ ] Awaitility never uses a blanket <code>ignoreExceptions()</code>. Ignore only the exception that means "try again", such as Playwright's <code>TimeoutError</code>, and fail at once on error statuses (use case 4).</li>
+<li>[ ] Polling timeouts come from an agreed SLA in config. Synchronous contracts are asserted once, not polled (use case 5).</li>
+<li>[ ] The recorder is attached to the <code>BrowserContext</code>, not the <code>Page</code>, so popups and new tabs are covered.</li>
+<li>[ ] <code>off...()</code> is given the same handler instance that <code>on...()</code> received (2.5).</li>
+<li>[ ] Remember that HTTP 4xx/5xx responses are <em>finished</em> events; only connection-level problems are <em>failed</em> (2.1).</li>
+<li>[ ] <code>net::ERR_ABORTED</code> (Chromium wording) after a navigation is noise, not a defect. Firefox and WebKit report it with different text.</li>
+<li>[ ] Bodies are masked, request headers are never stored, and you know where CI reports end up.</li>
+<li>[ ] CI artifacts that hold traces, HARs or recorded bodies have restricted access (<code>artifacts:access</code>). GitLab's default lets anyone who can see the pipeline download them.</li>
+<li>[ ] Reruns don't hide consistency bugs: if Surefire/Failsafe <code>rerunFailingTestsCount</code> is on, set <code>failOnFlakeCount</code> and review every flake.</li>
+<li>[ ] Playwright's <code>assertThat</code> and AssertJ's <code>assertThat</code> are never both static-imported.</li>
+<li>[ ] A separate token-based <code>APIRequestContext</code> is closed with <code>dispose()</code> at the end of the scenario. The context-bound <code>context().request()</code> closes with the context.</li>
+<li>[ ] If expected network events never appear, a Service Worker may be intercepting the requests. Create the context with <code>setServiceWorkers(ServiceWorkerPolicy.BLOCK)</code> (<a href="https://playwright.dev/java/docs/network">Playwright docs</a>).</li>
+<li>[ ] If you later add a <code>route()</code> (for a correlation header, say), headers the browser adds at send time, such as <code>Cookie</code> and <code>Host</code>, may be missing from <code>Request.headers()</code>. Observe without routes when you need the exact wire headers (<a href="https://playwright.dev/java/docs/network">Playwright docs</a>).</li>
+</ul>
+<hr />
+<h2>Summary and conclusion</h2>
+<p>This article set out to show how a Playwright Java suite can test not only the screen but the services behind it. To this end, it worked through two tools and the patterns built on them. Part 1 examined <code>waitForResponse</code>: the golden rule that the action goes inside the callback, matching on method and path rather than status, reading bodies with a Jackson mapper configured for money, and waiting on navigation instead of <code>networkidle</code>. Part 2 built a <code>NetworkRecorder</code> on the <em>finished</em> and <em>failed</em> events, with masking, queries and guard support, and explained the Java threading model that decides when those events arrive. Part 3 wired both into Cucumber and PicoContainer, so that every scenario gets a fresh recorder and every timeout explains itself. Part 4 applied them to ten use cases, and Part 5 reduced the lessons to a checklist.</p>
+<p>The main finding is that the three ways of working are complementary rather than competing. Seeding via API and validating via UI proves that data reaches the screen, and the two-phase wait shows which layer failed when it does not. Triggering via UI and capturing the API call proves that the screen speaks to the services correctly: the IDs, the payload contract, the query string, the error path. Seeding via UI and validating through the flow proves that the journey holds together, and the reload check catches the optimistic update that never saved. Underneath all three, the recorder watches every call and catches what the UI hides.</p>
+<p>In other words, a UI test that can see the network stops being only a test of the screen. It becomes a test of the integration between the screen and the microservices, which is where the hardest defects tend to sit. This is also why my Playwright and Karate suites are independent but learn from each other: the Karate suite knows the API contracts in depth, and the Playwright suite shows how the UI actually uses them.</p>
+<h2>Sources</h2>
+<p>The guide itself draws on:</p>
+<ul>
+<li><a href="https://playwright.dev/java/docs/network">Network | Playwright Java</a></li>
+<li><a href="https://playwright.dev/java/docs/multithreading">Multithreading | Playwright Java</a></li>
+<li><a href="https://github.com/awaitility/awaitility/wiki/Usage">Awaitility usage guide</a></li>
+<li><a href="https://github.com/FasterXML/jackson-databind/blob/2.19/src/main/java/com/fasterxml/jackson/databind/DeserializationFeature.java">Jackson DeserializationFeature (2.19)</a></li>
+<li><a href="https://github.com/microsoft/playwright/blob/main/docs/src/api/class-page.md">Playwright Java API: Page</a></li>
+</ul>
+<div class="footnote">
+<hr />
+<ol>
+<li id="fn:guide">
+<p>Karimov, D. (2026). <em>Playwright Java: Real API Traffic Guide</em>. pricingtool repository, <code>docs/playwright-java-real-api-traffic-guide.md</code>. https://github.com/mattkari/pricingtool/blob/main/docs/playwright-java-real-api-traffic-guide.md. Section references in this article ("guide §1.1", "guide, use case 4") point to that document.&#160;<a class="footnote-backref" href="#fnref:guide" title="Jump back to footnote 1 in the text">&#8617;</a></p>
+</li>
+</ol>
+</div>
+<hr><p class="meta"><a href="/writing">More articles</a> · <a href="/">About me</a></p>
+</article>
+</body>
+</html>
