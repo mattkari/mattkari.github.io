@@ -11,6 +11,15 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'playwright-java-real-api-traffic',
+    title: 'Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java',
+    summary:
+      'waitForResponse, a NetworkRecorder and ten API + UI patterns against real microservices, organised around three ways of working: seed via API and validate via UI, trigger via UI and capture the call, seed via UI and validate the flow.',
+    date: '2026-10-24',
+    readingMinutes: 29,
+    tags: ['Playwright', 'Java', 'API testing', 'Test automation'],
+  },
+  {
     slug: 'crypto-signal-engine',
     title:
       'I turned my crypto trading bot into a signal engine that cannot trade. Here\'s how it reads BTC, ETH and ADA',
