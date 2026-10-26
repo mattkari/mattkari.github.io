@@ -11,6 +11,15 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'uzbek-alphabet-ai-tokens',
+    title: "Does Uzbekistan's new alphabet make AI cheaper? I measured it",
+    summary:
+      "The new 28-letter Uzbek alphabet swaps oʻ, gʻ, sh and ch for ö, ğ, ş and ç. Across seven AI tokenizers the token saving is 0 to 7%, and which apostrophe you type matters as much as the reform. The real gain is one spelling per word.",
+    date: '2026-10-27',
+    readingMinutes: 5,
+    tags: ['LLM', 'Tokenization', 'Uzbek', 'AI cost'],
+  },
+  {
     slug: 'supervised-claude-code-sessions',
     title: 'Three Claude Code Sessions, One Orchestrator, One Auditor: My Day-to-Day AI Workflow as a Test Automation Engineer',
     summary:
