@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Does Uzbekistan&#x27;s new alphabet make AI cheaper? I measured it</title>
+<meta name="description" content="Uzbekistan&#x27;s new 28-letter alphabet replaces oʻ, gʻ, sh and ch with ö, ğ, ş and ç. I measured the token cost across seven AI tokenizers: the saving is 0 to 7%, and the apostrophe matters as much as the reform.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/uzbek-alphabet-ai-tokens/">
+<meta property="og:title" content="Does Uzbekistan&#x27;s new alphabet make AI cheaper? I measured it">
+<meta property="og:description" content="Uzbekistan&#x27;s new 28-letter alphabet replaces oʻ, gʻ, sh and ch with ö, ğ, ş and ç. I measured the token cost across seven AI tokenizers: the saving is 0 to 7%, and the apostrophe matters as much as the reform.">
+<style>
+body{max-width:720px;margin:40px auto;padding:0 20px;font-family:Georgia,serif;font-size:19px;line-height:1.6;color:#222}
+h1{font-family:Arial,Helvetica,sans-serif;font-size:32px;line-height:1.25}
+h2{font-family:Arial,Helvetica,sans-serif;font-size:24px;margin-top:40px}
+code,pre{font-family:Menlo,Consolas,monospace;font-size:15px;background:#f4f4f4}
+pre{padding:12px;overflow-x:auto}
+blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444}
+.meta{color:#666;font-size:16px}
+table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;padding:4px 8px}
+h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin-top:28px}
+.footnote{font-size:16px}
+td:nth-child(n+2),th:nth-child(n+2){text-align:right}</style>
+</head>
+<body>
+<article>
+<nav style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin-bottom:24px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></nav>
+<h1>Does Uzbekistan&#x27;s new alphabet make AI cheaper? I measured it</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 27 October 2026 · 5 min read</p>
+<p>On 21 October 2026, Uzbekistan adopted Law No. ÖRQ-1184. It amends the 1993 law on the Latin-based Uzbek alphabet (lex.uz, 2026). From 22 April 2027 the alphabet will have 28 letters and one apostrophe (tutuq belgisi), instead of 26 letters and three letter combinations. In other words, <em>oʻ</em>, <em>gʻ</em>, <em>sh</em> and <em>ch</em> become <em>ö</em>, <em>ğ</em>, <em>ş</em> and <em>ç</em>. The law also states its aim: to improve the alphabet and spelling rules, and to widen the use of the state language in digital systems.</p>
+<p>A natural question followed: if words get shorter, does AI get cheaper? Large language models charge by the token, so fewer characters might mean fewer tokens. If that were so, every chatbot, translation service and document pipeline in the country would save money.</p>
+<p>This article tests that claim. It does not argue that the reform is right or wrong. Rather, it asks a narrower question: what does the new spelling change, measurably, for AI systems?</p>
+<h2>How I tested it</h2>
+<p>To this end, I built a corpus of about 460,000 characters of real Uzbek text:</p>
+<ol>
+<li>Ten long articles from Uzbek Wikipedia (Alisher Navoiy, Amir Temur, Buxoro, Samarqand, Toshkent and others).</li>
+<li>Twenty news articles from gazeta.uz, published on 26 October 2026.</li>
+</ol>
+<p>I converted each text to the new alphabet by the law's own mapping: <em>oʻ → ö</em>, <em>gʻ → ğ</em>, <em>sh → ş</em>, <em>ch → ç</em>. <em>ng</em> stays as written, because the new alphabet no longer lists it as a letter combination. I then counted tokens in both versions with seven tokenizers: OpenAI's GPT-4 and GPT-4o, Meta's Llama 3, Google's Gemma 2, Alibaba's Qwen 2.5, Mistral v0.3, and Anthropic's Claude (Sonnet 4.5, measured through the API's usage figures on the news set).</p>
+<p>I also tested a second variable that people rarely notice: <em>which apostrophe</em> is used. The official character for <em>oʻ</em> is U+02BB (ʻ). In practice, Uzbek writers use at least four: ʻ, ‘, ' and `. Wikipedia uses the first; gazeta.uz uses the second.</p>
+<h2>What I found</h2>
+<p>The new alphabet is 3.6% shorter in characters. The token effect is a different matter:</p>
+<table>
+<thead>
+<tr>
+<th>Tokenizer</th>
+<th style="text-align: right;">Old alphabet</th>
+<th style="text-align: right;">New alphabet</th>
+<th style="text-align: right;">Change</th>
+<th style="text-align: right;">Effect of apostrophe choice alone</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Llama 3</td>
+<td style="text-align: right;">190,284</td>
+<td style="text-align: right;">176,234</td>
+<td style="text-align: right;">−7.4%</td>
+<td style="text-align: right;">up to −4.0%</td>
+</tr>
+<tr>
+<td>OpenAI GPT-4 (cl100k)</td>
+<td style="text-align: right;">193,366</td>
+<td style="text-align: right;">184,193</td>
+<td style="text-align: right;">−4.7%</td>
+<td style="text-align: right;">up to −3.9%</td>
+</tr>
+<tr>
+<td>Qwen 2.5</td>
+<td style="text-align: right;">191,276</td>
+<td style="text-align: right;">185,337</td>
+<td style="text-align: right;">−3.1%</td>
+<td style="text-align: right;">up to −0.7%</td>
+</tr>
+<tr>
+<td>Gemma 2</td>
+<td style="text-align: right;">176,233</td>
+<td style="text-align: right;">171,635</td>
+<td style="text-align: right;">−2.6%</td>
+<td style="text-align: right;">none</td>
+</tr>
+<tr>
+<td>Claude (news set only)</td>
+<td style="text-align: right;">37,174</td>
+<td style="text-align: right;">36,198</td>
+<td style="text-align: right;">−2.6%</td>
+<td style="text-align: right;">−2.4%</td>
+</tr>
+<tr>
+<td>OpenAI GPT-4o (o200k)</td>
+<td style="text-align: right;">158,628</td>
+<td style="text-align: right;">158,249</td>
+<td style="text-align: right;">−0.2%</td>
+<td style="text-align: right;">−0.6% to +1.6%</td>
+</tr>
+<tr>
+<td>Mistral v0.3</td>
+<td style="text-align: right;">206,553</td>
+<td style="text-align: right;">207,362</td>
+<td style="text-align: right;">+0.4%</td>
+<td style="text-align: right;">none</td>
+</tr>
+</tbody>
+</table>
+<p>Three findings stand out.</p>
+<p><strong>First, the saving is small, and it shrinks with newer models.</strong> The range runs from 7.4% on Llama 3 to almost zero on GPT-4o, and Mistral uses slightly <em>more</em> tokens. On GPT-4o the news set also grew by 1.1%. It seems that newer tokenizers, trained on more multilingual text, had already learned Uzbek's frequent chunks.</p>
+<p><strong>Second, a token is not a letter.</strong> Tokenizers split text into common pieces, not characters. <em>ishlatiladi</em> and <em>işlatiladi</em> are both three tokens on GPT-4o, because "ish" was already a single token. The real saving comes from the apostrophe: the old <em>toʻgʻrisida</em> splits the rare quote mark off as a separate piece, while <em>töğrisida</em> does not.</p>
+<p><strong>Third, and interestingly, the apostrophe matters as much as the reform.</strong> On GPT-4 and Llama 3, simply changing which apostrophe a text uses moves the token count by up to 4%. That is about as large as the whole alphabet change. In other words, the old system's real cost was not length but <em>inconsistency</em>: the same word, <em>oʻzbek</em>, can be written four ways and becomes four different token sequences.</p>
+<h2>Where the real value is</h2>
+<p>From the above, it can be assumed that the reform will not cut AI bills in any meaningful way. A business spending £1,000 a month on an Uzbek chatbot might save between £0 and £70, depending on the model, and the saving falls as models improve.</p>
+<p>The value lies elsewhere:</p>
+<ol>
+<li><strong>One spelling per word.</strong> With <em>ö</em> and <em>ğ</em>, there is no apostrophe to choose. Search, deduplication and retrieval-augmented generation (RAG, where a model answers from documents it looks up) all depend on matching text exactly. Four spellings of one word mean missed matches; one spelling means none.</li>
+<li><strong>Shared letters with Turkish.</strong> <em>Ş</em>, <em>Ç</em>, <em>Ö</em> and <em>Ğ</em> are standard Turkish letters, so models have seen them in large volumes of training data. This may help models transfer what they know from Turkish to Uzbek.</li>
+<li><strong>Fewer technical faults.</strong> Apostrophes break URLs, database queries, keyboards and file names. Letters do not.</li>
+</ol>
+<h2>Limits of this test</h2>
+<p>This study does not claim to be complete. It covers two text types, about 460,000 characters, and seven tokenizers. The Claude figure covers the news set only and was measured indirectly, through usage reporting. The automatic conversion may mishandle rare loanwords that contain <em>sh</em> or <em>ch</em> across a syllable boundary. Finally, token count measures cost, not quality: whether models <em>understand</em> the new spelling better is a separate question, and a better one to test next.</p>
+<h2>Summary and conclusion</h2>
+<p>The aim of this article was to test a popular assumption: that Uzbekistan's new alphabet will make AI cheaper. The main finding is that it will not, in any material sense. Token savings range from about 7% on older tokenizers to effectively zero on newer ones. To put it simply, the reform does not shorten what models read.</p>
+<p>What it does is give each word one spelling. For AI systems that depend on exact matching, that is the more durable gain, and one that no tokenizer upgrade will erase.</p>
+<p><strong>Sources:</strong> Law of the Republic of Uzbekistan No. ÖRQ-1184, 21 October 2026, <a href="https://lex.uz/docs/-8548754">lex.uz/docs/-8548754</a>. Corpus: Uzbek Wikipedia (10 articles) and gazeta.uz (20 news articles, 26 October 2026). Code and results: available on request.</p>
+<hr><p class="meta"><a href="/writing">More articles</a> · <a href="/">About me</a></p>
+</article>
+</body>
+</html>
