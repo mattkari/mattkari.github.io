@@ -11,6 +11,15 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'gated-rag-test-generation',
+    title: 'Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests',
+    summary:
+      'A LangGraph pipeline that gathers test evidence through local, read-only MCP servers in Docker, puts two human gates around it and blocks generation when evidence is missing. The open questions it writes turned out to be a ready agenda for the business analyst.',
+    date: '2026-10-30',
+    readingMinutes: 13,
+    tags: ['LangGraph', 'RAG', 'MCP', 'Test automation', 'AI quality'],
+  },
+  {
     slug: 'uzbek-alphabet-ai-tokens',
     title: "Does Uzbekistan's new alphabet make AI cheaper? I measured it",
     summary:
