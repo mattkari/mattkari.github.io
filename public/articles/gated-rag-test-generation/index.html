@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests</title>
+<meta name="description" content="A LangGraph pipeline that gathers test evidence through local, read-only MCP servers, puts two human gates around it, blocks generation when evidence is missing, and turns the model&#x27;s open questions into a BA-ready agenda.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/gated-rag-test-generation/">
+<meta property="og:title" content="Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests">
+<meta property="og:description" content="A LangGraph pipeline that gathers test evidence through local, read-only MCP servers, puts two human gates around it, blocks generation when evidence is missing, and turns the model&#x27;s open questions into a BA-ready agenda.">
+<meta property="og:image" content="https://mattkari.github.io/articles/gated-rag-test-generation/img/pipeline.png">
+<style>
+body{max-width:760px;margin:40px auto;padding:0 20px;font-family:Georgia,serif;font-size:19px;line-height:1.6;color:#222}
+h1{font-family:Arial,Helvetica,sans-serif;font-size:32px;line-height:1.25}
+h2{font-family:Arial,Helvetica,sans-serif;font-size:24px;margin-top:40px}
+h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin-top:28px}
+code,pre{font-family:Menlo,Consolas,monospace;font-size:14px;background:#f4f4f4}
+pre{padding:12px;overflow-x:auto}
+blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444}
+.meta{color:#666;font-size:16px}
+table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;padding:4px 8px;text-align:left}
+p em:only-child{font-size:16px;color:#555}
+</style>
+</head>
+<body>
+<article>
+<nav style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin-bottom:24px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></nav>
+<h1>Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 30 October 2026 · 13 min read</p>
+<p><em>All system, service, endpoint, ticket and field names in this article, its screenshots and its diagram are illustrative placeholders. The screenshots are mock-ups that reproduce the layout of the tool, not captures of it.</em></p>
+<h2>Why I built it</h2>
+<p>Writing test cases for an API is rarely difficult. Finding everything a good test case depends on is the hard part. The requirement sits in one story, the acceptance criteria in another, the design in a wiki page, the contract in an OpenAPI file, the routing rules in a gateway repository, and the existing tests in a third repository. A language model can draft test cases in seconds, but only from what it is given. If the evidence is incomplete, the draft is confident and wrong.</p>
+<p>This article describes the pipeline I built to deal with that problem: a retrieval-augmented (RAG) test assistant that gathers the evidence first, shows it to a person twice, and only then asks a model to draft candidate tests. Today I moved its flow onto LangGraph, and the first real end-to-end run completed. The article explains the design, the rules behind it, and what I found while building it.</p>
+<p>It should be noted at the outset that this is not a tool that writes tests for you. Rather, it is a tool that prepares evidence and drafts candidates for an engineer to review. Nothing it produces is published anywhere.</p>
+<h2>The design in one sentence</h2>
+<p><strong>Gather evidence deterministically, let a human approve it twice, block generation when anything is missing, and keep everything the model saw.</strong></p>
+<p>In other words, the model is the smallest part of the system. It is called once, at step 9 of 11. The other ten steps exist to decide whether it should be called at all.</p>
+<h2>The sources: local, read-only, pinned</h2>
+<p>The pipeline reads from four places (Figure 1, top row):</p>
+<ol>
+<li><strong>The issue tracker and the wiki</strong>, through an <strong>Atlassian MCP server</strong>.</li>
+<li><strong>Source repositories</strong>, through a <strong>GitLab MCP server</strong>: the gateway, the service under test (here, "Service A") and the existing automated tests.</li>
+<li><strong>The OpenAPI contract</strong> for the target operation.</li>
+<li><strong>A hosted language model</strong>, through an approved enterprise endpoint.</li>
+</ol>
+<p>Both MCP servers run <strong>locally in Docker containers</strong>. MCP (Model Context Protocol) is a standard way for an AI application to call tools; here the tools are "get this story", "get this page" and "read this file". Running the servers locally means the pipeline talks to containers on my own machine rather than to a third-party integration, and I control exactly which tools are exposed. Both are used <strong>read-only</strong>.</p>
+<p>Three rules govern the sources:</p>
+<ul>
+<li><strong>Explicit wiki pages only.</strong> The pipeline retrieves the page IDs it is given. It does not search the whole wiki and guess.</li>
+<li><strong>Committed content only.</strong> Every file is read from committed content at a named reference (for example <code>HEAD</code>), never from uncommitted local changes. The limit is stated honestly: freshness is <em>unverified</em>, because the pipeline does not fetch, so the local reference may be behind the remote.</li>
+<li><strong>An anchor match is a relevance signal, not proof of sufficiency.</strong> Finding the endpoint path in a wiki page tells you the page is relevant. It does not tell you the page contains enough to test it.</li>
+</ul>
+<h2>The flow: eleven steps, two gates</h2>
+<p>LangGraph lets me express the pipeline as a fixed graph of steps instead of a free-roaming agent. The order is deterministic: the same request walks the same path every time.</p>
+<ol>
+<li><strong>Load</strong> the request and validate it against a schema.</li>
+<li><strong>Preflight</strong>: check inputs and configuration, and show a summary (target, repositories, limits).</li>
+<li><strong>Gate 1</strong>: a person approves the scope, or the run stops.</li>
+<li><strong>Check</strong> that the live MCP clients respond. (In "fakes" mode, used for offline tests, this step is skipped and no model is called.)</li>
+<li><strong>Acquire evidence</strong>: stories, wiki pages, the contract with every <code>$ref</code> resolved, the gateway's routing and validation, the controller and its call chain, and the existing tests.</li>
+<li><strong>Build the evidence pack</strong>: remove duplicates, fix the order, enforce size and item limits, and <em>record</em> what was truncated.</li>
+<li><strong>Gate 2</strong>: a person reviews the evidence, its size and its limitations, or the run stops.</li>
+<li><strong>Check sufficiency</strong>: every required item must be present.</li>
+<li><strong>Generate</strong>: the model drafts candidate tests from the exact prompt measured before Gate 2.</li>
+<li><strong>Write</strong> the outputs.</li>
+<li><strong>End</strong>.</li>
+</ol>
+<p>A request is a small JSON payload (schema version 1.1). An API request looks like this, with every value a placeholder:</p>
+<pre><code class="language-json">{
+  &quot;schemaVersion&quot;: &quot;1.1&quot;,
+  &quot;qaStoryKey&quot;: &quot;PROJ-102&quot;,
+  &quot;baStoryKey&quot;: &quot;PROJ-103&quot;,
+  &quot;featureKey&quot;: &quot;PROJ-101&quot;,
+  &quot;workItemType&quot;: &quot;API&quot;,
+  &quot;sourceMode&quot;: &quot;LIVE&quot;,
+  &quot;reviewOnly&quot;: true,
+  &quot;target&quot;: {
+    &quot;method&quot;: &quot;PATCH&quot;,
+    &quot;path&quot;: &quot;/api/records/{recordId}/items&quot;
+  },
+  &quot;confluencePageIds&quot;: [&quot;100000001&quot;],
+  &quot;repositorySelection&quot;: {
+    &quot;mode&quot;: &quot;EXPLICIT&quot;,
+    &quot;repositories&quot;: [
+      {
+        &quot;role&quot;: &quot;API_AUTOMATION&quot;,
+        &quot;root&quot;: &quot;C:/projects/api-tests&quot;,
+        &quot;contentMode&quot;: &quot;COMMITTED&quot;,
+        &quot;reference&quot;: &quot;HEAD&quot;,
+        &quot;searchPaths&quot;: [
+          &quot;api-tests/src/test/resources/features/records/item-update.feature&quot;
+        ]
+      }
+    ]
+  },
+  &quot;candidateLimits&quot;: {
+    &quot;coreRequired&quot;: 5,
+    &quot;recommendedRiskBased&quot;: 0,
+    &quot;optionalExploratory&quot;: 0,
+    &quot;maximumTotal&quot;: 5
+  }
+}
+</code></pre>
+<p>A UI request uses the same shape without a <code>target</code>, because a UI change has no single endpoint:</p>
+<pre><code class="language-json">{
+  &quot;schemaVersion&quot;: &quot;1.1&quot;,
+  &quot;qaStoryKey&quot;: &quot;PROJ-202&quot;,
+  &quot;baStoryKey&quot;: &quot;PROJ-203&quot;,
+  &quot;featureKey&quot;: &quot;PROJ-201&quot;,
+  &quot;workItemType&quot;: &quot;UI&quot;,
+  &quot;sourceMode&quot;: &quot;LIVE&quot;,
+  &quot;reviewOnly&quot;: true,
+  &quot;repositorySelection&quot;: {
+    &quot;mode&quot;: &quot;EXPLICIT&quot;,
+    &quot;repositories&quot;: [
+      {
+        &quot;role&quot;: &quot;UI_AUTOMATION&quot;,
+        &quot;root&quot;: &quot;C:/projects/ui-tests&quot;,
+        &quot;contentMode&quot;: &quot;COMMITTED&quot;,
+        &quot;reference&quot;: &quot;HEAD&quot;,
+        &quot;searchPaths&quot;: [
+          &quot;ui-tests/src/test/resources/features/records/view-toggle-ui.feature&quot;
+        ]
+      }
+    ]
+  },
+  &quot;candidateLimits&quot;: {
+    &quot;coreRequired&quot;: 5,
+    &quot;recommendedRiskBased&quot;: 0,
+    &quot;optionalExploratory&quot;: 0,
+    &quot;maximumTotal&quot;: 5
+  }
+}
+</code></pre>
+<p>Four fields carry most of the safety:</p>
+<ol>
+<li><strong><code>reviewOnly: true</code></strong> keeps every output as a draft for a person.</li>
+<li><strong><code>repositorySelection.mode: "EXPLICIT"</code></strong> with <strong><code>searchPaths</code></strong> limits the repository search to named feature files, so the scope stays focused and existing-test evidence cannot flood the pack.</li>
+<li><strong><code>contentMode: "COMMITTED"</code></strong> with <strong><code>reference: "HEAD"</code></strong> reads committed content only, never uncommitted changes in a working copy.</li>
+<li><strong><code>candidateLimits</code></strong> caps how many candidates of each tier the model may return. The values above are the ones the first runs used; the risk tier at 0 is one of the limits discussed later.</li>
+</ol>
+<p>One small habit has also proved useful. When a story key has not been verified yet, the request carries an obvious placeholder such as <code>&lt;QA_STORY_KEY&gt;</code> instead of a plausible key. A placeholder fails validation at step 1; a wrong but valid key would quietly pull evidence from an unrelated task.</p>
+<h2>The rule that does the most work: missing evidence blocks generation</h2>
+<p>For API work, the pipeline will not generate until all six items are present:</p>
+<ol>
+<li>The feature, BA and QA stories.</li>
+<li>At least one design page with relevant anchors.</li>
+<li>The contract: target operation found and every <code>$ref</code> resolved.</li>
+<li>The gateway's routing and validation configuration.</li>
+<li>The controller and its call chain.</li>
+<li>A completed, bounded search of the existing tests.</li>
+</ol>
+<p>If the contract cannot be interpreted, for example because of a circular or broken <code>$ref</code>, the run blocks. There is deliberately no fallback to "send the raw operation and hope". To put it simply, a model that is not given the contract will invent one, and the invented version will look plausible.</p>
+<h2>Budget control: measure the prompt before anyone approves it</h2>
+<p>The exact prompt is built <strong>once, before Gate 2</strong>, so the person approving the evidence is approving what the model will actually see. Generation reuses that same prompt text; it is not rebuilt afterwards. A hard cap on prompt size applies: if the cap is missing or exceeded, the run blocks. The prompt's SHA-256 hash is written with the outputs, so any candidate can be traced to the exact prompt that produced it.</p>
+<p>The token count is currently an estimate (characters divided by four). The diagram labels it as uncalibrated, because structured text such as YAML and JSON usually tokenises less efficiently than prose, so the estimate can under-count.</p>
+<h2>The outputs</h2>
+<p>Each run writes a folder of five files:</p>
+<table>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>candidate-tests.json</code></td>
+<td>the drafted candidates, machine-readable</td>
+</tr>
+<tr>
+<td><code>candidate-review.md</code></td>
+<td>the same candidates, laid out for a human reviewer</td>
+</tr>
+<tr>
+<td><code>coverage-summary.md</code></td>
+<td>what the candidates cover, against the evidence</td>
+</tr>
+<tr>
+<td><code>open-questions.md</code></td>
+<td>what the model could not determine from the evidence</td>
+</tr>
+<tr>
+<td><code>generation-manifest.json</code></td>
+<td>the run record, including the prompt hash</td>
+</tr>
+</tbody>
+</table>
+<p>The open-questions file is, interestingly, the most useful of the five. It shows where the evidence ran out, which is usually where a conversation with the business analyst or developer should start. The next section explains why.</p>
+<p>A local web page (<code>/graph</code>) drives all of this: a form or JSON input, presets, an interactive view of the graph, panels for both gates, and artefact download.</p>
+<h2>What a run looks like</h2>
+<p>The three screens below follow one request through the graph. The step bar at the top of each screen shows where the run is: green steps are complete, and the red outline marks the current step.</p>
+<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Mock-up of the /graph page at Gate 1: the request form on the left, the preflight summary and the Gate 1 approval panel on the right" src="/articles/gated-rag-test-generation/img/01-request-gate1.png" /></p>
+<p><em>Figure 1. Request, preflight and Gate 1 (mock-up). The engineer fills in the target, the three story keys, the design page and an explicit repository selection. Preflight validates the request and states openly that repository freshness is unverified. Nothing is read until the scope is approved.</em></p>
+<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Mock-up of the /graph page at Gate 2 and the sufficiency check: the evidence pack table, the prompt budget bar, the Gate 2 panel and a sufficiency check that fails on the missing contract" src="/articles/gated-rag-test-generation/img/02-evidence-gate2.png" /></p>
+<p><em>Figure 2. Evidence pack, Gate 2 and the sufficiency check (mock-up). The pack shows each category's item count, source and status, including the truncated design page and existing tests taking 85% of the pack. The prompt is measured and hashed before approval. With the contract missing, check 3 fails and generation is blocked, which is the behaviour the first real run showed was not yet enforced.</em></p>
+<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Mock-up of the /graph page at the end of a run: five candidate tests with their tiers and open-question counts, the artefact list, and the open questions grouped by topic as a BA agenda" src="/articles/gated-rag-test-generation/img/03-results-questions.png" /></p>
+<p><em>Figure 3. Results after a re-run with the contract supplied (mock-up). Five review-only candidates, now including two risk-based ones, each with a count of the questions blocking it. On the right, the open questions are grouped by topic and labelled: "needs decision" goes to the BA, while "should come from a document" points back to a gap in the evidence.</em></p>
+<h2>Open questions as a BA-ready agenda</h2>
+<p>The first real run produced five candidate tests and, alongside them, a list of open questions. Each question sits under the candidate test it blocks. The questions fell into a small number of recurring kinds. Illustrative versions, with placeholder field names, look like this:</p>
+<ul>
+<li><strong>Field mapping:</strong> "Which response field maps to the business term <em>Category</em>, and is the mapping one-to-one?"</li>
+<li><strong>Derived values:</strong> "Should each amount field in the response equal the stored value, or a value derived from it (for example a calculated total)?"</li>
+<li><strong>Timing:</strong> "When should <code>startDate</code> be populated in this response, and in what format?"</li>
+<li><strong>Interacting flags:</strong> "How do the item-level <code>includeInTotal</code> flag and the record-level <code>includeInTotal</code> flag relate, and which one wins?"</li>
+<li><strong>Contract facts:</strong> "What HTTP status code does the documented success response use?"</li>
+</ul>
+<p>In other words, the model separated what it could test from what only a person can decide, and it wrote the second part as questions a business analyst can answer. This changes the value of the pipeline. It drafts test candidates, but it also prepares the requirements conversation, and it does so before any test exists, which is when gaps in requirements are cheapest to fix.</p>
+<p>Three practices make the BA meeting efficient:</p>
+<ol>
+<li><strong>Group the questions by topic</strong> (status codes, field mapping, dates, flags) rather than by test, so one answer can unblock several candidates.</li>
+<li><strong>Mark each question as either answerable from a document or needing a decision.</strong> The first kind should have come from the evidence, not from the BA.</li>
+<li><strong>Record each answer in the story's acceptance criteria.</strong> The next run then finds the answer as evidence instead of asking the same question again.</li>
+</ol>
+<p>The second practice matters more than it first appears. A question such as "what is the success status code?" is not a business decision; the OpenAPI contract answers it. When a contract fact reaches the BA as an open question, it is a signal that the contract did not reach the model. That signal led to the most important finding below.</p>
+<h2>What I found while building it</h2>
+<p>Building the pipeline was also a review of it. Four findings are worth recording.</p>
+<p><strong>First, a rejected run is a successful run.</strong> One early run was rejected at Gate 1 and wrote nothing. That is the design working: a wrong scope cost one click, not a folder of misleading tests.</p>
+<p><strong>Second, the sufficiency gate let a run through without its contract.</strong> The design says an unresolved contract blocks generation. Yet in the first real run, the open questions asked for the success status code and whether an OpenAPI definition existed for the endpoint, which are both facts the contract would have supplied. It can therefore be assumed that the contract was either not retrieved or cut from the evidence pack, and that the sufficiency check at step 8 did not enforce the rule. A gate that can be bypassed is the main risk in a design that depends on gates. The fix is twofold: confirm from the run manifest and evidence pack whether a contract item was present or truncated, and add a test proving that a run with no contract stops at step 8. That test must fail on the current code before the fix is accepted.</p>
+<p><strong>Third, existing tests can crowd out the requirements.</strong> In the same run, 22 of the 26 evidence items were existing automated tests, and only 4 were requirements, design or QA scope. That is roughly 85% of the evidence describing what is already tested. Existing tests are useful context, but they describe what is already tested, not what should be. The planned fix is to pass existing coverage as a compact index (feature and scenario titles) and spend the budget on requirements and design.</p>
+<p><strong>Fourth, long design pages get truncated silently unless you record it.</strong> A very long wiki page can lose most of its content to a per-item size limit. Because the evidence pack records truncation, the loss was visible at Gate 2 rather than hidden in a weak output. The better fix is to split long pages into sections and keep the sections that mention the target operation.</p>
+<h2>Limits</h2>
+<p>This article does not claim the pipeline produces good tests. Rather, it claims the pipeline produces <em>reviewable</em> candidates from <em>recorded</em> evidence. Four limits remain:</p>
+<ol>
+<li><strong>Quality is not yet measured.</strong> The first real run produced five candidates, all in the core category. Whether they are right is a separate question.</li>
+<li><strong>The sufficiency gate needs a test of its own</strong>, because one run passed it without contract evidence.</li>
+<li><strong>The token estimate is uncalibrated.</strong></li>
+<li><strong>Repository freshness is unverified</strong>, because the pipeline does not fetch.</li>
+<li><strong>No negative or risk-focused candidates</strong> were requested (the run used 5 core, 0 risk, 0 exploratory). For an API, error and boundary cases are where defects usually hide, so these limits need widening. Interestingly, one core candidate still covered an empty-result case.</li>
+</ol>
+<h2>Next steps</h2>
+<p>First, close the gate: prove with a failing-then-passing test that a run without a resolved contract stops at step 8. Second, add the scoring step below.</p>
+<h3>A twelfth node that scores the output</h3>
+<p>The missing piece is a step after "Write": compare the candidates with a set of trusted, hand-written tests for the same endpoints, and count how many candidates are correct, how many are wrong, and what was missed. Run that across ten endpoints and the pipeline has a measured result instead of a demonstration. It is the same principle the pipeline already applies to the model: do not trust the summary, check the evidence.</p>
+<h2>Rules I would keep</h2>
+<ul>
+<li>The model is one step of eleven. Put the effort into the other ten.</li>
+<li>Two human gates: approve the scope, then approve the evidence.</li>
+<li>Missing evidence blocks generation. No fallbacks that guess.</li>
+<li>Measure the prompt before approval, and store its hash with the result.</li>
+<li>Read committed content at a named reference, and say plainly what is unverified.</li>
+<li>Use an obvious placeholder for any unverified key, never a plausible guess.</li>
+<li>Review-only by default: a person decides what becomes a real test.</li>
+<li>Treat open questions as a BA agenda, and treat a contract fact in that agenda as a bug.</li>
+<li>Test the gates themselves. A gate nobody has tried to bypass is an assumption.</li>
+</ul>
+<h2>Summary and conclusion</h2>
+<p>This article set out to describe a pipeline that drafts API and UI test candidates without trusting the model more than it deserves. The approach is to gather evidence deterministically through local, read-only MCP servers, to place two human gates around that evidence, and to block generation whenever a required item is missing. The main finding so far is that the safety of such a system comes less from the model than from the structure around it: the gates, the sufficiency rule and the recorded evidence. A second finding is that the open questions are as valuable as the candidate tests, because they turn gaps in the requirements into a ready agenda for the business analyst, and, read carefully, they also expose gaps in the pipeline itself. The structure, however, is only as strong as its weakest gate, so the gates must be tested, and the quality of the output still has to be measured. Those are the next steps.</p>
+<p><em>If you build something similar at work, ask your employer first, use only approved tools and model endpoints, and keep real system names, tickets and data out of anything you publish.</em></p>
+<h2>Appendix: the whole process</h2>
+<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Gated RAG test-generation pipeline: inputs and local MCP sources feed an 11-step LangGraph flow with two human gates, an evidence-sufficiency check and review-only outputs" src="/articles/gated-rag-test-generation/img/pipeline.png" /></p>
+<p><em>Figure 4. The pipeline end to end: inputs and the local, read-only MCP sources (top), the deterministic eleven-step flow with its two human gates (middle), and the API/UI differences, budget control, sufficiency rule and outputs (bottom).</em></p>
+</article>
+<footer style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin:48px 0 24px;border-top:1px solid #ddd;padding-top:16px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></footer>
+</body>
+</html>
