@@ -16,7 +16,7 @@ export const articles: Article[] = [
     summary:
       'A LangGraph pipeline that gathers test evidence through local, read-only MCP servers in Docker, puts two human gates around it and blocks generation when evidence is missing. The open questions it writes turned out to be a ready agenda for the business analyst.',
     date: '2026-10-30',
-    readingMinutes: 13,
+    readingMinutes: 15,
     tags: ['LangGraph', 'RAG', 'MCP', 'Test automation', 'AI quality'],
   },
   {
