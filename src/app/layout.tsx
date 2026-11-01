@@ -35,13 +35,22 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_URL,
     siteName: "Matt Karimov — Portfolio",
+    images: [
+      {
+        url: `${SITE_URL}/og/default.png`,
+        width: 1200,
+        height: 630,
+        alt: "Matt Karimov — answers that show their evidence",
+      },
+    ],
     title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
     description:
       "Banking test automation (API, Kafka, DB, UI) + hands-on LLM engineering: a source-grounded RAG research assistant with page-level citations and honest refusal. PhD, Durham. Presented at ITCC-2026.",
     locale: "en_GB",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
+    images: [`${SITE_URL}/og/default.png`],
     title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
     description:
       "Banking QA + source-grounded RAG with page-level citations and honest refusal. PhD, Durham. ITCC-2026.",
