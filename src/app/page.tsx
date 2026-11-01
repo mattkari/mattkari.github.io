@@ -198,7 +198,7 @@ export default function Home() {
 
   const differentiators = [
     'Source-grounded RAG with page-level citations',
-    'MCP servers connecting LLMs to real systems',
+    'LLM tooling wired to real systems over MCP',
     'LLM evaluation and grounding checks',
     'Banking QA: API, Kafka, database and UI',
     'Payments domain (SEPA and instant payments)',
@@ -209,7 +209,7 @@ export default function Home() {
     {
       icon: Bot,
       title: 'AI and LLM engineering',
-      items: ['Python', 'RAG pipelines', 'Embeddings and vector retrieval', 'pgvector', 'Prompt design', 'MCP servers', 'Claude / Anthropic API', 'Streamlit', 'LLM evaluation'],
+      items: ['Python', 'RAG pipelines', 'Embeddings and vector retrieval', 'pgvector', 'Prompt design', 'MCP integration', 'Claude / Anthropic API', 'Streamlit', 'LLM evaluation'],
     },
     {
       icon: Terminal,
@@ -254,7 +254,7 @@ export default function Home() {
       company: 'Barclays Investment Bank, UK',
       period: 'Feb 2026 – Present',
       highlights: [
-        'Developed multiple MCP (Model Context Protocol) servers connecting LLM tooling to internal systems, including SQL, Atlassian, GitLab and Playwright integrations',
+        'Connected LLM tooling to internal systems over the Model Context Protocol, running Atlassian, GitLab and SQL MCP servers in Docker with read-only access, plus the Playwright MCP and CLI',
         'Built a Karate Test Assistant RAG tool grounded in framework docs and test code to support API test authoring and debugging',
         'Architected UI test automation using Playwright with Java for a global investment bank platform',
         'Built the Karate Framework for API testing, streamlining backend and service-level test coverage',
@@ -573,8 +573,8 @@ export default function Home() {
                   and claims you can verify.
                 </p>
                 <p className="mt-6 text-lg leading-relaxed text-slate-300">
-                  Day to day I am a Test Automation Engineer at Barclays Investment Bank, building
-                  MCP servers that connect LLM tooling to internal systems and a RAG test
+                  Day to day I am a Test Automation Engineer at Barclays Investment Bank,
+                  connecting LLM tooling to internal systems over MCP and building a RAG test
                   assistant for API test authoring. Outside work I build and self-host my own
                   systems on a Raspberry Pi 5. My target for 2026: an AI engineering role where
                   source grounding, evaluation and honesty about limits are the product.
