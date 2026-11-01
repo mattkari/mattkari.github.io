@@ -27,12 +27,13 @@ p em:only-child{font-size:16px;color:#555}
 <article>
 <nav style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin-bottom:24px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></nav>
 <h1>Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests</h1>
-<p class="meta">Dusmamat (Matt) Karimov · 30 October 2026 · 15 min read</p>
-<p><em>All system, service, endpoint, ticket and field names in this article, its screenshots and its diagram are illustrative placeholders. The screenshots are mock-ups that reproduce the layout of the tool, not captures of it.</em></p>
+<p class="meta">Dusmamat (Matt) Karimov · 30 October 2026 · 20 min read</p>
+<p><em>All system, service, endpoint, ticket and field names in this article, its screenshots and its diagrams are illustrative placeholders. The screenshots are mock-ups that reproduce the layout of the tool, not captures of it.</em></p>
+<p><em>Updated 1 November 2026: added the tool's graph view (Figure 4) and the next stage, which turns approved candidates into Xray tests in Jira. See "Update: the graph view and the road to Xray".</em></p>
 <h2>Why I built it</h2>
 <p>Writing test cases for an API is rarely difficult. Finding everything a good test case depends on is the hard part. The requirement sits in one story, the acceptance criteria in another, the design in a wiki page, the contract in an OpenAPI file, the routing rules in a gateway repository, and the existing tests in a third repository. A language model can draft test cases in seconds, but only from what it is given. If the evidence is incomplete, the draft is confident and wrong.</p>
 <p>This article describes the pipeline I built to deal with that problem: a retrieval-augmented (RAG) test assistant that gathers the evidence first, shows it to a person twice, and only then asks a model to draft candidate tests. Today I moved its flow onto LangGraph, and the first real end-to-end run completed. The article explains the design, the rules behind it, and what I found while building it.</p>
-<p>It should be noted at the outset that this is not a tool that writes tests for you. Rather, it is a tool that prepares evidence and drafts candidates for an engineer to review. Nothing it produces is published anywhere.</p>
+<p>It should be noted at the outset that this is not a tool that writes tests for you. Rather, it is a tool that prepares evidence and drafts candidates for an engineer to review. In the version described here, nothing it produces is published anywhere. The next stage, described in the update below, adds publishing to Xray, but only behind further human approvals.</p>
 <h2>Related work: what the research already says</h2>
 <p>I am not the first to generate tests from requirements with an LLM, and two recent industrial studies support the central rule of this design.</p>
 <p><strong>APITestGenie</strong> (Pereira, Lima and Faria, 2026) generates API integration tests from business requirements and OpenAPI specifications using an LLM with retrieval. On ten real-world APIs, including around 1,000 live endpoints from an automotive partner, it produced valid test scripts for 89% of requirements within three attempts, and some generated tests found real defects. Interestingly, the authors found that the level of detail in the requirements and in the API documentation was one of the main factors deciding success.</p>
@@ -231,18 +232,64 @@ p em:only-child{font-size:16px;color:#555}
 <p>The run manifest and evidence pack record which items were present and whether they were truncated, so the explanations can be told apart by inspection. I have not done that inspection yet, so I treat this as a hypothesis, not a finding. Whichever explanation holds, the lesson is the same: a run that was not blocked is not proof that the evidence was sufficient.</p>
 <p><strong>Third, existing tests can crowd out the requirements.</strong> In the same run, 22 of the 26 evidence items were existing automated tests, and only 4 were requirements, design or QA scope. That is roughly 85% of the evidence describing what is already tested. Existing tests are useful context, but they describe what is already tested, not what should be. The planned fix is to pass existing coverage as a compact index (feature and scenario titles) and spend the budget on requirements and design.</p>
 <p><strong>Fourth, long design pages get truncated silently unless you record it.</strong> A very long wiki page can lose most of its content to a per-item size limit. Because the evidence pack records truncation, the loss was visible at Gate 2 rather than hidden in a weak output. The better fix is to split long pages into sections and keep the sections that mention the target operation.</p>
+<h2>Update: the graph view and the road to Xray</h2>
+<p><em>Added 1 November 2026.</em></p>
+<p>Two things have changed since the first version of this article. First, the tool now draws its own graph. Second, the plan has moved beyond review-only drafts: approved candidates will become test cases in Xray, the test management add-on for Jira. This section describes both, and it is explicit about what is built and what is not.</p>
+<h3>Seeing the graph</h3>
+<p>The local page now renders the LangGraph flow as a diagram (Figure 4). During a run, each step is coloured as not run, ran, waiting for approval, or ended after a rejection. Solid edges are always taken. Dashed edges are taken only when their label holds.</p>
+<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="The generation graph: thirteen nodes from START to END, with two approval gates drawn as diamonds, dashed edges for rejection and for the offline mode, and one model call at generate_candidates" src="/articles/gated-rag-test-generation/img/04-generation-graph.png" /></p>
+<p><em>Figure 4. The generation graph of the review-only version, redrawn from the tool's local graph view with placeholder labels. Dashed edges are conditional: both gates can end the run, and in the offline "fakes" mode the flow skips the live client, the wiki and issue-tracker acquisition, and the sufficiency check.</em></p>
+<p>Drawing the graph turned out to be a review tool in its own right. The code expresses conditional paths as small routing functions, and they are easy to read past. The diagram shows them at a glance. Two dashed edges stand out:</p>
+<ol>
+<li><strong>"No client"</strong> goes from the live-client check straight to the repositories, skipping the issue tracker and the wiki.</li>
+<li><strong>"Approved" in offline mode</strong> goes from Gate 2 straight to generation, skipping the sufficiency check.</li>
+</ol>
+<p>Both belong to the offline "fakes" mode used for tests, in which no real model is called, so they are the intended path. The point is a different one: a single mode flag is all that separates a safe offline path from an unchecked live one. Two guards follow from that. The sufficiency check should run in every mode, and a test should prove that the offline path can never reach the real model endpoint. In other words, every dashed edge that skips a check deserves a test of its own.</p>
+<h3>From review-only to Xray: the target flow</h3>
+<p>The next stage keeps the evidence gates and adds the steps that turn an approved candidate into a real test:</p>
+<ol>
+<li>You enter the QA story. The tool finds the feature and BA stories through the issue links, and you select them.</li>
+<li>You select the API operation from a list. The tool reads the contract and the code files.</li>
+<li><strong>Gate 1:</strong> you approve the preflight.</li>
+<li>The tool collects the evidence: stories, wiki pages, a compact "contract card" for the operation, the request template and the code.</li>
+<li><strong>Gate 2:</strong> you approve the evidence and the prompt size.</li>
+<li>The tool makes one call to the approved model endpoint. It returns up to five candidates.</li>
+<li>Code checks each candidate: the method, the path and the field names must match the contract.</li>
+<li><strong>Candidate gate:</strong> you approve or reject each candidate.</li>
+<li><strong>Type gate:</strong> you choose Manual or Cucumber.</li>
+<li>The tool builds the Xray payload and looks for a duplicate test.</li>
+<li><strong>Create gate:</strong> you approve. The tool creates the Xray test, then reads it back.</li>
+<li><strong>Link gate:</strong> you approve. The tool links the test to the BA story, then reads both issues back.</li>
+</ol>
+<p>Three safety rules apply to the whole flow: the tool writes nothing to Jira without your approval; the access token is not stored, logged or shown; and if any check fails, the tool stops and deletes nothing.</p>
+<p>Four changes in this flow are worth explaining:</p>
+<ul>
+<li><strong>Choosing instead of typing.</strong> Story keys come from the issue links, and the operation comes from a list read from the contract. This removes most of the wrong-key risk that the placeholder habit described earlier was guarding against.</li>
+<li><strong>Named code files, with caps.</strong> The request can now name specific code files. Each file is capped at 20 KB, and an oversized file is skipped with a named warning rather than silently cut. A total cap of 120 KB (about 30,000 estimated tokens) applies across all named files. It should be noted that this is a ceiling, not a target: a typical read scenario needs only about 24 to 26 KB, and the cap exists so that code cannot crowd out the requirements, as existing tests did in the first run.</li>
+<li><strong>Code checks the model before a person does.</strong> Step 7 rejects any candidate whose method, path or field names do not exist in the contract. This is the same principle as Meta's filters (Alshahwan et al., 2024): mechanical checks first, human judgement second.</li>
+<li><strong>Every write has a gate and a read-back.</strong> Creating the test and linking it are separate approvals, and each is confirmed by reading the issues back from Jira rather than trusting the response of the write call.</li>
+</ul>
+<h3>Status</h3>
+<p>The new parts are being built in small, separately reviewed changes. The named-file sources, for example, came with 45 new tests, and deliberately breaking the code in seven different ways made the suite fail seven times out of seven. The graph view is working. The remaining steps (the operation list, the request form, the candidate checks and the Xray create and link) are in progress. <strong>Nothing has been written to Jira yet</strong>; one real create-and-link run is the final step of the plan.</p>
+<h3>Three open design questions</h3>
+<ol>
+<li><strong>How many human gates are too many?</strong> The target flow has six. Each extra approval adds a chance that people start clicking "approve" without reading. One option is to fold the type choice into the candidate gate (approve as Manual, approve as Cucumber, or reject), and to merge create and link into one publish gate that shows the payload and the link target together. That would leave four.</li>
+<li><strong>What happens on a partial failure?</strong> If the create succeeds and the link fails, a naive re-run creates a duplicate test. A fingerprint label on each test (run identifier, method, path and scenario) would let the duplicate check find it, and a re-run could resume at the link step.</li>
+<li><strong>Can the candidate gate measure quality?</strong> If each approve or reject decision is recorded with a reason (wrong field, duplicate, out of scope, missing evidence), the gate produces an adoption rate and a list of failure types as a side effect of normal use. That is the measurement this article has so far lacked.</li>
+</ol>
 <h2>Limits</h2>
-<p>This article does not claim the pipeline produces good tests. Rather, it claims the pipeline produces <em>reviewable</em> candidates from <em>recorded</em> evidence. Four limits remain:</p>
+<p>This article does not claim the pipeline produces good tests. Rather, it claims the pipeline produces <em>reviewable</em> candidates from <em>recorded</em> evidence. Six limits remain:</p>
 <ol>
 <li><strong>Quality is not yet measured.</strong> The first real run produced five candidates, all in the core category. Whether they are right is a separate question.</li>
 <li><strong>The sufficiency gate needs a test of its own.</strong> One run reached generation while asking questions its contract should have answered; the cause is not yet confirmed (see above).</li>
 <li><strong>The token estimate is uncalibrated.</strong></li>
 <li><strong>Repository freshness is unverified</strong>, because the pipeline does not fetch.</li>
+<li><strong>The Xray stage is not yet built or run.</strong> Its flow above is a design, not a result.</li>
 <li><strong>No negative or risk-focused candidates</strong> were requested (the run used 5 core, 0 risk, 0 exploratory). For an API, error and boundary cases are where defects usually hide, so these limits need widening. Interestingly, one core candidate still covered an empty-result case.</li>
 </ol>
 <h2>Next steps</h2>
-<p>First, inspect the run manifest to find which of the three explanations holds, and cover the sufficiency gate with a test that fails on a deliberately incomplete request. Second, add the scoring step below.</p>
-<h3>A twelfth node that scores the output</h3>
+<p>First, inspect the run manifest to find which of the three explanations holds, and cover the sufficiency gate with a test that fails on a deliberately incomplete request. Second, guard the offline path so it can never reach the real model. Third, finish the Xray steps and complete one real create-and-link run. Fourth, add the scoring step below.</p>
+<h3>A step that scores the output</h3>
 <p>The missing piece is a step after "Write": compare the candidates with a set of trusted, hand-written tests for the same endpoints, and count how many candidates are correct, how many are wrong, and what was missed. Run that across ten endpoints and the pipeline has a measured result instead of a demonstration. It is the same principle the pipeline already applies to the model: do not trust the summary, check the evidence.</p>
 <h2>Rules I would keep</h2>
 <ul>
@@ -255,9 +302,11 @@ p em:only-child{font-size:16px;color:#555}
 <li>Review-only by default: a person decides what becomes a real test.</li>
 <li>Treat open questions as a BA agenda, and treat a contract fact in that agenda as a bug.</li>
 <li>Test the gates themselves. A gate nobody has tried to bypass is an assumption.</li>
+<li>Draw the graph. Every dashed edge that skips a check needs a test.</li>
+<li>Every write to a shared system gets its own approval and a read-back.</li>
 </ul>
 <h2>Summary and conclusion</h2>
-<p>This article set out to describe a pipeline that drafts API and UI test candidates without trusting the model more than it deserves. The approach is to gather evidence deterministically through local, read-only MCP servers, to place two human gates around that evidence, and to block generation whenever a required item is missing. The main finding so far is that the safety of such a system comes less from the model than from the structure around it: the gates, the sufficiency rule and the recorded evidence. A second finding is that the open questions are as valuable as the candidate tests, because they turn gaps in the requirements into a ready agenda for the business analyst, and, read carefully, they can also point to gaps in the pipeline itself. The structure, however, is only as strong as its weakest gate, so the gates must be tested, and the quality of the output still has to be measured. Those are the next steps.</p>
+<p>This article set out to describe a pipeline that drafts API and UI test candidates without trusting the model more than it deserves. The approach is to gather evidence deterministically through local, read-only MCP servers, to place two human gates around that evidence, and to block generation whenever a required item is missing. The main finding so far is that the safety of such a system comes less from the model than from the structure around it: the gates, the sufficiency rule and the recorded evidence. A second finding is that the open questions are as valuable as the candidate tests, because they turn gaps in the requirements into a ready agenda for the business analyst, and, read carefully, they can also point to gaps in the pipeline itself. The structure, however, is only as strong as its weakest gate, so the gates must be tested, and the quality of the output still has to be measured. The next stage, publishing approved candidates to Xray, applies the same principle to writing: every write is approved by a person and confirmed by reading it back. Those are the next steps.</p>
 <p><em>If you build something similar at work, ask your employer first, use only approved tools and model endpoints, and keep real system names, tickets and data out of anything you publish.</em></p>
 <h2>References</h2>
 <ul>
@@ -267,7 +316,7 @@ p em:only-child{font-size:16px;color:#555}
 </ul>
 <h2>Appendix: the whole process</h2>
 <p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Gated RAG test-generation pipeline: inputs and local MCP sources feed an 11-step LangGraph flow with two human gates, an evidence-sufficiency check and review-only outputs" src="/articles/gated-rag-test-generation/img/pipeline.png" /></p>
-<p><em>Figure 4. The pipeline end to end: inputs and the local, read-only MCP sources (top), the deterministic eleven-step flow with its two human gates (middle), and the API/UI differences, budget control, sufficiency rule and outputs (bottom).</em></p>
+<p><em>Figure 5. The pipeline end to end: inputs and the local, read-only MCP sources (top), the deterministic eleven-step flow with its two human gates (middle), and the API/UI differences, budget control, sufficiency rule and outputs (bottom).</em></p>
 </article>
 <footer style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin:48px 0 24px;border-top:1px solid #ddd;padding-top:16px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></footer>
 </body>
