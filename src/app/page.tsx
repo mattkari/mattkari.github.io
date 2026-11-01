@@ -513,11 +513,12 @@ export default function Home() {
               </div>
               <div className="max-w-2xl">
                 <p className="text-lg leading-relaxed text-slate-300">
-                  My path to AI engineering runs through evidence. A PhD on the Qur&apos;anic
-                  concept of justice (Durham, 2017) trained me to separate what a source says
-                  from what I infer — the exact discipline a trustworthy LLM system needs. Five
-                  years in banking QA taught me what regulated systems demand: traceability,
-                  reconciliation, and claims you can verify.
+                  My path to AI engineering runs through evidence. A PhD in governance and
+                  international affairs (Durham, 2017) trained me to work the way a
+                  trustworthy LLM system must: read sources closely, separate what a source
+                  says from what I infer, and defend every claim. Five years in banking QA
+                  taught me what regulated systems demand: traceability, reconciliation,
+                  and claims you can verify.
                 </p>
                 <p className="mt-6 text-lg leading-relaxed text-slate-300">
                   Day to day I am a Test Automation Engineer at Barclays Investment Bank, building
