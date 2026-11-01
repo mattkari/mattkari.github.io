@@ -2,44 +2,112 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  Menu,
-  X,
-  Mail,
-  MapPin,
-  Terminal,
-  Check,
   Bot,
-  Monitor,
-  Globe,
-  Github,
-  Linkedin,
   Briefcase,
-  GraduationCap,
+  Check,
+  Cloud,
   Database,
   GitBranch,
-  Cloud,
+  Github,
+  Globe,
+  GraduationCap,
   Layers,
+  Linkedin,
   Loader2,
+  Mail,
+  MapPin,
+  Menu,
+  Monitor,
+  Terminal,
+  X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
 import { WritingShowcase } from '@/components/writing-showcase';
+import { sortedArticles } from '@/lib/articles';
 
-const LINKEDIN_URL = 'https://www.linkedin.com/in/mattkari';
-const GITHUB_URL = 'https://github.com/mattkari';
-const EMAIL = 'mattkarimov@outlook.com';
 const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
+const GITHUB_URL = 'https://github.com/mattkari';
+const LINKEDIN_URL = 'https://www.linkedin.com/in/mattkari';
+const EMAIL = 'mattkarimov@outlook.com';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
+
+// ---------------------------------------------------------------------------
+// Small shared pieces so every section speaks the same design language:
+// dark navy, one gold accent, Playfair Display for display type.
+// ---------------------------------------------------------------------------
+
+function Kicker({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-amber-300/80">{children}</p>
+  );
+}
+
+function SectionHeading({
+  kicker,
+  title,
+  italic,
+  sub,
+}: {
+  kicker: string;
+  title: string;
+  italic?: string;
+  sub?: string;
+}) {
+  return (
+    <div className="mb-14 max-w-3xl">
+      <Kicker>{kicker}</Kicker>
+      <h2 className="font-display text-3xl leading-tight text-white sm:text-4xl">
+        {title} {italic && <span className="italic text-slate-400">{italic}</span>}
+      </h2>
+      <div aria-hidden="true" className="mt-5 h-px w-16 bg-amber-300/60" />
+      {sub && <p className="mt-5 text-lg leading-relaxed text-slate-300">{sub}</p>}
+    </div>
+  );
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full border border-white/15 px-2.5 py-0.5 text-[0.72rem] tracking-wide text-slate-300">
+      {children}
+    </span>
+  );
+}
+
+function CheckItem({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-3">
+      <Check size={16} aria-hidden="true" className="mt-1 shrink-0 text-amber-300" />
+      <span className="text-sm leading-relaxed text-slate-300">{children}</span>
+    </li>
+  );
+}
 
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isWritingOpen, setIsWritingOpen] = useState(false);
+  const [status, setStatus] = useState<FormStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+
+  // Injected at build time from the WEB3FORMS_ACCESS_KEY repo secret. Without it
+  // there is nowhere for submissions to go, so the form renders in a disabled
+  // state pointing at the email address instead of failing silently.
+  const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
+  const isFormEnabled = Boolean(accessKey);
+
+  const navLinks = [
+    { name: 'About', href: '#about' },
+    { name: 'Projects', href: '#projects' },
+    { name: 'Writing', href: '#writing' },
+    { name: 'Experience', href: '#experience' },
+    { name: 'Contact', href: '#contact' },
+  ];
 
   // Arriving at /#writing (or clicking the Writing nav link) opens the essay list.
   useEffect(() => {
@@ -50,38 +118,12 @@ export default function Home() {
     window.addEventListener('hashchange', openIfWriting);
     return () => window.removeEventListener('hashchange', openIfWriting);
   }, []);
-  const [status, setStatus] = useState<FormStatus>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    message: '',
-  });
-
-  // Injected at build time from the WEB3FORMS_ACCESS_KEY repo secret. Without it
-  // there is nowhere for submissions to go, so the form renders in a disabled
-  // state pointing at the email address instead of failing silently.
-  const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY;
-  const isFormEnabled = Boolean(accessKey);
-
-  const navLinks = [
-    { name: 'Home', href: '#home' },
-    { name: 'About', href: '#about' },
-    { name: 'Projects', href: '#projects' },
-    { name: 'Writing', href: '#writing' },
-    { name: 'Skills', href: '#skills' },
-    { name: 'Experience', href: '#experience' },
-    { name: 'Education', href: '#education' },
-    { name: 'Contact', href: '#contact' },
-  ];
 
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -124,54 +166,54 @@ export default function Home() {
   };
 
   const differentiators = [
-    'Source-grounded RAG — page-level citations, honest refusal',
-    'MCP servers connecting LLM tooling to real systems',
-    'PhD-level source analysis (Durham, 2017)',
-    'Banking QA: API, Kafka, database & UI validation',
-    'Payments domain (SEPA & Instant Payments)',
-    'CI/CD, Docker & self-hosted deployment on ARM',
+    'Source-grounded RAG with page-level citations',
+    'MCP servers connecting LLMs to real systems',
+    'LLM evaluation and grounding checks',
+    'Banking QA: API, Kafka, database and UI',
+    'Payments domain (SEPA and instant payments)',
+    'CI/CD, Docker and self-hosting on ARM',
   ];
 
   const skillGroups = [
     {
       icon: Bot,
-      title: 'AI & LLM Engineering',
-      items: ['Python', 'RAG pipelines', 'Embeddings & vector retrieval', 'pgvector', 'Prompt design', 'MCP servers', 'Claude / Anthropic API', 'Streamlit', 'LLM evaluation & grounding checks'],
+      title: 'AI and LLM engineering',
+      items: ['Python', 'RAG pipelines', 'Embeddings and vector retrieval', 'pgvector', 'Prompt design', 'MCP servers', 'Claude / Anthropic API', 'Streamlit', 'LLM evaluation'],
     },
     {
       icon: Terminal,
-      title: 'Programming & Frameworks',
+      title: 'Programming and frameworks',
       items: ['Java (OOP)', 'Ruby', 'TestNG', 'JUnit', 'Cucumber BDD', 'JBehave'],
     },
     {
       icon: Layers,
-      title: 'API & Integration Testing',
+      title: 'API and integration testing',
       items: ['REST Assured', 'Karate', 'Postman', 'REST APIs', 'JSON / XML', 'Kafka event validation'],
     },
     {
       icon: Monitor,
-      title: 'Test & UI Automation',
-      items: ['Selenium WebDriver', 'Playwright', 'Page Object Model', 'BDD / TDD', 'E2E & exploratory'],
+      title: 'Test and UI automation',
+      items: ['Selenium WebDriver', 'Playwright', 'Page Object Model', 'BDD / TDD', 'E2E and exploratory'],
     },
     {
       icon: Database,
-      title: 'Database Testing',
+      title: 'Database testing',
       items: ['SQL', 'MongoDB'],
     },
     {
       icon: GitBranch,
-      title: 'CI/CD & Version Control',
+      title: 'CI/CD and version control',
       items: ['Jenkins', 'GitLab CI/CD', 'Maven', 'Docker', 'Kubernetes', 'Git', 'GitLab', 'Bitbucket'],
     },
     {
       icon: Cloud,
-      title: 'Cloud & Architecture',
-      items: ['AWS (EC2)', 'Microservices', 'Distributed Systems'],
+      title: 'Cloud and architecture',
+      items: ['AWS (EC2)', 'Microservices', 'Distributed systems'],
     },
     {
       icon: Briefcase,
-      title: 'Domain & Methodology',
-      items: ['Financial Services', 'Payments & Banking', 'Agile Scrum', 'SDLC / STLC', 'Jira'],
+      title: 'Domain and methodology',
+      items: ['Financial services', 'Payments and banking', 'Agile Scrum', 'SDLC / STLC', 'Jira'],
     },
   ];
 
@@ -179,212 +221,193 @@ export default function Home() {
     {
       title: 'Test Automation Engineer',
       company: 'Barclays Investment Bank, UK',
-      period: '02/2026 – Present',
+      period: 'Feb 2026 – Present',
       highlights: [
-        'Developed multiple MCP (Model Context Protocol) servers connecting LLM tooling to internal systems, including SQL, Atlassian, GitLab, and Playwright integrations',
+        'Developed multiple MCP (Model Context Protocol) servers connecting LLM tooling to internal systems, including SQL, Atlassian, GitLab and Playwright integrations',
         'Built a Karate Test Assistant RAG tool grounded in framework docs and test code to support API test authoring and debugging',
         'Architected UI test automation using Playwright with Java for a global investment bank platform',
         'Built the Karate Framework for API testing, streamlining backend and service-level test coverage',
       ],
-      technologies: ['Playwright', 'Java', 'Karate Framework', 'MCP', 'RAG', 'SQL', 'GitLab'],
+      technologies: ['Playwright', 'Java', 'Karate', 'MCP', 'RAG', 'SQL', 'GitLab'],
     },
     {
       title: 'Quality Automation Specialist',
       company: 'NatWest Group, UK',
-      period: '02/2022 – 01/2026',
+      period: 'Feb 2022 – Jan 2026',
       highlights: [
-        "Led testing of NatWest's ICON IPF (Integration Processing Framework) platform for 3+ years, becoming a subject matter expert in integration framework testing and payment processing workflows",
-        'Enhanced the IPF test framework by introducing the REST Assured library for API testing and implementing the Strategy Pattern to improve maintainability and code reusability',
-        'Built and maintained automation frameworks covering backend, API, and database testing for SEPA and instant payment systems',
-        'Spearheaded a BDD automation approach using JBehave and Cucumber, translating JIRA business requirements into executable test scenarios',
-        'Integrated automated tests into CI/CD pipelines using Jenkins and GitLab CI/CD for continuous testing and rapid feedback',
-        'Pioneered integrating the test framework with Docker and Kubernetes for consistent, containerized test environments',
+        "Led testing of NatWest's ICON IPF platform for 3+ years, becoming the subject-matter expert in integration framework testing and payment processing workflows",
+        'Enhanced the IPF test framework with REST Assured and the Strategy Pattern, improving maintainability and reuse',
+        'Built automation covering backend, API and database testing for SEPA and instant payment systems',
+        'Spearheaded BDD automation with JBehave and Cucumber, turning JIRA requirements into executable scenarios',
+        'Integrated tests into CI/CD with Jenkins and GitLab CI/CD for continuous testing and rapid feedback',
+        'Pioneered Docker and Kubernetes integration for consistent, containerised test environments',
       ],
-      technologies: ['ICON IPF', 'Java', 'Selenium', 'JBehave', 'Cucumber BDD', 'JUnit', 'REST Assured', 'SQL', 'Docker', 'Kubernetes', 'Jenkins', 'GitLab CI/CD'],
+      technologies: ['ICON IPF', 'Java', 'Selenium', 'JBehave', 'Cucumber', 'REST Assured', 'SQL', 'Docker', 'Kubernetes', 'Jenkins', 'GitLab CI'],
     },
     {
       title: 'QA Automation Engineer',
       company: 'Amplience, UK',
-      period: '04/2021 – 01/2022',
+      period: 'Apr 2021 – Jan 2022',
       highlights: [
-        'Designed and implemented a test automation framework using Java, Selenium WebDriver, Cucumber BDD, TestNG, and the Page Object Model',
-        'Integrated automated tests into CI/CD build processes using Jenkins on AWS EC2',
+        'Designed and implemented a test automation framework using Java, Selenium WebDriver, Cucumber BDD, TestNG and the Page Object Model',
+        'Integrated automated tests into CI/CD builds using Jenkins on AWS EC2',
         'Conducted API testing with REST Assured and Postman, validating REST APIs and JSON schemas',
-        'Performed database testing with MongoDB, verifying data consistency and integrity across integrated systems',
-        'Executed exploratory, integration, E2E, smoke, regression, and UI testing across the product',
+        'Performed MongoDB database testing, verifying data consistency across integrated systems',
       ],
-      technologies: ['Java', 'Ruby', 'Selenium', 'Cucumber BDD', 'TestNG', 'REST Assured', 'Postman', 'MongoDB', 'Jenkins', 'AWS EC2'],
+      technologies: ['Java', 'Ruby', 'Selenium', 'Cucumber', 'TestNG', 'REST Assured', 'Postman', 'MongoDB', 'Jenkins', 'AWS EC2'],
     },
     {
-      title: 'Complaints Manager (Testing & Validation Focus)',
+      title: 'Complaints Manager (Testing and Validation Focus)',
       company: 'Lloyds Banking Group, UK',
-      period: '11/2017 – 01/2021',
+      period: 'Nov 2017 – Jan 2021',
       highlights: [
-        'Led manual and automated testing of banking redress calculators for Asset Finance Payment Protection Insurance claims',
-        'Performed SQL database testing and data-driven validation to improve accuracy of claim processes',
-        'Served as Subject Matter Expert in redress calculations, training team members on testing best practices',
+        'Led manual and automated testing of banking redress calculators for Asset Finance PPI claims',
+        'Performed SQL database testing and data-driven validation to improve claim accuracy',
+        'Served as subject-matter expert in redress calculations, training team members on testing practice',
       ],
-      technologies: ['Manual Testing', 'SQL', 'Financial Services', 'Outcome Testing'],
+      technologies: ['Manual testing', 'SQL', 'Financial services', 'Outcome testing'],
     },
     {
       title: 'Quality Assurance Representative',
       company: 'HSBC, Leeds, UK',
-      period: '05/2017 – 11/2017',
+      period: 'May 2017 – Nov 2017',
       highlights: [
-        'Conducted manual testing, verification, and validation on complex financial calculators for PPI complaints',
+        'Conducted manual testing, verification and validation on complex financial calculators for PPI complaints',
         'Performed SQL database testing and data reviews to ensure accuracy in the banking domain',
       ],
-      technologies: ['Manual Testing', 'SQL', 'Banking Compliance'],
+      technologies: ['Manual testing', 'SQL', 'Banking compliance'],
     },
   ];
 
   const stats = [
-    { value: '5+', label: 'Years in Banking QA & Test Automation' },
-    { value: 'PhD', label: 'Durham University, 2017' },
-    { value: '3', label: 'LLM-Integrated Systems Built' },
-    { value: `${skillGroups.reduce((total, group) => total + group.items.length, 0)}+`, label: 'Tools & Technologies' },
+    { value: '5+', label: 'Years in banking QA' },
+    { value: String(sortedArticles.length), label: 'Published technical essays' },
+    { value: 'PhD', label: 'Durham, 2017' },
   ];
 
   const projects = [
     {
       name: 'Source-Grounded RAG Research Assistant',
       tag: 'Flagship · Open source',
+      image: '/images/projects/sgrag.png',
+      imageAlt: 'The source-grounded research assistant answering a question with page-level citations',
       repo: 'https://github.com/mattkari/source-grounded-rag',
-      repoLabel: 'github.com/mattkari/source-grounded-rag',
-      liveUrl: null,
-      liveLabel: '',
       description:
-        'A scholarly research assistant built to reduce and expose hallucination. It answers only from an authorised corpus, cites at printed-page level, separates AI interpretation from source claims, and refuses plainly when evidence is insufficient — refusal phrased as a statement about the collection, not the world.',
+        'A scholarly research assistant built to reduce and expose hallucination. It answers only from an authorised corpus, cites at printed-page level, separates AI interpretation from source claims, and refuses plainly when evidence is insufficient.',
       evidence: [
-        'Live-verified behaviour: an answerable question returned SUFFICIENT with 7 definitions cited across 5 page ranges; an out-of-corpus question was refused as retrieval scores collapsed from 0.77 to 0.11',
-        'Presented at ITCC-2026 (conference deck + speaker notes)',
-        'Corpus swapped Sönmez → my own 288-page PhD thesis (294 chunks) via a branch and PR — the architecture is corpus-agnostic by design',
+        'Verified live: an answerable question returned 7 cited definitions across 5 page ranges; an out-of-corpus question was refused as retrieval scores collapsed from 0.77 to 0.11',
+        'Presented at ITCC-2026 (conference deck and speaker notes)',
+        'Corpus swapped to my own 288-page PhD thesis via a branch and PR — corpus-agnostic by design',
       ],
-      status: 'In use for my own research; Medium case study in progress',
-      technologies: ['Python', 'Retrieval & embeddings', 'Anthropic API', 'Streamlit', 'Docker', 'Evaluation'],
+      status: 'In use for my own research',
+      technologies: ['Python', 'Retrieval', 'Anthropic API', 'Streamlit', 'Docker', 'Evaluation'],
     },
     {
-      name: 'Family Finance — Self-Hosted on Raspberry Pi 5',
+      name: 'Family Finance, Self-Hosted',
       tag: 'Private repo · Home infrastructure',
+      image: '/images/projects/family-finance.png',
+      imageAlt: 'Verified metrics from the family-finance system: transfers excluded, tests green, backups nightly',
       repo: null,
-      repoLabel: '',
-      liveUrl: null,
-      liveLabel: '',
       description:
-        'A self-hosted household finance system that replaced a Google Sheets workflow: FastAPI, PostgreSQL/pgvector, Redis + Celery, React, deployed with Docker Compose on a Raspberry Pi 5. Six bank-statement formats are parsed with each row reconciled against the statement\u2019s own totals; transfers between the household\u2019s own accounts are detected and excluded so moving money is never counted as income.',
+        'A self-hosted household finance system that replaced a Google Sheets workflow: FastAPI, PostgreSQL/pgvector, Redis and Celery, React, deployed with Docker Compose on a Raspberry Pi 5. Six bank-statement formats are parsed, each row reconciled against the statement totals, and transfers between the household’s own accounts are excluded so moving money is never counted as income.',
       evidence: [
-        '354 backend and 214 frontend tests green in CI (repo is private — figures from the repository)',
+        '354 backend and 214 frontend tests green in CI',
         'One real month verified: £9,174.62 of internal transfers correctly excluded from spending and income',
-        'HTTPS from a private CA on the home network; nightly paired backups of database and statement PDFs',
+        'Nightly paired backups of database and statement PDFs; HTTPS from a private CA',
       ],
-      status: 'Private by design (household financial data) — happy to walk through the architecture',
-      technologies: ['FastAPI', 'PostgreSQL + pgvector', 'Celery', 'React', 'Docker', 'Raspberry Pi'],
+      status: 'Private by design — architecture walkthrough on request',
+      technologies: ['FastAPI', 'PostgreSQL', 'Celery', 'React', 'Docker', 'Raspberry Pi'],
     },
     {
-      name: 'AI-Assisted Crypto Trading Bot — Live on Raspberry Pi 5',
-      tag: 'Private repo · Deployed on Raspberry Pi 5',
+      name: 'AI-Assisted Crypto Signal Engine',
+      tag: 'Private repo · Live on Raspberry Pi 5',
+      image: '/images/projects/crypto.png',
+      imageAlt: 'The crypto signal engine dashboard showing live indicators and condition scores',
       repo: null,
-      repoLabel: '',
-      liveUrl: null,
-      liveLabel: '',
       description:
-        'A position-aware trading bot for Binance Spot, dockerised and deployed on a Raspberry Pi 5 with start/stop control from Telegram. A dual-mode strategy engine (trend-following in bull regimes, mean-reversion in bear) sits behind three mandatory macro gates and eight technical indicators, with ATR-based stops and three-tranche scaled exits. An LLM analyst (GLM via the Z.AI API) arbitrates borderline signals — but only borderline ones, and only at 80%+ stated confidence; hard RSI risk guards are rules the AI can never override. Two-way Telegram control for start/stop/status/live signals from a phone.',
+        'A position-aware trading engine for Binance Spot, dockerised on a Raspberry Pi 5 with Telegram control. A dual-mode strategy engine sits behind three macro gates and eight indicators, with ATR-based stops. An LLM analyst arbitrates borderline signals only, at 80%+ stated confidence; hard risk guards are rules the AI can never override.',
       evidence: [
-        'Live Docker container with auto-restart and a Telegram health check — verified running and healthy on the Pi (up 6+ days, zero restarts)',
-        'Backtester mirrors the live strategy logic exactly: a 1,000-candle dual-mode replay (live fetch + both strategy modes compared) completes in ~12 seconds on the Pi',
-        'The AI is confidence-gated by design: it receives a 24-candle market summary and can only move borderline rule scores (3\u20135/7), never bypass a risk guard',
+        'Live container with auto-restart and a Telegram health check — up 6+ days, zero restarts',
+        'A 1,000-candle dual-mode backtest replay completes in about 12 seconds on the Pi',
+        'The LLM analyst is confidence-gated by design: borderline scores only, never a risk guard',
       ],
-      status: 'Private (live trading and API keys) — architecture walkthrough on request',
-      technologies: ['Python', 'ccxt / Binance Spot', 'GLM (Z.AI API)', 'Telegram Bot API', 'Docker', 'Raspberry Pi'],
+      status: 'Read-only signal engine — architecture walkthrough on request',
+      technologies: ['Python', 'ccxt', 'GLM API', 'Telegram', 'Docker', 'Raspberry Pi'],
     },
     {
-      name: 'EcoHaven Boots — Live E-Commerce Platform',
+      name: 'EcoHaven Boots, Live E-Commerce',
       tag: 'In production · Real small business',
+      image: '/images/projects/ecohaven.png',
+      imageAlt: 'The EcoHaven Boots storefront: handcrafted leather baby boots',
       repo: null,
-      repoLabel: '',
       liveUrl: 'https://ecohavenboots.co.uk',
-      liveLabel: 'ecohavenboots.co.uk',
       description:
-        'A production e-commerce platform for a handmade leather baby boots business — customer storefront with search and filtering, cart, and Stripe checkout in GBP; an admin panel for product, order and media management behind iron-session auth. Built with Next.js 14 (App Router, server components) and TypeScript over Prisma, deployed as a Docker multi-stage build behind Nginx and a Cloudflare Tunnel, running on the Raspberry Pi 5.',
+        'A production e-commerce platform for a handmade leather baby boots business: storefront with search and filtering, cart and Stripe checkout in GBP, and an admin panel behind iron-session auth. Next.js 14 with server components over Prisma, deployed as a Docker multi-stage build behind Nginx and a Cloudflare Tunnel on the Raspberry Pi 5.',
       evidence: [
         'Live right now at ecohavenboots.co.uk — a real public URL, not a screenshot',
-        'Payments correctness hardened in documented phases: Stripe webhook idempotency and payment_status gating, stock decrement on capture, consistent GBP pricing and shipping thresholds',
-        'Security hardening shipped: upload type validation and path-traversal sanitisation, required session secret (no fallback), 50MB body limits, sameSite cookies',
-        'Documented REST API surface: products, orders, admin auth, file upload, Stripe webhooks',
+        'Payments hardened in phases: Stripe webhook idempotency, stock decrement on capture, consistent GBP pricing',
+        'Security shipped: upload validation and path sanitisation, required session secret, sameSite cookies',
       ],
-      status: 'Operating in production for a real business — source private',
-      technologies: ['Next.js 14', 'TypeScript', 'Prisma', 'Stripe', 'Docker', 'Nginx', 'Cloudflare Tunnel', 'Raspberry Pi'],
+      status: 'Operating in production for a real business',
+      technologies: ['Next.js 14', 'TypeScript', 'Prisma', 'Stripe', 'Docker', 'Nginx'],
     },
   ];
 
   const education = [
-    {
-      program: 'Full Stack Automation Tester (SDET) Program',
-      school: 'Cydeo, Virginia, USA',
-      year: '2020',
-    },
-    {
-      program: 'PhD in Governance and International Affairs',
-      school: 'Durham University, UK',
-      year: '2017',
-    },
-    {
-      program: 'MA in Public Administration',
-      school: 'JMI Central University, New Delhi, India',
-      year: '2006',
-    },
-    {
-      program: 'BA in Legal Studies',
-      school: 'TIU University, Tashkent, Uzbekistan',
-      year: '2003',
-    },
+    { program: 'Full Stack Automation Tester (SDET) Program', school: 'Cydeo, Virginia, USA', year: '2020' },
+    { program: 'PhD in Governance and International Affairs', school: 'Durham University, UK', year: '2017' },
+    { program: 'MA in Public Administration', school: 'JMI Central University, New Delhi, India', year: '2006' },
+    { program: 'BA in Legal Studies', school: 'TIU University, Tashkent, Uzbekistan', year: '2003' },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 to-background">
+    <div className="min-h-screen bg-slate-950">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-blue-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-md"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-amber-300 focus:text-slate-950 focus:px-4 focus:py-2 focus:rounded-md"
       >
         Skip to main content
       </a>
 
       {/* Navigation */}
-      <nav aria-label="Primary" className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-blue-100 shadow-sm">
+      <nav
+        aria-label="Primary"
+        className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-sm"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold text-lg">MK</span>
-              </div>
-              <span className="font-semibold text-lg text-blue-900 hidden sm:block">
-                Matt Karimov
+            <a href="#home" className="flex items-center space-x-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
+                MK
               </span>
-            </div>
+              <span className="hidden text-lg font-semibold text-white sm:block">Matt Karimov</span>
+            </a>
 
-            <div className="hidden md:flex items-center space-x-6">
+            <div className="hidden md:flex items-center space-x-7">
               {navLinks.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
                   onClick={() => link.href === '#writing' && setIsWritingOpen(true)}
-                  className="text-blue-800 hover:text-blue-600 transition-colors font-medium"
+                  className="text-sm font-medium text-slate-300 transition-colors hover:text-amber-300"
                 >
                   {link.name}
                 </a>
               ))}
               <Button
+                size="sm"
                 onClick={() => scrollTo('contact-form')}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-amber-300 text-slate-950 hover:bg-amber-200"
               >
-                Get In Touch
+                Get in touch
               </Button>
             </div>
 
             <button
-              className="md:hidden text-blue-800 hover:text-blue-600"
+              className="md:hidden text-slate-200 hover:text-amber-300"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label="Toggle menu"
+              aria-expanded={isMobileMenuOpen}
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -392,8 +415,8 @@ export default function Home() {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white border-t border-blue-100">
-            <div className="px-2 pt-2 pb-3 space-y-1">
+          <div className="md:hidden border-t border-white/10 bg-slate-950">
+            <div className="px-4 pt-2 pb-4 space-y-1">
               {navLinks.map((link) => (
                 <a
                   key={link.name}
@@ -402,20 +425,20 @@ export default function Home() {
                     setIsMobileMenuOpen(false);
                     if (link.href === '#writing') setIsWritingOpen(true);
                   }}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-blue-800 hover:text-blue-600 hover:bg-blue-50"
+                  className="block px-3 py-2.5 rounded-md text-base font-medium text-slate-200 hover:text-amber-300 hover:bg-white/5"
                 >
                   {link.name}
                 </a>
               ))}
-              <div className="px-3 py-2">
+              <div className="px-3 pt-2">
                 <Button
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full bg-amber-300 text-slate-950 hover:bg-amber-200"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     scrollTo('contact-form');
                   }}
                 >
-                  Get In Touch
+                  Get in touch
                 </Button>
               </div>
             </div>
@@ -424,568 +447,552 @@ export default function Home() {
       </nav>
 
       <main id="main-content">
-      {/* Hero */}
-      <section id="home" className="relative py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="mb-8 flex justify-center">
-            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-4xl">MK</span>
-            </div>
+        {/* Hero */}
+        <section
+          id="home"
+          className="relative overflow-hidden px-4 py-24 sm:px-6 lg:px-8 lg:py-32 scroll-mt-16"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-32 -top-40 h-[32rem] w-[32rem] rounded-full bg-blue-600/20 blur-3xl" />
+            <div className="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-amber-300/15 blur-3xl" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-blue-900 mb-6">
-            Matt Karimov
-          </h1>
-
-          <p className="text-xl sm:text-2xl text-blue-700 mb-4 font-medium">
-            Test Automation Engineer moving into AI Engineering
-          </p>
-
-          <p className="text-lg text-blue-800/80 mb-12 max-w-3xl mx-auto leading-relaxed">
-            I build systems whose answers show their evidence. Five years of banking
-            test automation at Barclays Investment Bank and NatWest — API, Kafka,
-            database and UI validation — now combined with hands-on LLM engineering:
-            a source-grounded RAG research assistant with page-level citations and
-            honest refusal, presented at ITCC-2026. PhD, Durham University. Based in
-            Manchester, United Kingdom.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 text-lg"
-              onClick={() => scrollTo('contact-form')}
-            >
-              Get In Touch
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-blue-600 text-blue-700 hover:bg-blue-50 px-8 py-6 text-lg"
-              onClick={() => scrollTo('experience')}
-            >
-              View Experience
-            </Button>
-          </div>
-
-          <div className="mt-16 grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-3xl sm:text-4xl font-bold text-blue-600">{stat.value}</p>
-                <p className="text-sm text-blue-800/70 mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* About */}
-      <section id="about" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">About Me</h2>
-            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
-          </div>
-
-          <div className="max-w-4xl mx-auto text-center space-y-6">
-            <p className="text-lg text-blue-800 leading-relaxed">
-              My path to AI engineering runs through evidence. A PhD on the Qur'anic
-              concept of justice (Durham, 2017) trained me to separate what a source
-              says from what I infer — the exact discipline a trustworthy LLM system
-              needs. Five years in banking QA taught me what regulated systems demand:
-              traceability, reconciliation, and claims you can verify. I am now
-              building AI systems with the same standard — grounded in authorised
-              sources, citing at page level, and refusing when the evidence runs out.
+          <div className="relative mx-auto max-w-5xl text-center">
+            <p className="mb-6 text-xs font-medium uppercase tracking-[0.3em] text-slate-400">
+              Matt Karimov · Test Automation Engineer · PhD, Durham
             </p>
-            <p className="text-lg text-blue-800 leading-relaxed">
-              Day to day I am a Test Automation Engineer at Barclays Investment Bank,
-              building MCP servers that connect LLM tooling to internal systems and a
-              RAG test assistant for API test authoring. Outside work I build and
-              self-host my own systems on a Raspberry Pi 5 — including a multi-bank
-              statement ingestion pipeline with per-row reconciliation. My target for
-              2026: an AI engineering role where source grounding, evaluation and
-              honesty about limits are the product, not an afterthought.
+            <h1 className="font-display text-4xl leading-[1.15] text-white sm:text-6xl">
+              Answers that <span className="italic text-amber-300">show their evidence.</span>
+            </h1>
+            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-300">
+              I build source-grounded AI tools for banking test teams. They cite their sources,
+              refuse when the evidence runs out, and prove what they claim.
             </p>
 
-            <div className="pt-4 flex flex-wrap justify-center gap-3">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Button
-                variant="outline"
-                className="border-blue-600 text-blue-700 hover:bg-blue-50"
-                onClick={() => window.open(LINKEDIN_URL, '_blank', 'noopener noreferrer')}
+                size="lg"
+                className="bg-amber-300 px-8 text-base font-semibold text-slate-950 hover:bg-amber-200"
+                onClick={() => scrollTo('contact-form')}
               >
-                <Linkedin size={18} className="mr-2" />
-                LinkedIn Profile
+                Get in touch
               </Button>
               <Button
+                size="lg"
                 variant="outline"
-                className="border-blue-600 text-blue-700 hover:bg-blue-50"
-                onClick={() => window.open(GITHUB_URL, '_blank', 'noopener noreferrer')}
+                className="border-white/30 px-8 text-base text-white hover:border-amber-300/60 hover:bg-white/5"
+                onClick={() => {
+                  setIsWritingOpen(true);
+                  scrollTo('writing');
+                }}
               >
-                <Github size={18} className="mr-2" />
-                GitHub Profile
+                Read the writing
               </Button>
             </div>
 
-            <div className="flex flex-wrap justify-center gap-3 pt-8">
-              {differentiators.map((item) => (
-                <Badge
-                  key={item}
-                  className="bg-blue-100 text-blue-800 hover:bg-blue-200 text-sm py-2 px-4"
-                >
-                  {item}
-                </Badge>
+            <div className="mx-auto mt-20 grid max-w-3xl grid-cols-3 gap-6 border-t border-white/10 pt-10">
+              {stats.map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <p className="font-display text-3xl text-amber-300 sm:text-4xl">{stat.value}</p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.15em] text-slate-400 sm:text-sm sm:normal-case sm:tracking-normal">
+                    {stat.label}
+                  </p>
+                </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Projects */}
-      <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">
-              Selected Projects — AI Systems With Evidence
-            </h2>
-            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
-            <p className="text-blue-800/70 mt-4 max-w-2xl mx-auto">
-              Every claim below is backed by a repo, a verified run, or a public
-              presentation — the standard I apply to the systems themselves.
-            </p>
+        {/* About */}
+        <section id="about" className="border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16">
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-12 lg:grid-cols-[1fr,2fr]">
+              <div>
+                <SectionHeading kicker="About" title="Evidence is" italic="the discipline" />
+              </div>
+              <div className="max-w-2xl">
+                <p className="text-lg leading-relaxed text-slate-300">
+                  My path to AI engineering runs through evidence. A PhD on the Qur&apos;anic
+                  concept of justice (Durham, 2017) trained me to separate what a source says
+                  from what I infer — the exact discipline a trustworthy LLM system needs. Five
+                  years in banking QA taught me what regulated systems demand: traceability,
+                  reconciliation, and claims you can verify.
+                </p>
+                <p className="mt-6 text-lg leading-relaxed text-slate-300">
+                  Day to day I am a Test Automation Engineer at Barclays Investment Bank, building
+                  MCP servers that connect LLM tooling to internal systems and a RAG test
+                  assistant for API test authoring. Outside work I build and self-host my own
+                  systems on a Raspberry Pi 5. My target for 2026: an AI engineering role where
+                  source grounding, evaluation and honesty about limits are the product.
+                </p>
+                <ul className="mt-8 flex flex-wrap gap-2.5" aria-label="What I bring">
+                  {differentiators.map((item) => (
+                    <li
+                      key={item}
+                      className="rounded-full border border-white/15 px-3.5 py-1.5 text-sm text-slate-300"
+                    >
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-8 flex flex-wrap gap-6 text-sm font-medium">
+                  <a
+                    href={LINKEDIN_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
+                  >
+                    <Linkedin size={16} aria-hidden="true" /> LinkedIn
+                  </a>
+                  <a
+                    href={GITHUB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
+                  >
+                    <Github size={16} aria-hidden="true" /> GitHub
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <div className="max-w-4xl mx-auto space-y-6">
-            {projects.map((project) => (
-              <Card key={project.name} className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+        {/* Projects */}
+        <section
+          id="projects"
+          className="border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16"
+        >
+          <div className="mx-auto max-w-7xl">
+            <SectionHeading
+              kicker="Portfolio"
+              title="Selected work —"
+              italic="systems with evidence"
+              sub="Every claim below is backed by a repo, a verified run, or a public presentation: the standard I apply to the systems themselves."
+            />
+
+            <div className="grid gap-8 lg:grid-cols-2">
+              {projects.map((project) => (
+                <article
+                  key={project.name}
+                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition-colors duration-300 hover:border-amber-300/30"
+                >
+                  <div className="overflow-hidden border-b border-white/10">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={project.image}
+                      alt={project.imageAlt}
+                      loading="lazy"
+                      className="aspect-[16/10] w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col p-7">
+                    <p className="mb-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-amber-300/90">
+                      {project.tag}
+                    </p>
+                    <h3 className="font-display text-xl leading-snug text-white sm:text-2xl">
+                      {project.name}
+                    </h3>
+                    <p className="mt-4 max-w-prose text-sm leading-relaxed text-slate-300">
+                      {project.description}
+                    </p>
+                    <ul className="mt-6 max-w-prose space-y-2.5">
+                      {project.evidence.map((item) => (
+                        <CheckItem key={item}>{item}</CheckItem>
+                      ))}
+                    </ul>
+                    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
+                      <ul className="flex flex-wrap gap-2">
+                        {project.technologies.map((tech) => (
+                          <li key={tech}>
+                            <Tag>{tech}</Tag>
+                          </li>
+                        ))}
+                      </ul>
+                      {project.repo ? (
+                        <a
+                          href={project.repo}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-amber-300 hover:text-amber-200"
+                        >
+                          <Github size={15} aria-hidden="true" /> Repo
+                        </a>
+                      ) : project.liveUrl ? (
+                        <a
+                          href={project.liveUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-amber-300 hover:text-amber-200"
+                        >
+                          <Globe size={15} aria-hidden="true" /> Visit
+                        </a>
+                      ) : (
+                        <span className="max-w-[16rem] text-right text-xs text-slate-500">
+                          {project.status}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Writing */}
+        <WritingShowcase open={isWritingOpen} onToggle={() => setIsWritingOpen((o) => !o)} />
+
+        {/* Experience */}
+        <section
+          id="experience"
+          className="border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16"
+        >
+          <div className="mx-auto max-w-7xl">
+            <SectionHeading kicker="Career" title="Professional" italic="experience" />
+
+            <div className="max-w-3xl space-y-5">
+              {experience.map((role) => (
+                <article
+                  key={role.title + role.company}
+                  className="rounded-2xl border border-white/10 bg-slate-900/60 p-7 transition-colors duration-300 hover:border-white/20"
+                >
+                  <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <CardTitle className="text-blue-900">{project.name}</CardTitle>
-                      <CardDescription className="text-blue-700 font-medium">
-                        {project.tag}
-                      </CardDescription>
+                      <h3 className="font-display text-xl text-white">{role.title}</h3>
+                      <p className="mt-1 text-sm font-medium text-amber-300/90">{role.company}</p>
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                    {project.repo && (
-                      <a
-                        href={project.repo}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-600 font-medium text-sm whitespace-nowrap self-start sm:self-auto"
-                      >
-                        <Github size={16} />
-                        {project.repoLabel}
-                      </a>
-                    )}
-                    {project.liveUrl && (
-                      <a
-                        href={project.liveUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-blue-700 hover:text-blue-600 font-medium text-sm whitespace-nowrap self-start sm:self-auto"
-                      >
-                        <Globe size={16} />
-                        {project.liveLabel}
-                      </a>
-                    )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-blue-800 leading-relaxed mb-5">{project.description}</p>
-                  <ul className="space-y-3 mb-5">
-                    {project.evidence.map((item) => (
-                      <li key={item} className="flex items-start gap-3">
-                        <Check className="text-blue-600 mt-1 flex-shrink-0" size={18} />
-                        <span className="text-blue-800">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="text-sm text-blue-600 font-medium mb-4">{project.status}</p>
-                  <div className="flex flex-wrap gap-2 pt-4 border-t border-blue-100">
-                    {project.technologies.map((tech) => (
-                      <Badge key={tech} variant="secondary" className="bg-blue-100 text-blue-800 font-normal">
-                        {tech}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Writing */}
-      <WritingShowcase open={isWritingOpen} onToggle={() => setIsWritingOpen((o) => !o)} />
-
-      {/* Skills */}
-      <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Core Technical Skills</h2>
-            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {skillGroups.map((group) => (
-              <Card key={group.title} className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                    <group.icon className="text-blue-600" size={24} />
-                  </div>
-                  <CardTitle className="text-blue-900 text-lg">{group.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {group.items.map((item) => (
-                      <Badge key={item} variant="secondary" className="bg-blue-100 text-blue-800 font-normal">
-                        {item}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Experience */}
-      <section id="experience" className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Professional Experience</h2>
-            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
-          </div>
-
-          <div className="max-w-4xl mx-auto space-y-6">
-            {experience.map((role) => (
-              <Card key={role.title + role.company} className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Briefcase className="text-blue-600" size={22} />
-                      </div>
-                      <div>
-                        <CardTitle className="text-blue-900">{role.title}</CardTitle>
-                        <CardDescription className="text-blue-700 font-medium">
-                          {role.company}
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="border-blue-300 text-blue-700 whitespace-nowrap self-start sm:self-auto">
+                    <span className="rounded-full border border-white/15 px-3 py-1 text-xs tracking-wide text-slate-300">
                       {role.period}
-                    </Badge>
+                    </span>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
+                  <ul className="max-w-prose space-y-2.5">
                     {role.highlights.map((item) => (
-                      <li key={item} className="flex items-start gap-3">
-                        <Check className="text-blue-600 mt-1 flex-shrink-0" size={18} />
-                        <span className="text-blue-800">{item}</span>
+                      <CheckItem key={item}>{item}</CheckItem>
+                    ))}
+                  </ul>
+                  <ul className="mt-6 flex flex-wrap gap-2 border-t border-white/10 pt-5">
+                    {role.technologies.map((tech) => (
+                      <li key={tech}>
+                        <Tag>{tech}</Tag>
                       </li>
                     ))}
                   </ul>
-                  <div className="flex flex-wrap gap-2 pt-5 mt-5 border-t border-blue-100">
-                    {role.technologies.map((tech) => (
-                      <Badge key={tech} variant="secondary" className="bg-blue-50 text-blue-700 font-normal">
-                        {tech}
-                      </Badge>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Stack and education */}
+        <section id="skills" className="border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16">
+          <div className="mx-auto max-w-7xl">
+            <SectionHeading kicker="Capabilities" title="The stack" />
+
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {skillGroups.map((group) => (
+                <div
+                  key={group.title}
+                  className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 transition-colors duration-300 hover:border-white/20"
+                >
+                  <group.icon size={22} aria-hidden="true" className="text-amber-300" />
+                  <h3 className="mt-4 font-semibold text-white">{group.title}</h3>
+                  <ul className="mt-4 flex flex-wrap gap-2">
+                    {group.items.map((item) => (
+                      <li key={item}>
+                        <Tag>{item}</Tag>
+                      </li>
                     ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+                  </ul>
+                </div>
+              ))}
+            </div>
 
-      {/* Education */}
-      <section id="education" className="py-20 px-4 sm:px-6 lg:px-8 bg-blue-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">
-              Education &amp; Professional Development
-            </h2>
-            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
-          </div>
-
-          <div className="grid sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
-            {education.map((item) => (
-              <Card key={item.program} className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <GraduationCap className="text-blue-600" size={24} />
-                    </div>
+            <div className="mt-16 max-w-3xl">
+              <h3 className="font-display text-2xl text-white">Education</h3>
+              <ul className="mt-6 divide-y divide-white/10 rounded-2xl border border-white/10 bg-slate-900/60 px-6">
+                {education.map((item) => (
+                  <li key={item.program} className="flex items-start gap-4 py-5">
+                    <GraduationCap
+                      size={20}
+                      aria-hidden="true"
+                      className="mt-1 shrink-0 text-amber-300"
+                    />
                     <div>
-                      <h3 className="font-semibold text-blue-900 mb-1">{item.program}</h3>
-                      <p className="text-blue-700 text-sm">{item.school}</p>
-                      <p className="text-blue-600 text-sm">{item.year}</p>
+                      <p className="font-medium text-white">{item.program}</p>
+                      <p className="mt-1 text-sm text-slate-400">
+                        {item.school} · {item.year}
+                      </p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Contact */}
-      <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Contact</h2>
-            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
+        {/* Contact */}
+        <section
+          id="contact"
+          className="relative overflow-hidden border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16"
+        >
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+            <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
           </div>
+          <div className="relative mx-auto max-w-7xl">
+            <SectionHeading
+              kicker="Contact"
+              title="Start a"
+              italic="conversation"
+              sub="Recruiters, hiring managers and anyone building source-grounded AI systems: the form goes straight to my inbox."
+            />
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            <div className="space-y-6">
-              <Card className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Mail className="text-blue-600" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-blue-900 mb-1">Email</h3>
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div className="space-y-4">
+                {[
+                  {
+                    icon: Mail,
+                    label: 'Email',
+                    content: (
                       <a
                         href={`mailto:${EMAIL}`}
-                        className="text-blue-700 hover:text-blue-600"
+                        className="text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
                       >
                         {EMAIL}
                       </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Linkedin className="text-blue-600" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-blue-900 mb-1">LinkedIn</h3>
+                    ),
+                  },
+                  {
+                    icon: Linkedin,
+                    label: 'LinkedIn',
+                    content: (
                       <a
                         href={LINKEDIN_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-700 hover:text-blue-600"
+                        className="text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
                       >
                         linkedin.com/in/mattkari
                       </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <Github className="text-blue-600" size={24} />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-blue-900 mb-1">GitHub</h3>
+                    ),
+                  },
+                  {
+                    icon: Github,
+                    label: 'GitHub',
+                    content: (
                       <a
                         href={GITHUB_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-blue-700 hover:text-blue-600"
+                        className="text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
                       >
                         github.com/mattkari
                       </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-blue-200 hover:shadow-lg transition-shadow">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <MapPin className="text-blue-600" size={24} />
-                    </div>
+                    ),
+                  },
+                ].map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex items-center gap-5 rounded-2xl border border-white/10 bg-slate-900/60 p-5"
+                  >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-amber-300/30 text-amber-300">
+                      <row.icon size={19} aria-hidden="true" />
+                    </span>
                     <div>
-                      <h3 className="font-semibold text-blue-900 mb-1">Location</h3>
-                      <p className="text-blue-700">Manchester, England</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{row.label}</p>
+                      <p className="mt-1">{row.content}</p>
                     </div>
                   </div>
+                ))}
+                <div className="flex items-center gap-5 rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 text-slate-300">
+                    <MapPin size={19} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Location</p>
+                    <p className="mt-1 text-slate-300">Manchester, England</p>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-amber-300/25 bg-amber-300/5 p-5">
+                  <p className="text-xs uppercase tracking-[0.2em] text-amber-300/80">
+                    Response time
+                  </p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-slate-300">
+                    Typically within 24 hours. For anything sensitive, email is best.
+                  </p>
+                </div>
+              </div>
+
+              <Card
+                id="contact-form"
+                className="scroll-mt-24 rounded-2xl border-white/10 bg-slate-900/60"
+              >
+                <CardHeader>
+                  <CardTitle className="font-display text-2xl text-white">Get in touch</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Typically replies within 24 hours.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {status === 'success' && (
+                    <Alert
+                      role="status"
+                      aria-live="polite"
+                      className="mb-6 border-emerald-800 bg-emerald-950/50 text-emerald-200"
+                    >
+                      <p className="font-medium">Message sent</p>
+                      <p>Thanks for getting in touch — I&apos;ll reply to you by email.</p>
+                    </Alert>
+                  )}
+
+                  {status === 'error' && (
+                    <Alert
+                      aria-live="assertive"
+                      className="mb-6 border-red-900 bg-red-950/50 text-red-200"
+                    >
+                      <p className="font-medium">Message not sent</p>
+                      <p>
+                        {errorMessage} You can email me directly at{' '}
+                        <a href={`mailto:${EMAIL}`} className="underline font-medium">
+                          {EMAIL}
+                        </a>
+                        .
+                      </p>
+                    </Alert>
+                  )}
+
+                  {!isFormEnabled && (
+                    <Alert
+                      aria-live="polite"
+                      className="mb-6 border-amber-800 bg-amber-950/40 text-amber-200"
+                    >
+                      <p className="font-medium">Contact form unavailable</p>
+                      <p>
+                        Please email me directly at{' '}
+                        <a href={`mailto:${EMAIL}`} className="underline font-medium">
+                          {EMAIL}
+                        </a>
+                        .
+                      </p>
+                    </Alert>
+                  )}
+
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* Honeypot: hidden from people, filled by bots — Web3Forms rejects those. */}
+                    <input
+                      type="checkbox"
+                      name="botcheck"
+                      className="hidden"
+                      tabIndex={-1}
+                      autoComplete="off"
+                    />
+                    <div className="space-y-2">
+                      <Label htmlFor="name" className="text-slate-300">
+                        Name *
+                      </Label>
+                      <Input
+                        id="name"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                        disabled={!isFormEnabled || status === 'submitting'}
+                        placeholder="Your name"
+                        className="border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-slate-300">
+                        Email *
+                      </Label>
+                      <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                        disabled={!isFormEnabled || status === 'submitting'}
+                        placeholder="you@example.com"
+                        className="border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="message" className="text-slate-300">
+                        Message *
+                      </Label>
+                      <Textarea
+                        id="message"
+                        name="message"
+                        value={formData.message}
+                        onChange={handleInputChange}
+                        required
+                        disabled={!isFormEnabled || status === 'submitting'}
+                        rows={5}
+                        className="resize-none border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
+                        placeholder="Your message..."
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={!isFormEnabled || status === 'submitting'}
+                      className="w-full bg-amber-300 py-6 text-base font-semibold text-slate-950 hover:bg-amber-200"
+                    >
+                      {status === 'submitting' ? (
+                        <>
+                          <Loader2 className="animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        'Send message'
+                      )}
+                    </Button>
+                  </form>
                 </CardContent>
               </Card>
             </div>
-
-            <Card id="contact-form" className="border-blue-200 scroll-mt-24">
-              <CardHeader>
-                <CardTitle className="text-blue-900">Get In Touch</CardTitle>
-                <CardDescription className="text-blue-700">
-                  Send a message via the contact form — typically replies within 24 hours
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {status === 'success' && (
-                  <Alert
-                    role="status"
-                    aria-live="polite"
-                    className="mb-6 bg-green-50 border-green-200 text-green-800"
-                  >
-                    <p className="font-medium">Message sent</p>
-                    <p>Thanks for getting in touch — I&apos;ll reply to you by email.</p>
-                  </Alert>
-                )}
-
-                {status === 'error' && (
-                  <Alert
-                    aria-live="assertive"
-                    className="mb-6 bg-red-50 border-red-200 text-red-800"
-                  >
-                    <p className="font-medium">Message not sent</p>
-                    <p>
-                      {errorMessage} You can email me directly at{' '}
-                      <a href={`mailto:${EMAIL}`} className="underline font-medium">
-                        {EMAIL}
-                      </a>
-                      .
-                    </p>
-                  </Alert>
-                )}
-
-                {!isFormEnabled && (
-                  <Alert
-                    aria-live="polite"
-                    className="mb-6 bg-amber-50 border-amber-200 text-amber-900"
-                  >
-                    <p className="font-medium">Contact form unavailable</p>
-                    <p>
-                      Please email me directly at{' '}
-                      <a href={`mailto:${EMAIL}`} className="underline font-medium">
-                        {EMAIL}
-                      </a>
-                      .
-                    </p>
-                  </Alert>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Honeypot: hidden from people, filled by bots — Web3Forms rejects those. */}
-                  <input
-                    type="checkbox"
-                    name="botcheck"
-                    className="hidden"
-                    tabIndex={-1}
-                    autoComplete="off"
-                  />
-                  <div className="space-y-2">
-                    <Label htmlFor="name" className="text-blue-900">Name *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                      disabled={!isFormEnabled || status === 'submitting'}
-                      placeholder="Your name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email" className="text-blue-900">Email *</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      required
-                      disabled={!isFormEnabled || status === 'submitting'}
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="message" className="text-blue-900">Message *</Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      value={formData.message}
-                      onChange={handleInputChange}
-                      required
-                      disabled={!isFormEnabled || status === 'submitting'}
-                      rows={5}
-                      className="resize-none"
-                      placeholder="Your message..."
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    disabled={!isFormEnabled || status === 'submitting'}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 text-lg"
-                  >
-                    {status === 'submitting' ? (
-                      <>
-                        <Loader2 className="animate-spin" />
-                        Sending...
-                      </>
-                    ) : (
-                      'Send Message'
-                    )}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
           </div>
-        </div>
-      </section>
+        </section>
       </main>
 
       {/* Footer */}
-      <footer className="bg-blue-950 text-white mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center space-y-6">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-2xl">MK</span>
-              </div>
-            </div>
-
+      <footer className="border-t border-white/10 bg-slate-950">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="flex flex-col items-center gap-6 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
+              MK
+            </span>
             <div>
-              <h3 className="text-2xl font-bold mb-2">Matt Karimov</h3>
-              <p className="text-blue-300">Test Automation Engineer → AI Engineer</p>
+              <p className="font-display text-xl text-white">Matt Karimov</p>
+              <p className="mt-1 text-sm text-slate-400">Test automation · AI engineering</p>
             </div>
-
-            <div className="flex flex-wrap justify-center gap-8 text-blue-200">
+            <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-400">
               <a
                 href={LINKEDIN_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-blue-100 transition-colors inline-flex items-center gap-2"
+                className="inline-flex items-center gap-2 transition-colors hover:text-amber-300"
               >
-                <Linkedin size={16} />
-                LinkedIn
+                <Linkedin size={15} aria-hidden="true" /> LinkedIn
               </a>
               <a
                 href={GITHUB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-blue-100 transition-colors inline-flex items-center gap-2"
+                className="inline-flex items-center gap-2 transition-colors hover:text-amber-300"
               >
-                <Github size={16} />
-                GitHub
+                <Github size={15} aria-hidden="true" /> GitHub
               </a>
               <a
                 href={`mailto:${EMAIL}`}
-                className="hover:text-blue-100 transition-colors inline-flex items-center gap-2"
+                className="inline-flex items-center gap-2 transition-colors hover:text-amber-300"
               >
-                <Mail size={16} />
-                {EMAIL}
+                <Mail size={15} aria-hidden="true" /> {EMAIL}
               </a>
             </div>
-
-            <div className="pt-6 border-t border-blue-800">
-              <p className="text-blue-400 text-sm">
+            <div className="w-full border-t border-white/10 pt-6">
+              <p className="text-xs text-slate-500">
                 © {new Date().getFullYear()} Matt Karimov. All rights reserved.
               </p>
             </div>
