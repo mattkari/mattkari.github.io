@@ -16,6 +16,20 @@ export const metadata: Metadata = {
     title: 'Writing | Matt Karimov',
     description: 'Practical, tested guides on AI quality, LLM evaluation, AI agents and test automation.',
     locale: 'en_GB',
+    images: [
+      {
+        url: `${SITE_URL}/og/default.png`,
+        width: 1200,
+        height: 630,
+        alt: 'Matt Karimov — answers that show their evidence',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Writing | Matt Karimov',
+    description: 'Practical, tested guides on AI quality, LLM evaluation, AI agents and test automation.',
+    images: [`${SITE_URL}/og/default.png`],
   },
 };
 

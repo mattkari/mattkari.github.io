@@ -7,6 +7,7 @@ import {
   Check,
   Cloud,
   Database,
+  Download,
   GitBranch,
   Github,
   Globe,
@@ -34,6 +35,12 @@ const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
 const GITHUB_URL = 'https://github.com/mattkari';
 const LINKEDIN_URL = 'https://www.linkedin.com/in/mattkari';
 const EMAIL = 'mattkarimov@outlook.com';
+// Rebuild with: python3 scripts/build-cv-pdf.py
+// Keep CV_VERSION in step with CV_VERSION in that script.
+const CV_URL = '/cv/matt-karimov-cv.pdf';
+const CV_VERSION = 'November 2026';
+const LOCATION = 'Liverpool, UK';
+const LOCATION_LONG = 'Liverpool, UK \u00b7 North West England';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -90,6 +97,7 @@ function CheckItem({ children }: { children: React.ReactNode }) {
 
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
   const [isWritingOpen, setIsWritingOpen] = useState(false);
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -108,6 +116,29 @@ export default function Home() {
     { name: 'Experience', href: '#experience' },
     { name: 'Contact', href: '#contact' },
   ];
+
+  // Highlight the nav link for whichever section is currently in view.
+  useEffect(() => {
+    const ids = ['about', 'projects', 'writing', 'experience', 'contact'];
+    const nodes = ids
+      .map((id) => document.getElementById(id))
+      .filter((n): n is HTMLElement => n !== null);
+    if (!nodes.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) setActiveSection(visible[0].target.id);
+      },
+      // a band across the upper-middle of the viewport, so the active link
+      // changes when a section genuinely occupies the reading area
+      { rootMargin: '-20% 0px -70% 0px', threshold: 0 },
+    );
+    nodes.forEach((n) => observer.observe(n));
+    return () => observer.disconnect();
+  }, []);
 
   // Arriving at /#writing (or clicking the Writing nav link) opens the essay list.
   useEffect(() => {
@@ -251,38 +282,27 @@ export default function Home() {
       highlights: [
         'Designed and implemented a test automation framework using Java, Selenium WebDriver, Cucumber BDD, TestNG and the Page Object Model',
         'Integrated automated tests into CI/CD builds using Jenkins on AWS EC2',
-        'Conducted API testing with REST Assured and Postman, validating REST APIs and JSON schemas',
-        'Performed MongoDB database testing, verifying data consistency across integrated systems',
+        'Validated REST APIs and JSON schemas with REST Assured and Postman, and verified data consistency in MongoDB',
       ],
       technologies: ['Java', 'Ruby', 'Selenium', 'Cucumber', 'TestNG', 'REST Assured', 'Postman', 'MongoDB', 'Jenkins', 'AWS EC2'],
     },
+  ];
+
+  // Kept, not deleted: removing them would leave an unexplained gap in the
+  // timeline. Compact because neither role is automation or AI work.
+  const earlierRoles = [
     {
       title: 'Complaints Manager (Testing and Validation Focus)',
       company: 'Lloyds Banking Group, UK',
       period: 'Nov 2017 – Jan 2021',
-      highlights: [
-        'Led manual and automated testing of banking redress calculators for Asset Finance PPI claims',
-        'Performed SQL database testing and data-driven validation to improve claim accuracy',
-        'Served as subject-matter expert in redress calculations, training team members on testing practice',
-      ],
-      technologies: ['Manual testing', 'SQL', 'Financial services', 'Outcome testing'],
+      scope: 'Manual and automated testing of banking redress calculators, with SQL data validation',
     },
     {
       title: 'Quality Assurance Representative',
       company: 'HSBC, Leeds, UK',
       period: 'May 2017 – Nov 2017',
-      highlights: [
-        'Conducted manual testing, verification and validation on complex financial calculators for PPI complaints',
-        'Performed SQL database testing and data reviews to ensure accuracy in the banking domain',
-      ],
-      technologies: ['Manual testing', 'SQL', 'Banking compliance'],
+      scope: 'Manual verification and SQL database testing of financial complaint calculators',
     },
-  ];
-
-  const stats = [
-    { value: '5+', label: 'Years in banking QA' },
-    { value: String(sortedArticles.length), label: 'Published technical essays' },
-    { value: 'PhD', label: 'Durham, 2017' },
   ];
 
   const projects = [
@@ -353,9 +373,17 @@ export default function Home() {
     },
   ];
 
+  // Three parallel counts. The PhD moved into the About copy: a credential in
+  // a numeric slot read as an inconsistency, and it is already stated below.
+  const stats = [
+    { value: '5+', label: 'Years in banking QA' },
+    { value: String(sortedArticles.length), label: 'Technical essays' },
+    { value: String(projects.length), label: 'Systems running' },
+  ];
+
   const education = [
     { program: 'Full Stack Automation Tester (SDET) Program', school: 'Cydeo, Virginia, USA', year: '2020' },
-    { program: 'PhD in Governance and International Affairs', school: 'Durham University, UK', year: '2017' },
+    { program: 'PhD in Governance and International Affairs', school: 'Durham University, UK', year: '2018 (thesis submitted 2017)' },
     { program: 'MA in Public Administration', school: 'JMI Central University, New Delhi, India', year: '2006' },
     { program: 'BA in Legal Studies', school: 'TIU University, Tashkent, Uzbekistan', year: '2003' },
   ];
@@ -384,16 +412,24 @@ export default function Home() {
             </a>
 
             <div className="hidden md:flex items-center space-x-7">
-              {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  onClick={() => link.href === '#writing' && setIsWritingOpen(true)}
-                  className="text-sm font-medium text-slate-300 transition-colors hover:text-amber-300"
-                >
-                  {link.name}
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                const isActive = link.href === `#${activeSection}`;
+                return (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    aria-current={isActive ? 'true' : undefined}
+                    onClick={() => link.href === '#writing' && setIsWritingOpen(true)}
+                    className={`border-b-2 pb-0.5 text-sm font-medium transition-colors ${
+                      isActive
+                        ? 'border-amber-300 text-amber-300'
+                        : 'border-transparent text-slate-300 hover:text-amber-300'
+                    }`}
+                  >
+                    {link.name}
+                  </a>
+                );
+              })}
               <Button
                 size="sm"
                 onClick={() => scrollTo('contact-form')}
@@ -454,7 +490,7 @@ export default function Home() {
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -left-32 -top-40 h-[32rem] w-[32rem] rounded-full bg-blue-600/20 blur-3xl" />
-            <div className="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-amber-300/15 blur-3xl" />
+            <div className="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-amber-200/20 blur-3xl" />
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           </div>
 
@@ -514,7 +550,7 @@ export default function Home() {
               <div className="max-w-2xl">
                 <p className="text-lg leading-relaxed text-slate-300">
                   My path to AI engineering runs through evidence. A PhD in governance and
-                  international affairs (Durham, 2017) trained me to work the way a
+                  international affairs (Durham, 2018) trained me to work the way a
                   trustworthy LLM system must: read sources closely, separate what a source
                   says from what I infer, and defend every claim. Five years in banking QA
                   taught me what regulated systems demand: traceability, reconciliation,
@@ -651,7 +687,26 @@ export default function Home() {
           className="border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16"
         >
           <div className="mx-auto max-w-7xl">
-            <SectionHeading kicker="Career" title="Professional" italic="experience" />
+            <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
+              <div className="max-w-3xl">
+                <Kicker>Career</Kicker>
+                <h2 className="font-display text-3xl leading-tight text-white sm:text-4xl">
+                  Professional <span className="italic text-slate-400">experience</span>
+                </h2>
+                <div aria-hidden="true" className="mt-5 h-px w-16 bg-amber-300/60" />
+              </div>
+              <a
+                href={CV_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                type="application/pdf"
+                download
+                className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-amber-300/60 hover:text-amber-300"
+              >
+                <Download size={15} aria-hidden="true" />
+                Download CV (PDF, {CV_VERSION})
+              </a>
+            </div>
 
             <div className="max-w-3xl space-y-5">
               {experience.map((role) => (
@@ -682,6 +737,26 @@ export default function Home() {
                   </ul>
                 </article>
               ))}
+
+              <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-7">
+                <h3 className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
+                  Earlier roles
+                </h3>
+                <ul className="mt-5 space-y-4">
+                  {earlierRoles.map((role) => (
+                    <li key={role.company}>
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                        <p className="font-medium text-slate-200">
+                          {role.title}
+                          <span className="text-slate-500"> · {role.company}</span>
+                        </p>
+                        <span className="text-xs tracking-wide text-slate-500">{role.period}</span>
+                      </div>
+                      <p className="mt-1 max-w-prose text-sm text-slate-400">{role.scope}</p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </section>
@@ -739,14 +814,14 @@ export default function Home() {
           className="relative overflow-hidden border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
+            <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-amber-200/20 blur-3xl" />
           </div>
           <div className="relative mx-auto max-w-7xl">
             <SectionHeading
               kicker="Contact"
               title="Start a"
               italic="conversation"
-              sub="Recruiters, hiring managers and anyone building source-grounded AI systems: the form goes straight to my inbox."
+              sub="Open to conversations about AI engineering and AI quality roles. The form goes straight to my inbox."
             />
 
             <div className="grid gap-8 lg:grid-cols-2">
@@ -812,11 +887,29 @@ export default function Home() {
                   </span>
                   <div>
                     <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Location</p>
-                    <p className="mt-1 text-slate-300">Manchester, England</p>
+                    <p className="mt-1 text-slate-300">{LOCATION_LONG}</p>
                   </div>
                 </div>
-                <div className="rounded-2xl border border-amber-300/25 bg-amber-300/5 p-5">
-                  <p className="text-xs uppercase tracking-[0.2em] text-amber-300/80">
+                <a
+                  href={CV_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  type="application/pdf"
+                  download
+                  className="flex items-center gap-5 rounded-2xl border border-amber-300/30 bg-amber-300/5 p-5 transition-colors hover:border-amber-300/60"
+                >
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-amber-300/40 text-amber-300">
+                    <Download size={19} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-amber-300/80">CV</p>
+                    <p className="mt-1 font-medium text-amber-300">
+                      Download CV (PDF, {CV_VERSION})
+                    </p>
+                  </div>
+                </a>
+                <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                     Response time
                   </p>
                   <p className="mt-1.5 text-sm leading-relaxed text-slate-300">

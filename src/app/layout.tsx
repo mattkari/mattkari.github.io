@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
   description:
-    "Test Automation Engineer at Barclays Investment Bank moving into AI engineering. Source-grounded RAG research assistant with page-level citations and honest refusal, presented at ITCC-2026. PhD, Durham University. Based in Manchester.",
+    "Source-grounded AI tools for banking test teams: page-level citations, honest refusal and measured results. Test automation engineer based in Liverpool, UK.",
   keywords: [
     "AI Engineer",
     "LLM Engineering",
@@ -26,26 +26,49 @@ export const metadata: Metadata = {
     "Karate",
     "Kafka",
     "Banking QA",
-    "Manchester",
+    "Liverpool",
+    "North West England",
   ],
   alternates: {
     canonical: SITE_URL,
+  },
+  manifest: "/site.webmanifest",
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "48x48" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
   openGraph: {
     type: "website",
     url: SITE_URL,
     siteName: "Matt Karimov — Portfolio",
+    images: [
+      {
+        url: `${SITE_URL}/og/default.png`,
+        width: 1200,
+        height: 630,
+        alt: "Matt Karimov — answers that show their evidence",
+      },
+    ],
     title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
     description:
       "Banking test automation (API, Kafka, DB, UI) + hands-on LLM engineering: a source-grounded RAG research assistant with page-level citations and honest refusal. PhD, Durham. Presented at ITCC-2026.",
     locale: "en_GB",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
+    images: [`${SITE_URL}/og/default.png`],
     title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
     description:
       "Banking QA + source-grounded RAG with page-level citations and honest refusal. PhD, Durham. ITCC-2026.",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#020617",
 };
 
 const personSchema = {
@@ -56,10 +79,10 @@ const personSchema = {
   email: "mailto:mattkarimov@outlook.com",
   jobTitle: "Test Automation Engineer",
   description:
-    "Test Automation Engineer at Barclays Investment Bank moving into AI engineering. Builds source-grounded LLM systems with page-level citations and honest refusal.",
+    "Builds source-grounded AI tools for banking test teams. They cite their sources, refuse when the evidence runs out, and prove what they claim.",
   address: {
     "@type": "PostalAddress",
-    addressLocality: "Manchester",
+    addressLocality: "Liverpool",
     addressCountry: "GB",
   },
   alumniOf: {
@@ -69,6 +92,9 @@ const personSchema = {
   knowsAbout: [
     "Source-Grounded RAG",
     "LLM Evaluation",
+    "Model Context Protocol",
+    "AI Quality Assurance",
+    "Retrieval-Augmented Generation",
     "Test Automation",
     "API Testing",
     "Kafka",
