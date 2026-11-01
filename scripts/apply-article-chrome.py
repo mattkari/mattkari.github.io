@@ -21,13 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ARTICLES = ROOT / "public" / "articles"
 
-FONTS = (
-    '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
-    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
-    "family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500"
-    '&display=swap">'
-)
+FONTS = ""  # fonts are self-hosted via @font-face in _article.css
 
 STYLESHEET = '<link rel="stylesheet" href="/articles/_article.css">'
 
@@ -80,7 +74,7 @@ def transform(html: str) -> str:
     html = OLD_FOOTER_RE.sub("", html)
     html = IMG_STYLE_RE.sub("", html)
 
-    head_block = f"{THEME_META}\n{FONTS}\n{STYLESHEET}\n"
+    head_block = f"{THEME_META}\n{STYLESHEET}\n"
     if "</head>" not in html:
         raise ValueError("no </head> found")
     html = html.replace("</head>", head_block + "</head>", 1)

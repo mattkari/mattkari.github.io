@@ -215,3 +215,21 @@ p em:only-child { font-size: 15px; color: var(--muted); font-style: italic; }
   h2 { font-size: 1.4rem; margin-top: 44px; }
   article { padding-top: 36px; }
 }
+
+/* Self-hosted copies of the same two families next/font serves to the app.
+   Source: out/_next/static/media (next/font/google latin subsets).
+   Refresh with: cp out/_next/static/media/<inter>.p.woff2 public/fonts/inter-latin.woff2 */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Playfair Display";
+  src: url("/fonts/playfair-latin.woff2") format("woff2");
+  font-weight: 400 900;
+  font-style: normal;
+  font-display: swap;
+}
