@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Menu,
   X,
@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert } from '@/components/ui/alert';
-import { formatDate, sortedArticles } from '@/lib/articles';
+import { WritingShowcase } from '@/components/writing-showcase';
 
 const LINKEDIN_URL = 'https://www.linkedin.com/in/mattkari';
 const GITHUB_URL = 'https://github.com/mattkari';
@@ -39,6 +39,17 @@ type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isWritingOpen, setIsWritingOpen] = useState(false);
+
+  // Arriving at /#writing (or clicking the Writing nav link) opens the essay list.
+  useEffect(() => {
+    const openIfWriting = () => {
+      if (window.location.hash === '#writing') setIsWritingOpen(true);
+    };
+    openIfWriting();
+    window.addEventListener('hashchange', openIfWriting);
+    return () => window.removeEventListener('hashchange', openIfWriting);
+  }, []);
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [formData, setFormData] = useState({
@@ -356,6 +367,7 @@ export default function Home() {
                 <a
                   key={link.name}
                   href={link.href}
+                  onClick={() => link.href === '#writing' && setIsWritingOpen(true)}
                   className="text-blue-800 hover:text-blue-600 transition-colors font-medium"
                 >
                   {link.name}
@@ -386,7 +398,10 @@ export default function Home() {
                 <a
                   key={link.name}
                   href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    if (link.href === '#writing') setIsWritingOpen(true);
+                  }}
                   className="block px-3 py-2 rounded-md text-base font-medium text-blue-800 hover:text-blue-600 hover:bg-blue-50"
                 >
                   {link.name}
@@ -602,39 +617,7 @@ export default function Home() {
       </section>
 
       {/* Writing */}
-      <section id="writing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-blue-900 mb-4">Writing</h2>
-            <div className="w-24 h-1 bg-blue-600 mx-auto"></div>
-            <p className="text-blue-800/70 mt-4 max-w-2xl mx-auto">
-              Tested, step-by-step guides on AI quality, AI agents and test automation.
-            </p>
-          </div>
-
-          <div className="max-w-4xl mx-auto grid gap-6 md:grid-cols-2">
-            {sortedArticles.slice(0, 4).map((a) => (
-              <a
-                key={a.slug}
-                href={`/articles/${a.slug}/`}
-                className="block border border-blue-200 rounded-xl p-6 hover:shadow-lg hover:border-blue-400 transition bg-blue-50/40"
-              >
-                <p className="text-sm text-blue-600 mb-2">
-                  <time dateTime={a.date}>{formatDate(a.date)}</time> · {a.readingMinutes} min read
-                </p>
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">{a.title}</h3>
-                <p className="text-blue-800 text-sm leading-relaxed">{a.summary}</p>
-              </a>
-            ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <a href="/writing" className="text-blue-700 hover:text-blue-600 font-medium underline">
-              All articles
-            </a>
-          </div>
-        </div>
-      </section>
+      <WritingShowcase open={isWritingOpen} onToggle={() => setIsWritingOpen((o) => !o)} />
 
       {/* Skills */}
       <section id="skills" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
