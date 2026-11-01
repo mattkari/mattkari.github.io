@@ -57,3 +57,23 @@ html {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--primary) / 0.8);
 }
+
+/* Writing section: thin gold scrollbar and soft fade at the list edges */
+.writing-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(252 211 77 / 0.45) transparent;
+}
+.writing-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.writing-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.writing-scroll::-webkit-scrollbar-thumb {
+  background: rgb(252 211 77 / 0.45);
+  border-radius: 9999px;
+}
+.fade-y {
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+}
