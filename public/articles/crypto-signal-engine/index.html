@@ -10,20 +10,21 @@
 <meta property="og:title" content="I turned my crypto trading bot into a signal engine that cannot trade. Here's how it reads BTC, ETH and ADA">
 <meta property="og:description" content="How a read-only crypto signal engine on a Raspberry Pi reads BTC, ETH and ADA: indicators, gates, a Telegram bot, live data, tests that prove it cannot trade, and what it cannot predict.">
 <meta property="og:image" content="https://mattkari.github.io/articles/crypto-signal-engine/img/01-dashboard-live-2026-10-23.png">
-<style>
-body{max-width:720px;margin:40px auto;padding:0 20px;font-family:Georgia,serif;font-size:19px;line-height:1.6;color:#222}
-h1{font-family:Arial,Helvetica,sans-serif;font-size:32px;line-height:1.25}
-h2{font-family:Arial,Helvetica,sans-serif;font-size:24px;margin-top:40px}
-code,pre{font-family:Menlo,Consolas,monospace;font-size:15px;background:#f4f4f4}
-pre{padding:12px;overflow-x:auto}
-blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444}
-.meta{color:#666;font-size:16px}
-table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;padding:4px 8px}
-</style>
+<meta name="theme-color" content="#020617">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap">
+<link rel="stylesheet" href="/articles/_article.css">
 </head>
 <body>
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+</div>
+</header>
 <article>
-<nav style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin-bottom:24px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></nav>
 <h1>I turned my crypto trading bot into a signal engine that cannot trade. Here's how it reads BTC, ETH and ADA</h1>
 <p><em>A test automation engineer's walkthrough of a read-only market signal engine on a Raspberry Pi: the indicators, the gates, the Telegram bot, the live data, and what it can and cannot tell you about the market.</em></p>
 <p>Matt Karimov · Test automation engineer · October 2026</p>
@@ -43,7 +44,7 @@ table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;paddin
 <p>The last trading-capable version is preserved at a git tag, so the history is honest and nothing is lost.</p>
 <h2>Live data first</h2>
 <p>This is the dashboard, captured from the running container on my Raspberry Pi on <strong>23 October 2026 at 19:43 UK time</strong>:</p>
-<p><img style="max-width:100%;height:auto;border:1px solid #ddd" loading="lazy" alt="Live dashboard on 23 Oct 2026: BTC, ETH and ADA all on HOLD" src="img/01-dashboard-live-2026-10-23.png" /></p>
+<p><img loading="lazy" alt="Live dashboard on 23 Oct 2026: BTC, ETH and ADA all on HOLD" src="img/01-dashboard-live-2026-10-23.png" /></p>
 <p>At that moment:</p>
 <table>
 <thead>
@@ -136,7 +137,7 @@ table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;paddin
 <li><strong>Mean-reversion:</strong> used otherwise. It looks for oversold bounces at support. A BUY needs <strong>5 of 7</strong> conditions.</li>
 </ul>
 <p>Here is the full mean-reversion scorecard for Bitcoin from the same run:</p>
-<p><img style="max-width:100%;height:auto;border:1px solid #ddd" loading="lazy" alt="BTC signal breakdown from the live container: score 3 of 7, HOLD" src="img/03-signal-breakdown-btc.png" /></p>
+<p><img loading="lazy" alt="BTC signal breakdown from the live container: score 3 of 7, HOLD" src="img/03-signal-breakdown-btc.png" /></p>
 <p>Bitcoin scored <strong>3 of 7</strong>:</p>
 <ul>
 <li><strong>Passed:</strong> buyers slightly outnumbered sellers (54%), MACD was rising, and volume was above average.</li>
@@ -178,7 +179,7 @@ table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;paddin
 </table>
 <p>There's deliberately no <code>/buy</code>, <code>/sell</code>, <code>/start</code>, <code>/stop</code> or <code>/balance</code>. Those existed when it was a trading bot and were deleted with the order code.</p>
 <p>This is the reply to <code>/signal btc</code>, rendered from the bot's own formatting function with the same live data:</p>
-<p><img style="max-width:100%;height:auto;border:1px solid #ddd" loading="lazy" alt="Telegram reply to /signal btc, rendered from the bot's formatter with live data" src="img/04-telegram-signal-btc-rendered.png" /></p>
+<p><img loading="lazy" alt="Telegram reply to /signal btc, rendered from the bot's formatter with live data" src="img/04-telegram-signal-btc-rendered.png" /></p>
 <p><em>Note: this image is rendered from the bot's real output text, not a phone screenshot.</em></p>
 <h3>Set up your own bot (5 minutes)</h3>
 <ol>
@@ -213,7 +214,7 @@ app.run_polling(drop_pending_updates=True)
 <p>A Raspberry Pi drops its connection now and then, so startup retries with a back-off (5s, 10s, 15s...). A global error handler logs Telegram's occasional "Bad Gateway" errors as one line rather than letting them crash the bot.</p>
 <h2>The dashboard and API</h2>
 <p>The second container is a small FastAPI app on port 8300, reachable only on my home network:</p>
-<p><img style="max-width:100%;height:auto;border:1px solid #ddd" loading="lazy" alt="Auto-generated API docs: four GET routes and nothing else" src="img/02-api-docs.png" /></p>
+<p><img loading="lazy" alt="Auto-generated API docs: four GET routes and nothing else" src="img/02-api-docs.png" /></p>
 <p>Every route is a GET. Sending a POST to <code>/api/signals</code> returns <strong>405 Method Not Allowed</strong>, which I checked on the running container. A background loop refreshes the signals every 5 minutes and stores them in memory, so page views never multiply calls to the exchange.</p>
 <pre><code class="language-bash">curl -s localhost:8300/api/signals/ada
 </code></pre>
@@ -288,5 +289,16 @@ curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8300/api/signals   # 40
 <p><em>I'm a test automation engineer working towards AI quality and LLM evaluation. The next step for this project is an evaluation harness for the LLM analyst, scored on schema validity, refusal on bad input and self-consistency rather than on market returns.</em></p>
 <hr><p class="meta"><a href="/writing">More articles</a> · <a href="/">About me</a></p>
 </article>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
 </body>
 </html>
