@@ -546,6 +546,22 @@ export default function Home() {
             <div className="grid gap-12 lg:grid-cols-[1fr,2fr]">
               <div>
                 <SectionHeading kicker="About" title="Evidence is" italic="the discipline" />
+                <figure className="mt-2 max-w-xs">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/matt-karimov.jpg"
+                    srcSet="/images/matt-karimov-sm.jpg 440w, /images/matt-karimov.jpg 880w"
+                    sizes="(max-width: 1024px) 60vw, 320px"
+                    alt="Matt Karimov"
+                    width={880}
+                    height={1100}
+                    loading="lazy"
+                    className="w-full rounded-2xl border border-white/10 object-cover shadow-2xl shadow-slate-950/60"
+                  />
+                  <figcaption className="mt-3 text-sm text-slate-500">
+                    Matt Karimov, {LOCATION}
+                  </figcaption>
+                </figure>
               </div>
               <div className="max-w-2xl">
                 <p className="text-lg leading-relaxed text-slate-300">
