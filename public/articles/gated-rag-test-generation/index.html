@@ -10,22 +10,21 @@
 <meta property="og:title" content="Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests">
 <meta property="og:description" content="A LangGraph pipeline that gathers test evidence through local, read-only MCP servers, puts two human gates around it, blocks generation when evidence is missing, and turns the model&#x27;s open questions into a BA-ready agenda.">
 <meta property="og:image" content="https://mattkari.github.io/articles/gated-rag-test-generation/img/pipeline.png">
-<style>
-body{max-width:760px;margin:40px auto;padding:0 20px;font-family:Georgia,serif;font-size:19px;line-height:1.6;color:#222}
-h1{font-family:Arial,Helvetica,sans-serif;font-size:32px;line-height:1.25}
-h2{font-family:Arial,Helvetica,sans-serif;font-size:24px;margin-top:40px}
-h3{font-family:Arial,Helvetica,sans-serif;font-size:20px;margin-top:28px}
-code,pre{font-family:Menlo,Consolas,monospace;font-size:14px;background:#f4f4f4}
-pre{padding:12px;overflow-x:auto}
-blockquote{border-left:3px solid #999;margin-left:0;padding-left:16px;color:#444}
-.meta{color:#666;font-size:16px}
-table{border-collapse:collapse;font-size:16px}td,th{border:1px solid #ccc;padding:4px 8px;text-align:left}
-p em:only-child{font-size:16px;color:#555}
-</style>
+<meta name="theme-color" content="#020617">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap">
+<link rel="stylesheet" href="/articles/_article.css">
 </head>
 <body>
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+</div>
+</header>
 <article>
-<nav style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin-bottom:24px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></nav>
 <h1>Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests</h1>
 <p class="meta">Dusmamat (Matt) Karimov · 30 October 2026 · 20 min read</p>
 <p><em>All system, service, endpoint, ticket and field names in this article, its screenshots and its diagrams are illustrative placeholders. The screenshots are mock-ups that reproduce the layout of the tool, not captures of it.</em></p>
@@ -197,11 +196,11 @@ p em:only-child{font-size:16px;color:#555}
 <p>A local web page (<code>/graph</code>) drives all of this: a form or JSON input, presets, an interactive view of the graph, panels for both gates, and artefact download.</p>
 <h2>What a run looks like</h2>
 <p>The three screens below follow one request through the graph. The step bar at the top of each screen shows where the run is: green steps are complete, and the red outline marks the current step.</p>
-<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Mock-up of the /graph page at Gate 1: the request form on the left, the preflight summary and the Gate 1 approval panel on the right" src="/articles/gated-rag-test-generation/img/01-request-gate1.png" /></p>
+<p><img loading="lazy" alt="Mock-up of the /graph page at Gate 1: the request form on the left, the preflight summary and the Gate 1 approval panel on the right" src="/articles/gated-rag-test-generation/img/01-request-gate1.png" /></p>
 <p><em>Figure 1. Request, preflight and Gate 1 (mock-up). The engineer fills in the target, the three story keys, the design page and an explicit repository selection. Preflight validates the request and states openly that repository freshness is unverified. Nothing is read until the scope is approved.</em></p>
-<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Mock-up of the /graph page at Gate 2 and the sufficiency check: the evidence pack table, the prompt budget bar, the Gate 2 panel and a sufficiency check that fails on the missing contract" src="/articles/gated-rag-test-generation/img/02-evidence-gate2.png" /></p>
+<p><img loading="lazy" alt="Mock-up of the /graph page at Gate 2 and the sufficiency check: the evidence pack table, the prompt budget bar, the Gate 2 panel and a sufficiency check that fails on the missing contract" src="/articles/gated-rag-test-generation/img/02-evidence-gate2.png" /></p>
 <p><em>Figure 2. Evidence pack, Gate 2 and the sufficiency check (mock-up). The pack shows each category's item count, source and status, including the truncated design page and existing tests taking 85% of the pack. The prompt is measured and hashed before approval. With the contract missing, check 3 fails and generation is blocked, which is the behaviour the first real run showed was not yet enforced.</em></p>
-<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Mock-up of the /graph page at the end of a run: five candidate tests with their tiers and open-question counts, the artefact list, and the open questions grouped by topic as a BA agenda" src="/articles/gated-rag-test-generation/img/03-results-questions.png" /></p>
+<p><img loading="lazy" alt="Mock-up of the /graph page at the end of a run: five candidate tests with their tiers and open-question counts, the artefact list, and the open questions grouped by topic as a BA agenda" src="/articles/gated-rag-test-generation/img/03-results-questions.png" /></p>
 <p><em>Figure 3. Results after a re-run with the contract supplied (mock-up). Five review-only candidates, now including two risk-based ones, each with a count of the questions blocking it. On the right, the open questions are grouped by topic and labelled: "needs decision" goes to the BA, while "should come from a document" points back to a gap in the evidence.</em></p>
 <h2>Open questions as a BA-ready agenda</h2>
 <p>The first real run produced five candidate tests and, alongside them, a list of open questions. Each question sits under the candidate test it blocks. The questions fell into a small number of recurring kinds. Illustrative versions, with placeholder field names, look like this:</p>
@@ -237,7 +236,7 @@ p em:only-child{font-size:16px;color:#555}
 <p>Two things have changed since the first version of this article. First, the tool now draws its own graph. Second, the plan has moved beyond review-only drafts: approved candidates will become test cases in Xray, the test management add-on for Jira. This section describes both, and it is explicit about what is built and what is not.</p>
 <h3>Seeing the graph</h3>
 <p>The local page now renders the LangGraph flow as a diagram (Figure 4). During a run, each step is coloured as not run, ran, waiting for approval, or ended after a rejection. Solid edges are always taken. Dashed edges are taken only when their label holds.</p>
-<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="The generation graph: thirteen nodes from START to END, with two approval gates drawn as diamonds, dashed edges for rejection and for the offline mode, and one model call at generate_candidates" src="/articles/gated-rag-test-generation/img/04-generation-graph.png" /></p>
+<p><img loading="lazy" alt="The generation graph: thirteen nodes from START to END, with two approval gates drawn as diamonds, dashed edges for rejection and for the offline mode, and one model call at generate_candidates" src="/articles/gated-rag-test-generation/img/04-generation-graph.png" /></p>
 <p><em>Figure 4. The generation graph of the review-only version, redrawn from the tool's local graph view with placeholder labels. Dashed edges are conditional: both gates can end the run, and in the offline "fakes" mode the flow skips the live client, the wiki and issue-tracker acquisition, and the sufficiency check.</em></p>
 <p>Drawing the graph turned out to be a review tool in its own right. The code expresses conditional paths as small routing functions, and they are easy to read past. The diagram shows them at a glance. Two dashed edges stand out:</p>
 <ol>
@@ -315,9 +314,19 @@ p em:only-child{font-size:16px;color:#555}
 <li>Pereira, A., Lima, B. and Faria, J.P. (2026) 'APITestGenie: generating web API tests from requirements and API specifications with LLMs', <em>AST '26</em>. ACM. https://doi.org/10.1145/3793654.3793743 (preprint: https://arxiv.org/abs/2604.02039)</li>
 </ul>
 <h2>Appendix: the whole process</h2>
-<p><img loading="lazy" style="max-width:100%;height:auto;border:1px solid #ddd" alt="Gated RAG test-generation pipeline: inputs and local MCP sources feed an 11-step LangGraph flow with two human gates, an evidence-sufficiency check and review-only outputs" src="/articles/gated-rag-test-generation/img/pipeline.png" /></p>
+<p><img loading="lazy" alt="Gated RAG test-generation pipeline: inputs and local MCP sources feed an 11-step LangGraph flow with two human gates, an evidence-sufficiency check and review-only outputs" src="/articles/gated-rag-test-generation/img/pipeline.png" /></p>
 <p><em>Figure 5. The pipeline end to end: inputs and the local, read-only MCP sources (top), the deterministic eleven-step flow with its two human gates (middle), and the API/UI differences, budget control, sufficiency rule and outputs (bottom).</em></p>
 </article>
-<footer style="font-family:Arial,Helvetica,sans-serif;font-size:16px;margin:48px 0 24px;border-top:1px solid #ddd;padding-top:16px"><a href="/">Matt Karimov</a> · <a href="/writing">All writing</a></footer>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
 </body>
 </html>
