@@ -11,6 +11,15 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'auditing-scheduled-ai-jobs',
+    title: 'Auditing Eight Scheduled AI Jobs: What Execution Status Does Not Measure',
+    summary:
+      'Eight scheduled AI jobs on a Raspberry Pi ran 293.71 times a day, and a single job accounted for 98.1 per cent of that. The audit cut the system to 4.71 runs a day, and found that the verification method failed four times before any job did.',
+    date: '2026-11-07',
+    readingMinutes: 7,
+    tags: ['AI agents', 'Automation', 'Observability', 'Decision models'],
+  },
+  {
     slug: 'gated-rag-test-generation',
     title: 'Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests',
     summary:
