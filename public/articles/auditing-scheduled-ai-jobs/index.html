@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Auditing Eight Scheduled AI Jobs: What Execution Status Does Not Measure</title>
+<meta name="description" content="Eight scheduled AI jobs on a Raspberry Pi ran 293.71 times a day, and one of them was 98.1 per cent of that. An audit cut the system to 4.71 runs a day and found that the verification method failed four times before the jobs did.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/auditing-scheduled-ai-jobs/">
+<meta property="og:title" content="Auditing Eight Scheduled AI Jobs: What Execution Status Does Not Measure">
+<meta property="og:description" content="Eight scheduled AI jobs on a Raspberry Pi ran 293.71 times a day, and one of them was 98.1 per cent of that. An audit cut the system to 4.71 runs a day and found that the verification method failed four times before the jobs did.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://mattkari.github.io/og/auditing-scheduled-ai-jobs.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Auditing Eight Scheduled AI Jobs: What Execution Status Does Not Measure">
+<meta name="twitter:description" content="Eight scheduled AI jobs on a Raspberry Pi ran 293.71 times a day, and one of them was 98.1 per cent of that. An audit cut the system to 4.71 runs a day and found that the verification method failed four times before the jobs did.">
+<meta name="twitter:image" content="https://mattkari.github.io/og/auditing-scheduled-ai-jobs.png">
+<meta name="theme-color" content="#020617">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap">
+<link rel="stylesheet" href="/articles/_article.css">
+</head>
+<body>
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+</div>
+</header>
+<article>
+<h1>Auditing Eight Scheduled AI Jobs: What Execution Status Does Not Measure</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 7 November 2026 · 7 min read</p>
+<p>A personal AI agent running on a Raspberry Pi had accumulated eight scheduled jobs over several months: compiling notes, producing a morning brief, monitoring a small shop for orders, digesting household finances, verifying database backups, triaging recruitment email, and scanning job boards. Each job had been created for a defensible reason, and each reported a healthy status on every run. This article reports the findings of a systematic audit of those eight jobs, and argues that the conventional health signal, namely successful execution, measures very little of what matters.</p>
+<p>The overall structure of this article is organised as follows: the first section examines the distribution of scheduled work across the eight jobs; the second considers why execution status fails as a measure of value; the third documents four failures in the verification method itself; the fourth addresses silence as an intended output rather than a symptom; the fifth examines the limits of a probabilistic decision model used to adjudicate the pruning; and the final section provides a summary and conclusion.</p>
+<h2>The distribution of scheduled work</h2>
+<p>Eight scheduled jobs appears a modest figure. Counted as executions rather than as entries in a list, however, the picture changes considerably.</p>
+<table><thead><tr><th>Job</th><th>Schedule</th><th>Runs per day</th></tr></thead><tbody>
+<tr><td>Shop order alerts</td><td>every 5 minutes</td><td>288.00</td></tr>
+<tr><td>Note compile</td><td>03:00 daily</td><td>1.00</td></tr>
+<tr><td>Morning brief</td><td>07:00 daily</td><td>1.00</td></tr>
+<tr><td>Note capture</td><td>23:30 daily</td><td>1.00</td></tr>
+<tr><td>Finance digest</td><td>21:00 daily</td><td>1.00</td></tr>
+<tr><td>Recruitment email triage</td><td>weekdays 12:30, 17:30</td><td>1.43</td></tr>
+<tr><td>Backup restore test</td><td>Mondays</td><td>0.14</td></tr>
+<tr><td>Job board scan</td><td>Mondays</td><td>0.14</td></tr>
+<tr><td>Total</td><td></td><td>293.71</td></tr>
+</tbody></table>
+<p>According to these figures, a single job accounted for 98.1 per cent of every execution in the system. To be more precise, that job polled a shop which had received no orders in a fortnight, and it was the job to which the least thought had been given at the point of creation.</p>
+<p>It should be noted that nothing had failed. There were no errors, no alerts and no missed runs; every job reported success. In other words, the waste was invisible precisely because the system was behaving exactly as instructed.</p>
+<h2>Execution status as a measure of value</h2>
+<p>The first substantive finding of the audit concerns what a status field actually reports. A scheduled job may execute correctly, return a clean exit code and deliver nothing whatsoever. The framework in question marks a job as successful whenever the run completes, whereas whether the run produced anything a human subsequently read is recorded elsewhere and had never been examined.</p>
+<p>Therefore the natural next step was to count, across every stored run of every job, how many had delivered substantive content. The query returned zero across all jobs and several hundred runs.</p>
+<p>That result was wrong.</p>
+<h2>Four failures of the verification method</h2>
+<p>The query searched each stored record for a section heading that marks the delivered response. Script-based jobs, however, do not write that heading, and their output sits elsewhere in the record. The search therefore found nothing, and the nothing was reported as a finding rather than interrogated as a defect in the search.</p>
+<p>On that basis a working job had very nearly been deleted. Executed by hand, the same script printed a perfectly serviceable summary which included a missing credit card statement dating back some three months. Taken together, the evidence indicates that the job had been reporting usefully for weeks while being assessed as dead.</p>
+<p>Interestingly, this was not an isolated lapse. Within the same working session the same class of error occurred four times:</p>
+<ol>
+<li>A case-sensitive search for the string &quot;dry&quot; returned no matches in a file whose tenth line reads &quot;Dry-run by default&quot;, from which it was wrongly inferred that a safety feature was absent.</li>
+</ol>
+<ol>
+<li>A reported discrepancy of approximately three thousand pounds in a set of financial records was derived from reading transaction status and amount while omitting transaction type. On inspection every affected row was a credit card repayment which the system was correctly declining to count twice.</li>
+</ol>
+<ol>
+<li>The finance digest described above.</li>
+</ol>
+<ol>
+<li>A recruitment triage job was declared inactive, having in fact filed two detailed reports that same week.</li>
+</ol>
+<p>Each instance follows an identical shape: a query is written, an empty result is returned, and the emptiness is treated as evidence about the system rather than as a hypothesis about the query. From the above it can be assumed that the failure mode is methodological rather than incidental.</p>
+<p>To this end, the rule derived from these four cases may be stated briefly: an empty result from one&#x27;s own check is a claim about the check until demonstrated otherwise. In practical terms this means reading a single raw record by hand before writing any loop across fifty of them.</p>
+<h2>Silence as an intended output</h2>
+<p>A second finding complicates the matter further. The recruitment triage job returned a single token, <code>[SILENT]</code> (a control value which suppresses delivery), on the majority of its runs. A column of such results appears, on a cursory reading, to indicate failure.</p>
+<p>The job is in fact instructed to emit exactly that token when there is nothing new to report, since the alternative is a notification every weekday lunchtime confirming the absence of news. Four of its six most recent runs were silent; the remaining two carried detailed reports concerning a live opportunity.</p>
+<p>This matters for anyone attempting to measure automation. Output volume does not constitute a health metric. A job which reports constantly may be merely noisy, whereas a job which reports rarely may be well calibrated. It seems that the only honest test is whether the signal arrives when something warrants reporting, and that can be established only by exercising the job&#x27;s input directly on a quiet day.</p>
+<h2>The limits of a decision model</h2>
+<p>Because several of the pruning decisions involved genuine judgement, they were put to a small probabilistic decision model, with the measured facts written into the prompt and each option described together with its trade-offs.</p>
+<p>The model was decisive regarding the five-minute job: reducing its frequency to two-hourly scored 0.94, whereas retaining the existing schedule scored 0.00.</p>
+<p>The deciding fact, however, originated entirely outside the model. The shop platform already sends an email when an order arrives, and the job was therefore a duplicate notification, slower than the original.</p>
+<p>The model could not have reached that conclusion. The options presented to it concerned how quickly an alert ought to arrive, and it reasoned carefully about alert latency before returning a confident figure. It cannot interrogate a premise it was never given.</p>
+<p>In other words, a confident score from a well-calibrated model remains only as good as the state supplied to it. The 0.94 was not incorrect; the question was. For anyone wiring judgement models into a workflow, it can be said that a model&#x27;s confidence measures its agreement with the framing, not its agreement with reality.</p>
+<h2>Summary and conclusion</h2>
+<p>This article set out to report what a systematic audit of eight scheduled AI jobs found. Five jobs survived, running 4.71 times per day in place of 293.71, a reduction of 98.4 per cent of which almost all derives from a single deletion.</p>
+<p>The surviving jobs share one property: each either captures something which would otherwise be lost, or monitors something to which a deadline attaches. Two capture and file dictated notes; one triages recruitment email, where opportunities carry a clock; one produces a nightly financial digest, retained specifically because it surfaced an omission the audit itself had missed; and one, newly created, prompts twice weekly concerning a research deadline some five weeks away.</p>
+<p>That final pairing merits attention. The work with a genuine deadline had no automation attached to it whatsoever, whereas a dormant shop was polled 288 times each day. Neither arrangement was decided; both represent the accumulated residue of earlier enthusiasm, and no tooling was ever going to flag the imbalance, since every job was running precisely as instructed.</p>
+<p>This study does not argue that scheduled automation is inherently wasteful. Rather it claims that the signals conventionally used to assess such automation, namely execution status and the absence of errors, are insufficient to detect waste of this kind, and that three questions serve considerably better: first, how many executions occur per day in total, counted as runs rather than as jobs; second, when did each job last produce output which a human actually read; and third, does the schedule, written out in frequency order, resemble the same list written out in order of importance.</p>
+<p>The audit required under an hour and removed 98 per cent of the work the system was performing. It should be noted, finally, that the system was never broken. Every job ran and every status was green. The failure lay entirely in what had been chosen as the measure, and it was discovered only by deliberately searching for absence.</p>
+</article>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
+</body>
+</html>
