@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Four-Pound Storefront: Self-Hosting a Shop on a Raspberry Pi, Measured</title>
+<meta name="description" content="A shop self-hosted on a Raspberry Pi 5, measured: the domain costs £3.97 a year, the whole Pi about £6.82 in electricity, and the real risks sit in availability, shared hosting and neglected updates.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/self-hosted-pi-storefront/">
+<meta property="og:title" content="The Four-Pound Storefront: Self-Hosting a Shop on a Raspberry Pi, Measured">
+<meta property="og:description" content="A shop self-hosted on a Raspberry Pi 5, measured: the domain costs £3.97 a year, the whole Pi about £6.82 in electricity, and the real risks sit in availability, shared hosting and neglected updates.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://mattkari.github.io/og/self-hosted-pi-storefront.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="The Four-Pound Storefront: Self-Hosting a Shop on a Raspberry Pi, Measured">
+<meta name="twitter:description" content="A shop self-hosted on a Raspberry Pi 5, measured: the domain costs £3.97 a year, the whole Pi about £6.82 in electricity, and the real risks sit in availability, shared hosting and neglected updates.">
+<meta name="twitter:image" content="https://mattkari.github.io/og/self-hosted-pi-storefront.png">
+<meta name="theme-color" content="#020617">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap">
+<link rel="stylesheet" href="/articles/_article.css">
+</head>
+<body>
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+</div>
+</header>
+<article>
+<h1>The Four-Pound Storefront: Self-Hosting a Shop on a Raspberry Pi, Measured</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 8 November 2026 · 8 min read</p>
+<p>A small online shop is served from a Raspberry Pi 5 on a home network, through a domain recently renewed for what was first described as roughly six pounds a year. The claim behind that figure is attractive and widely repeated: that self-hosting reduces the running cost of a web presence to almost nothing. This article tests the claim against measurements taken from the running system on 8 November 2026, and sets out the advantages, the disadvantages, the risks and the lessons that those measurements reveal.</p>
+<p>The overall structure of this article is organised as follows: the first section describes the architecture; the second measures the cost; the third and fourth set out the case for and against self-hosting, together with the risks attached to each; the fifth records the lessons drawn from measuring the system rather than describing it; and the final section provides a summary and conclusion. The complete setup, with every file and command, is recorded step by step in a companion guide, <a href="/articles/pi-shop-hosting-guide/">Hosting a Next.js Shop on a Raspberry Pi 5</a>, so that this article can concentrate on the argument rather than on the commands.</p>
+<h2>The architecture</h2>
+<p>The setup consists of five parts: first, a Raspberry Pi 5 with 8 GB of memory and a 1 TB NVMe solid-state drive; second, two Docker containers, namely a Next.js application and an nginx reverse proxy; third, a SQLite database held in a Docker volume; fourth, a Cloudflare Tunnel, which connects outwards from the Pi to Cloudflare's edge so that no port on the home router has to be opened; and fifth, a domain registered through Cloudflare Registrar, which sells domains at the registry's wholesale price. A nightly job at 03:00 copies the database, the uploaded images and an encrypted copy of the configuration to a private repository.</p>
+<p>The shop shares the Pi with fourteen other containers, including services that hold private household data. In other words, the storefront is one tenant on a general-purpose home server rather than a machine of its own, and this fact shapes both the cost and the risk.</p>
+<p>It should be noted at the outset that the shop has never taken an order. Its payments run on the payment provider's test keys, its eight products are seed data, and its two newsletter subscribers are test addresses. This article therefore does not describe a trading business; rather, it examines what it costs, and what it risks, to keep a production-shaped storefront online from a home.</p>
+<h2>The cost, measured</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Measured or sourced value</th>
+<th>Annual cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Domain renewal</td>
+<td>$5.30 per year, registrar dashboard</td>
+<td>£3.97</td>
+</tr>
+<tr>
+<td>Electricity, whole Pi</td>
+<td>2.96 W mean, 25.9 kWh per year</td>
+<td>£6.82</td>
+</tr>
+<tr>
+<td>Electricity, shop's share by memory</td>
+<td>213 MB of 3.9 GB in use, 5.3 per cent</td>
+<td>£0.36</td>
+</tr>
+<tr>
+<td>Hardware, broadband, standing charge</td>
+<td>not measured</td>
+<td>excluded</td>
+</tr>
+</tbody>
+</table>
+<p>According to the registrar's dashboard, the renewal price is $5.30 per year, which converts to £3.97 at the mid-market rate on 8 November 2026; a card's foreign-currency fee adds a few pence. The figure of six pounds therefore overstates the domain, yet at the same time it understates the whole, because it omits electricity.</p>
+<p>Power was read from the Pi's own power-management chip in five samples, which ranged from 2.38 to 4.52 W with a mean of 2.96 W. To be more precise, the chip reports the board's internal rails, so the figure excludes the losses of the power supply, and a meter at the wall socket would read somewhat higher. At the Ofgem price cap unit rate for October to December 2026, a national average of 26.32p per kWh, the whole Pi costs approximately £6.82 a year to run, or 1.87p a day.</p>
+<p>Taken together, the figures support two different answers, depending on the question asked. If the Pi existed only to serve the shop, the annual cost would be approximately £10.79, of which electricity is the larger part. Because the Pi runs fifteen containers, however, and the shop's application uses 5.3 per cent of the memory in use, the shop's share of the electricity is closer to 36p, and the marginal cost of keeping it online is, for practical purposes, the domain alone.</p>
+<h2>Advantages: why one should</h2>
+<p>First, the running cost is genuinely low, provided that the hardware already exists for other reasons. Second, the tunnel model removes the most common hazard of home hosting: the shop itself requires no inbound port, public resolvers return Cloudflare's addresses rather than the home's, and encryption is provided at the edge without any certificate to manage. The Pi as a whole, however, is not closed: remote administration runs over WireGuard, which listens on a single UDP port and stays silent to any packet that is not signed by a known key. Third, the application container is hardened in the ways that matter: it runs as an unprivileged user, it is not granted elevated privileges, and it has no access to the Docker socket. Fourth, the system is responsive, the homepage returning in 0.15 seconds when requested through the Manchester edge from the Pi itself, and every component, from the database file to the backup, remains under the owner's control.</p>
+<p>Interestingly, the largest advantage is not financial. A storefront that has to stay online, survive reboots and be backed up each night teaches the same operational lessons as a commercial service, at a cost that makes experimentation affordable. For an engineer whose work concerns quality and reliability, it can be said that this is the cheapest production environment available.</p>
+<h2>Disadvantages and risks: why one should not</h2>
+<p>The disadvantages, however, are less visible than the savings, and several of them were found only by measurement.</p>
+<p>First, each layer of the system has a single point of failure: one Pi, one drive, one domestic power supply and one broadband line. The tunnel logged 131 connection errors in the fifteen days for which logs exist, mostly timeouts on its QUIC connections, clustered on four days, with 27 per cent of them on a single day. The service has not been restarted since 24 October, and it reconnected without intervention each time. Whether visitors saw any interruption cannot be determined, because nothing measures the site's availability from outside the home; in other words, the reliability of the service is currently unknown rather than demonstrably poor.</p>
+<p>Second, the shop shares a host with private household data. The container hardening described above limits the consequences of a compromised application, whereas the kernel, the disk and the network remain shared. A public application on a household server is therefore a decision about blast radius, not only a decision about cost.</p>
+<p>Third, the application listens on every network interface of the Pi rather than on the Pi alone, although the tunnel needs only the local address. It is not exposed to the internet through this route, yet any device on the home network can reach it directly, bypassing the edge entirely.</p>
+<p>Fourth, the domain's automatic renewal is switched off, and the registration expires on 9 October 2027. A forgotten renewal would take the site offline and, after the registry's grace period, release the name. Fifth, a restore script exists, yet there is no record of a restore having been rehearsed, and a backup that has never been restored remains an assumption rather than a safeguard. Sixth, the operating system had not been upgraded since 27 January 2026. A weekly update job does run, yet its system-update half calls the package manager without administrator rights and has failed 175 times; in other words, the job reports activity while the host it was meant to protect falls behind. The same failure also concealed the size of the gap: a first count, taken from package lists last refreshed on 31 October, showed 40 updates waiting, 13 of them for security, whereas freshly refreshed lists showed 56 and 29. The 29 security updates were installed on 8 November without restarting any container, and automatic updates were set up on the same day.</p>
+<p>Finally, for a real business the list would lengthen considerably: live payment keys, a fulfilment process, and a level of availability that a domestic broadband line does not promise. It seems that self-hosting suits a demonstration or a low-stakes service far better than it suits a shop on which an income depends.</p>
+<h2>Lessons from measuring rather than describing</h2>
+<p>The measurements also exposed five lessons about method, each of which would have produced a confident and incorrect statement had the first reading been accepted.</p>
+<p>i) The headline figure was neither right nor complete: the domain costs less than quoted, while the electricity omitted from it costs more than the domain.</p>
+<p>ii) Docker's own statistics reported zero bytes of memory for both containers. Memory accounting is not enabled on this Pi, so the tool could not see the figure; the host's process table showed 213 MB for the application.</p>
+<p>iii) A query for thirty days of tunnel logs silently returned fifteen, because the logs begin on 24 October. A count over a window is therefore meaningless until the actual start of that window has been checked.</p>
+<p>iv) A plausible hypothesis, that the tunnel depended on a DNS filter running on the same Pi, was disproved in a single command: the Pi resolves names through its broadband provider.</p>
+<p>v) The nginx container has run for a week and served no requests, because the tunnel sends traffic directly to the application. A component can be healthy, running and entirely absent from the request path. Similarly, the application image occupies 3.17 GB, of which 618 MB is a full copy of the dependencies, although the build is configured to produce a self-contained output, and 508 MB is a single layer that changes file ownership by rewriting files already present.</p>
+<p>From the above it can be assumed that the most useful property of a self-hosted system is that it can be measured completely, and that the most common failure is to describe it instead.</p>
+<h2>Summary and conclusion</h2>
+<p>This article set out to test the claim that a self-hosted shop costs roughly six pounds a year. The measured answer is that the domain costs £3.97, the whole Pi costs approximately £6.82 a year in electricity, and the shop's own share of that electricity is about 36p; the true figure therefore depends on whether the hardware would be running anyway.</p>
+<p>This study does not argue that self-hosting is a false economy. Rather it claims that the cost is real but small, that the risks are concentrated in availability, shared hosting, neglected renewals and an operating system left unpatched, and that none of those risks appears in a running-cost figure. Four actions follow from the measurements: first, restore automatic security updates, which was done on 8 November; second, switch on automatic renewal for the domain; third, add an external availability check, so that reliability becomes a number rather than a guess; and fourth, rehearse a restore from the nightly backup before relying on it.</p>
+<p>For a demonstration storefront, a learning environment or a portfolio, the case for self-hosting is strong. For a business on which an income depends, however, it can be said that the four pounds buys the domain, while the reliability has to be bought separately.</p>
+<p>Those who intend to build the same setup will find every step, file and check in the <a href="/articles/pi-shop-hosting-guide/">companion guide</a>.</p>
+</article>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
+</body>
+</html>

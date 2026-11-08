@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hosting a Next.js Shop on a Raspberry Pi 5: Docker, Cloudflare Tunnel and WireGuard, Step by Step</title>
+<meta name="description" content="Step by step: a Next.js shop packaged with Docker, published through a Cloudflare Tunnel with no port opened for the site, and administered from a phone over WireGuard and Termux. Every file is the real one.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/pi-shop-hosting-guide/">
+<meta property="og:title" content="Hosting a Next.js Shop on a Raspberry Pi 5: Docker, Cloudflare Tunnel and WireGuard, Step by Step">
+<meta property="og:description" content="Step by step: a Next.js shop packaged with Docker, published through a Cloudflare Tunnel with no port opened for the site, and administered from a phone over WireGuard and Termux. Every file is the real one.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://mattkari.github.io/og/pi-shop-hosting-guide.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Hosting a Next.js Shop on a Raspberry Pi 5: Docker, Cloudflare Tunnel and WireGuard, Step by Step">
+<meta name="twitter:description" content="Step by step: a Next.js shop packaged with Docker, published through a Cloudflare Tunnel with no port opened for the site, and administered from a phone over WireGuard and Termux. Every file is the real one.">
+<meta name="twitter:image" content="https://mattkari.github.io/og/pi-shop-hosting-guide.png">
+<meta name="theme-color" content="#020617">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap">
+<link rel="stylesheet" href="/articles/_article.css">
+</head>
+<body>
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+</div>
+</header>
+<article>
+<h1>Hosting a Next.js Shop on a Raspberry Pi 5: Docker, Cloudflare Tunnel and WireGuard, Step by Step</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 8 November 2026 · 20 min read</p>
+<p>This guide records how a demonstration shop runs on a Raspberry Pi 5 in a private home: how the application was packaged with Docker, how Cloudflare publishes it without opening any port for the website, and how the Pi is administered from a phone over WireGuard and SSH in Termux. Every file reproduced below is the one running on the Pi on 8 November 2026, whereas secrets, keys, the tunnel identifier, the domain and the project name have been replaced by placeholders.</p>
+<p>It should be noted at the outset that the shop is a learning project rather than a business, since it runs on Stripe test keys and has never taken an order. This guide therefore does not describe how to operate a trading shop. Rather, it records a working, production-shaped setup that suits a demonstration, a portfolio piece or a low-stakes service, and its final section explains why the same setup falls short of what a real business requires. The costs, risks and lessons of the same setup are argued separately in a companion article, <a href="/articles/self-hosted-pi-storefront/">The Four-Pound Storefront</a>, which this guide therefore does not repeat at length.</p>
+<p>The overall structure of this guide is organised as follows: the first part lists what is needed and shows how the pieces fit together; Steps 1 to 4 package the application and run it with Docker Compose; Steps 5 and 6 register the domain and publish the site through a Cloudflare Tunnel; Step 7 sets up remote administration with WireGuard and Termux; Step 8 covers backups and updates; Step 9 records the checks used to test the result; and the guide closes with the rules worth keeping and a summary and conclusion.</p>
+<h2>What you need</h2>
+<table>
+<thead>
+<tr>
+<th>Item</th>
+<th>Measured on the Pi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Computer</td>
+<td>Raspberry Pi 5, 8 GB RAM</td>
+</tr>
+<tr>
+<td>Storage</td>
+<td>1 TB NVMe SSD, used for the OS and the data</td>
+</tr>
+<tr>
+<td>OS</td>
+<td>Raspberry Pi OS on Debian 13 (trixie), 64-bit</td>
+</tr>
+<tr>
+<td>Containers</td>
+<td>Docker Engine 29.9.2, Docker Compose v5.6.1</td>
+</tr>
+<tr>
+<td>Application</td>
+<td>Next.js 14.1, Prisma 5, SQLite</td>
+</tr>
+<tr>
+<td>Edge</td>
+<td>Cloudflare account, a Cloudflare Registrar domain, cloudflared 2026.2.0</td>
+</tr>
+<tr>
+<td>Remote access</td>
+<td>WireGuard (wg-quick) on the Pi; WireGuard and Termux on an Android phone</td>
+</tr>
+</tbody>
+</table>
+<p>According to the registrar's dashboard, the .co.uk domain renews at $5.30 a year, which was £3.97 on 8 November 2026. The Pi draws about 3 W, which amounts to roughly £6.82 a year of electricity at the October to December 2026 price cap; however, the same Pi also runs 14 other containers, so the shop's own share of that electricity is a matter of pennies.</p>
+<h2>How the pieces fit</h2>
+<pre><code class="language-text">Visitor  --HTTPS--&gt;  Cloudflare edge (DNS + TLS)
+                          |
+                  Cloudflare Tunnel  (an OUTBOUND connection the Pi opens)
+                          |
+        cloudflared on the Pi  --&gt;  http://localhost:3000  --&gt;  app container  --&gt;  SQLite volume
+
+Phone (Termux)  --WireGuard, UDP 51820--&gt;  Pi at 10.8.0.1  --SSH--&gt;  shell
+</code></pre>
+<p>In other words, visitors never connect to the house: the Pi opens an outbound connection to Cloudflare, and Cloudflare then answers the visitors on its behalf. The router forwards exactly one port, UDP 51820 for WireGuard, and that port serves remote administration rather than visitors.</p>
+<h2>Step 1: Prepare the Pi</h2>
+<ol>
+<li>Install Raspberry Pi OS (64-bit) on the NVMe drive and boot from it, since a solid-state drive is generally faster and more durable than a memory card for a server that writes logs and a database every day.</li>
+<li>Install Docker Engine and the Compose plugin from Docker's own apt repository, following docs.docker.com/engine/install/debian, and then add the user to the <code>docker</code> group and log in again.</li>
+<li>Confirm that both work before going any further:</li>
+</ol>
+<pre><code class="language-bash">docker run --rm hello-world
+docker compose version
+</code></pre>
+<blockquote>
+<p>The exact install commands were not recorded at the time; the result on this Pi is Docker 29.9.2 with Compose v5.6.1.</p>
+</blockquote>
+<p><strong>Pitfall: <code>docker stats</code> reports 0 B of memory on this Pi.</strong> Memory accounting (<code>cgroup_enable=memory</code>) is not switched on in <code>/boot/firmware/cmdline.txt</code>, and therefore Docker cannot see the figure at all; the host's own process table, however, can:</p>
+<pre><code class="language-bash">docker top &lt;container&gt; -eo pid,rss,comm      # RSS in KB per process
+</code></pre>
+<p>Measured in this way, the shop's application uses 213 MB rather than the zero that Docker reports, which is a reminder that a tool's silence is not the same thing as a measurement.</p>
+<h2>Step 2: Make the application container-ready</h2>
+<p>Two files decide what enters the image. First, <code>next.config.js</code> turns on Next.js standalone output, which produces a small <code>server.js</code> bundle containing only the dependencies that the server actually needs:</p>
+<pre><code class="language-js">/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output: 'standalone',
+  // images.remotePatterns: unchanged, omitted here
+}
+</code></pre>
+<p>Second, <code>.dockerignore</code> keeps secrets, local databases, uploads and build leftovers out of the build context, so that none of them can ever end up inside an image layer:</p>
+<pre><code class="language-text">node_modules
+npm-debug.log
+.next
+.git
+.gitignore
+README.md
+.env
+.env.local
+.env*.local
+prisma/*.db
+prisma/*.db-journal
+data/
+public/uploads/
+</code></pre>
+<h2>Step 3: The Dockerfile</h2>
+<p>The full file follows, and its comments record the real history of what went wrong while it was being written.</p>
+<pre><code class="language-dockerfile">FROM node:20 AS base
+
+FROM base AS deps
+WORKDIR /app
+
+COPY package.json package-lock.json* ./
+RUN npm ci
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED 1
+
+# Build-time placeholders only. Real secrets are supplied at runtime — passing
+# them as build ARGs bakes them into image layers, readable via `docker history`.
+# The build needs these variables to exist, not to be valid.
+#
+# `/` is statically prerendered and queries Prisma, so the build needs a
+# database that has the tables. This throwaway one is never shipped: the
+# runtime stage copies only .next/standalone, .next/static and public.
+ENV DATABASE_URL=&quot;file:/tmp/build-placeholder.db&quot;
+ENV STRIPE_SECRET_KEY=&quot;sk_test_build_placeholder&quot;
+ENV SESSION_SECRET=&quot;build-time-placeholder-secret-32-chars-min&quot;
+
+RUN npx prisma db push --skip-generate &amp;&amp; npm run build
+
+FROM base AS runner
+WORKDIR /app
+
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./package.json
+COPY --from=deps /app/node_modules ./node_modules
+
+RUN npm install sharp
+
+RUN mkdir -p /app/data
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+RUN chown -R nextjs:nodejs /app
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT 3000
+ENV HOSTNAME &quot;0.0.0.0&quot;
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e &quot;require('http').get('http://localhost:3000/api/health', (r) =&gt; {process.exit(r.statusCode === 200 ? 0 : 1)})&quot;
+
+# Apply versioned migrations only. The previous `db push --accept-data-loss`
+# plus an unconditional re-seed ran on every restart, which reset the admin
+# password and overwrote product rows edited through the admin UI.
+# Seeding is a one-time provisioning step: `npm run prisma:seed`.
+CMD npx prisma migrate deploy &amp;&amp; node server.js
+</code></pre>
+<p>Each stage has a single purpose. The <strong>deps</strong> stage installs exactly what <code>package-lock.json</code> specifies through <code>npm ci</code>. The <strong>builder</strong> stage creates a throwaway SQLite database before it builds, because the home page is prerendered at build time and reads products from the database; without a database that already has the tables, <code>next build</code> therefore fails at "Generating static pages". The <strong>runner</strong> stage is the image that actually runs: it uses a non-root user (<code>nextjs</code>, uid 1001), checks its own health every 30 seconds, applies database migrations, and only then starts the server.</p>
+<p>The comments record two lessons. First, secrets passed as build arguments are readable by anyone who holds the image through <code>docker history</code>, and for this reason the build receives harmless placeholders while the real values arrive only at runtime. Second, <code>prisma db push --accept-data-loss</code>, combined with a seed on every start, once reset the admin password and overwrote product edits at each restart; the start command therefore runs <code>prisma migrate deploy</code>, and seeding happens exactly once.</p>
+<p>One weakness remains unfixed, namely that the image occupies 3.17 GB. According to <code>docker history</code>, three layers account for most of that size:</p>
+<table>
+<thead>
+<tr>
+<th>Layer</th>
+<th>Size</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>COPY --from=deps /app/node_modules</code></td>
+<td>618 MB</td>
+<td>full dependency tree, kept because the start command runs <code>npx prisma migrate deploy</code>, which needs the Prisma CLI</td>
+</tr>
+<tr>
+<td>Debian packages in <code>node:20</code></td>
+<td>591 MB</td>
+<td>the full base image</td>
+</tr>
+<tr>
+<td><code>RUN chown -R nextjs:nodejs /app</code></td>
+<td>508 MB</td>
+<td>rewrites files that are already there, so Docker stores them twice</td>
+</tr>
+</tbody>
+</table>
+<p>It seems that each of these can be reduced, although none of the following ideas has yet been tested on this Pi: using <code>COPY --chown</code> for every copy and changing the ownership of <code>/app/data</code> alone; installing only the Prisma CLI in the runner; and trying the <code>node:20-slim</code> base. Each change should therefore be proved on a spare container before it replaces the live one.</p>
+<h2>Step 4: Compose and the environment file</h2>
+<p>The Compose file is reproduced here in full:</p>
+<pre><code class="language-yaml">services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - &quot;3000:3000&quot;
+    environment:
+      - DATABASE_URL=file:/app/data/production.db
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-http://localhost:3000}
+      # No default: a missing SESSION_SECRET must fail the boot rather than
+      # silently fall back to a value published in .env.example.
+      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET must be set}
+    volumes:
+      - db-data:/app/data
+      - ./public/uploads:/app/public/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: [&quot;CMD&quot;, &quot;node&quot;, &quot;-e&quot;, &quot;require('http').get('http://localhost:3000/api/health', (r) =&gt; {process.exit(r.statusCode === 200 ? 0 : 1)})&quot;]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - &quot;8888:80&quot;
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./public/uploads:/app/public/uploads:ro
+      - ./public/images:/app/public/images:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  db-data:
+</code></pre>
+<p>The <code>.env</code> file sits beside it with permissions 600. The variable names below are those of <code>.env.example</code>, whereas every value shown is a placeholder:</p>
+<pre><code class="language-bash">DATABASE_URL=file:/app/data/production.db
+STRIPE_SECRET_KEY=sk_test_xxx
+STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
+STRIPE_WEBHOOK_SECRET=whsec_xxx
+ADMIN_PASSWORD=&lt;long random password, read only by the one-time seed&gt;
+SESSION_SECRET=&lt;at least 32 random characters&gt;
+NEXT_PUBLIC_SITE_URL=https://example.co.uk
+</code></pre>
+<pre><code class="language-bash">cp .env.example .env      # then replace every value
+chmod 600 .env
+openssl rand -base64 48   # one way to make a SESSION_SECRET
+</code></pre>
+<p>The application is then built and started:</p>
+<pre><code class="language-bash">docker compose build app
+docker compose up -d
+docker compose logs -f app
+</code></pre>
+<p>The first start depends on the state of the database. A fresh volume needs nothing further, because <code>prisma migrate deploy</code> creates the tables on first start; the admin user and the products are then provisioned once with <code>npm run prisma:seed</code>, which refuses a default admin password and, if run again, never overwrites an existing password or edited products. A database that existed before migrations were introduced, on the other hand, has to be baselined once, or else the container restart-loops with Prisma error P3005. The following command is the one that worked on this Pi:</p>
+<pre><code class="language-bash">docker compose run --rm --no-deps app sh -c \
+  &quot;npx prisma migrate resolve --applied 20260812213417_init &amp;&amp; npx prisma migrate deploy&quot;
+</code></pre>
+<p>A short check then confirms that the container is healthy and that real data, not merely a health signal, is being served:</p>
+<pre><code class="language-bash">docker ps --format '{{.Names}}\t{{.Status}}'        # app shows (healthy)
+curl -s http://localhost:3000/api/products | head -c 200
+</code></pre>
+<p>Four pitfalls apply at this step.</p>
+<ol>
+<li>A healthy <code>/api/health</code> does not prove a working shop. On one occasion the live <code>.env</code> carried the example <code>SESSION_SECRET</code>, which the application rejects; as a result <code>/api/products</code> returned 500 and the site displayed "No products found", while the health check remained green throughout. A data endpoint should therefore be checked after every deploy.</li>
+<li>The mapping <code>"3000:3000"</code> publishes the application on every network interface, so that any device on the home Wi-Fi can reach it directly and bypass Cloudflare altogether. Because the tunnel needs only the Pi itself, the correct mapping is <code>"127.0.0.1:3000:3000"</code>, although this fix has not yet been applied on this Pi.</li>
+<li>The nginx service is not in the request path at all. The tunnel sends traffic straight to the application on port 3000, and nginx consequently served no requests in the last seven days; it should therefore either receive the tunnel's traffic or be removed from the file.</li>
+<li>The database belongs in a named volume such as <code>db-data</code>. On Docker 23 and later, <code>docker volume prune -f</code> removes only anonymous volumes, whereas adding <code>-a</code> would also delete named volumes whose containers happen to be stopped, the shop's database among them.</li>
+</ol>
+<h2>Step 5: The domain on Cloudflare Registrar</h2>
+<ol>
+<li>In the Cloudflare dashboard, open <strong>Domains</strong> and then <strong>Registrations</strong> to register the name; Cloudflare sells at the registry's own price, and a .co.uk therefore renews at $5.30 a year on this account.</li>
+<li>The domain's DNS is then managed within the same Cloudflare account, which is precisely what the tunnel requires in Step 6.</li>
+<li>Switch on <strong>Auto renew</strong> on the domain's Overview page, because on this account the registration runs only to 9 October 2027 and automatic renewal had been left switched off.</li>
+</ol>
+<h2>Step 6: Publish the application with a Cloudflare Tunnel</h2>
+<p>The <code>cloudflared</code> package can be installed either from Cloudflare's apt repository or from the arm64 package on Cloudflare's GitHub releases page; this Pi runs version 2026.2.0, although the install route that was used was not recorded.</p>
+<p>The tunnel on this Pi is <strong>locally managed</strong>, that is to say it was created on the command line rather than in the dashboard. The files present on the Pi match that route exactly: a login certificate, a credentials file named after the tunnel's identifier, and a configuration file.</p>
+<pre><code class="language-bash">cloudflared tunnel login                  # opens a browser; choose the domain; writes ~/.cloudflared/cert.pem
+cloudflared tunnel create shop            # writes ~/.cloudflared/&lt;TUNNEL-UUID&gt;.json
+cloudflared tunnel route dns shop example.co.uk
+cloudflared tunnel route dns shop www.example.co.uk
+</code></pre>
+<p>The configuration that the service actually reads is <code>/etc/cloudflared/config.yml</code>:</p>
+<pre><code class="language-yaml">tunnel: &lt;TUNNEL-UUID&gt;
+credentials-file: /etc/cloudflared/&lt;TUNNEL-UUID&gt;.json
+
+# Shop ONLY.
+# Do not add unrelated projects here: a malformed rule stops the whole
+# tunnel and takes the shop offline with it. Other projects get their
+# own tunnel + their own systemd unit.
+ingress:
+  - hostname: example.co.uk
+    service: http://localhost:3000
+  - hostname: www.example.co.uk
+    service: http://localhost:3000
+  - service: http_status:404
+</code></pre>
+<p>The credentials are then placed where the service can read them, the configuration is validated, and the service is installed:</p>
+<pre><code class="language-bash">sudo mkdir -p /etc/cloudflared
+sudo cp ~/.cloudflared/&lt;TUNNEL-UUID&gt;.json /etc/cloudflared/
+sudo cp ~/.cloudflared/config.yml /etc/cloudflared/config.yml   # credentials-file must point to /etc/cloudflared/
+cloudflared tunnel --config /etc/cloudflared/config.yml ingress validate
+cloudflared tunnel --config /etc/cloudflared/config.yml ingress rule https://example.co.uk   # prints the matched service
+sudo cloudflared service install
+systemctl status cloudflared
+</code></pre>
+<p>The resulting service definition on this Pi reads as follows:</p>
+<pre><code class="language-text">ExecStart=/usr/bin/cloudflared --no-autoupdate --config /etc/cloudflared/config.yml tunnel run
+</code></pre>
+<p>The final check is made from outside the Pi's own view of itself:</p>
+<pre><code class="language-bash">curl -sI https://example.co.uk | grep -i '^server'    # server: cloudflare
+dig +short @1.1.1.1 example.co.uk                      # Cloudflare addresses, never your home IP
+</code></pre>
+<p>Four pitfalls apply at this step.</p>
+<ol>
+<li>The service reads <code>/etc/cloudflared/config.yml</code>, not <code>~/.cloudflared/config.yml</code>. Editing the copy in the home folder validates cleanly and restarts cleanly, yet it changes nothing; for this reason <code>systemctl cat cloudflared | grep ExecStart</code> should be checked before any edit is made.</li>
+<li>Each project should have a tunnel of its own, so that a typing error in a hobby project's rule cannot take down a site that matters, and the catch-all <code>http_status:404</code> rule must always come last in the list.</li>
+<li>The flag <code>--no-autoupdate</code> means that cloudflared never updates itself, and on this Pi it does not update through apt either, because it was installed from a downloaded package with no repository behind it. In other words, the program that faces the internet on the shop's behalf is frozen at version 2026.2.0, from February 2026, until Cloudflare's own apt repository is added.</li>
+<li>The tunnel drops and recovers by itself. According to its logs, it recorded 131 connection errors in 15 days, mostly QUIC timeouts concentrated on four poor days, and it reconnected every time; nothing outside the house, however, measures whether visitors noticed, and an external uptime check is therefore the missing piece.</li>
+</ol>
+<h2>Step 7: Reach the Pi from the phone with WireGuard and Termux</h2>
+<h3>7.1 WireGuard on the Pi</h3>
+<pre><code class="language-bash">sudo apt install wireguard
+wg genkey | sudo tee /etc/wireguard/pi.key | wg pubkey | sudo tee /etc/wireguard/pi.pub
+</code></pre>
+<blockquote>
+<p>The commands above are the standard key-generation route; how the keys on this Pi were generated was not recorded.</p>
+</blockquote>
+<p>The configuration <code>/etc/wireguard/wg0.conf</code> follows with its keys removed, and the addresses shown are examples inside the Pi's 10.8.0.0/24 range.</p>
+<pre><code class="language-ini">[Interface]
+Address = 10.8.0.1/24
+ListenPort = 51820
+PrivateKey = &lt;PI-PRIVATE-KEY&gt;
+MTU = 1420
+PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT; iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE; sysctl -w net.core.rmem_max=26214400; sysctl -w net.core.wmem_max=26214400
+PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT; iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+
+[Peer]
+PublicKey = &lt;PHONE-PUBLIC-KEY&gt;
+AllowedIPs = 10.8.0.2/32
+
+[Peer]
+PublicKey = &lt;SECOND-DEVICE-PUBLIC-KEY&gt;
+AllowedIPs = 10.8.0.3/32
+</code></pre>
+<p>The <code>PostUp</code> line performs two tasks. To be more precise, it lets traffic pass in and out of the tunnel and translates it through <code>eth0</code>, so that the phone can reach the rest of the home network through the Pi, while its two <code>sysctl</code> values raise the UDP buffer sizes. Forwarding must also be switched on (<code>net.ipv4.ip_forward = 1</code>), as it already is on this Pi, after which the interface is enabled:</p>
+<pre><code class="language-bash">sudo systemctl enable --now wg-quick@wg0
+sudo wg show          # peers and their latest handshake
+</code></pre>
+<h3>7.2 The router and the home address</h3>
+<p>WireGuard needs exactly one forwarded port, and on this setup the router forwards UDP 51820 to the Pi. Because WireGuard answers only those packets that are signed by a known key, the port appears closed to everyone else on the internet.</p>
+<p>The home connection, however, has no fixed public IP address: the provider assigns one dynamically from its own range, and no dynamic DNS updater runs on the Pi. The phone's profile does in fact hold the current address itself, as its endpoint field shows, and it therefore stops working whenever the provider changes that address, until it is edited by hand. A dynamic DNS name would remove this weakness, for example a DNS-only record kept up to date through Cloudflare's API. It should be noted, though, that such a record publishes the home address in public DNS, which is exactly what the tunnel otherwise keeps hidden, and a hostname on a separate domain, unrelated to the shop, therefore limits what the record reveals.</p>
+<h3>7.3 The phone's WireGuard profile</h3>
+<p>The profile below reproduces the phone's settings as its WireGuard app displays them, with the keys and the home address replaced by placeholders, since the phone's own file is not stored on the Pi.</p>
+<pre><code class="language-ini">[Interface]
+PrivateKey = &lt;PHONE-PRIVATE-KEY&gt;
+Address = 10.8.0.2/32
+
+[Peer]
+PublicKey = &lt;PI-PUBLIC-KEY&gt;
+Endpoint = &lt;HOME-PUBLIC-IP&gt;:51820
+AllowedIPs = 0.0.0.0/0, ::/0
+PersistentKeepalive = 25
+</code></pre>
+<p>The phone's profile sends everything through the house. Its <code>AllowedIPs</code> line reads <code>0.0.0.0/0, ::/0</code>, so that whenever the tunnel is switched on, all of the phone's traffic, and not merely its traffic to the Pi, leaves through WireGuard and reaches the internet over the home broadband line. The counters on the Pi confirm that this route is used in practice, since the Pi has sent the phone almost 1 GB and received about 47 MB since it last started on 24 October. Interestingly, the <code>::/0</code> half routes IPv6 into a tunnel that carries IPv4 only, because neither the Pi's interface nor its <code>PostUp</code> rules handle IPv6; in other words, IPv6 traffic is dropped rather than leaked, and applications fall back to IPv4.</p>
+<p>This full-tunnel choice has a clear advantage on public Wi-Fi, where it protects all of the phone's traffic. On the other hand, it carries everyday browsing over the home upload line and through the Pi itself. For administration alone, <code>AllowedIPs = 10.8.0.0/24</code> would carry only the traffic meant for the Pi, whereas adding the home network's range would also reach the other devices at home.</p>
+<p>It should also be noted that the second peer in <code>wg0.conf</code> has not connected once since the Pi last started. An unused key remains a standing credential, and it should therefore be removed unless a device still needs it.</p>
+<h3>7.4 SSH from Termux</h3>
+<pre><code class="language-bash">pkg update &amp;&amp; pkg upgrade
+pkg install openssh
+ssh &lt;user&gt;@10.8.0.1          # WireGuard switched on in the phone first
+</code></pre>
+<h3>7.5 Switch SSH to keys, in this order</h3>
+<p>The SSH journal for the last 15 days shows two logins, and both of them used a password: one arrived over WireGuard and the other from the home Wi-Fi. Switching passwords off first would therefore have locked the phone out, and the key must accordingly be installed and tested before anything else changes.</p>
+<pre><code class="language-bash"># 1. In Termux: make a key and install it on the Pi
+ssh-keygen -t ed25519 -C &quot;phone-termux&quot;
+cat ~/.ssh/id_ed25519.pub | ssh &lt;user&gt;@10.8.0.1 'cat &gt;&gt; ~/.ssh/authorized_keys'
+ssh &lt;user&gt;@10.8.0.1          # must log in WITHOUT the account password
+</code></pre>
+<pre><code class="language-bash"># 2. On the Pi, with that session still open: switch passwords off
+echo 'PasswordAuthentication no' | sudo tee /etc/ssh/sshd_config.d/10-keys-only.conf
+sudo sshd -t &amp;&amp; sudo systemctl reload ssh
+sudo sshd -T | grep -i passwordauthentication     # expect: passwordauthentication no
+</code></pre>
+<p>It should be noted that the name of the drop-in file matters. On this Pi, <code>50-cloud-init.conf</code> already sets <code>PasswordAuthentication yes</code>, and because sshd keeps the first value it reads while drop-ins load in name order, a file named after it would be silently ignored; the change was therefore made in <code>10-keys-only.conf</code> on 8 November, confirmed with <code>sudo sshd -T</code>, and a password-only login was then refused. A <strong>new</strong> Termux session should then log in successfully before the old session is closed, and port 22 should never be forwarded on the router. Interestingly, the journal records no failed password attempts in 15 days, which suggests that port 22 is not reachable from the internet, since an exposed SSH port usually attracts guessing within hours.</p>
+<h2>Step 8: Backups and updates</h2>
+<p>Backups work as intended. A cron job runs <code>scripts/backup.sh</code> at 03:00 every night; it copies the live database, the uploads, the images, an encrypted copy of <code>.env</code> and the tunnel configuration, and then pushes them to a private GitHub repository. The most recent run, at 03:00 on 8 November, completed at 109 MB.</p>
+<p>A restore, on the other hand, has never been rehearsed. A <code>restore.sh</code> script exists, yet a backup that has never been restored remains an assumption rather than a safeguard; the rehearsal should therefore restore into a throwaway container on another port, confirm that <code>/api/products</code> returns the products, and then delete the throwaway.</p>
+<p>Updates, by contrast, are broken. A weekly job runs the following script as the ordinary user every Sunday at 02:00:</p>
+<pre><code class="language-bash">#!/bin/bash
+apt update
+apt full-upgrade -y
+apt autoremove -y
+
+cd ~
+docker compose pull
+docker compose up -d
+docker image prune -af
+docker volume prune -f
+</code></pre>
+<p>The Docker half of the script works, whereas the <code>apt</code> half has failed 175 times with "permission denied", because <code>apt</code> requires root. As a result the last full upgrade on record dates from 27 January 2026. In other words, the job runs every week while the system it was written to update falls further behind. The failure even concealed its own size: package lists last refreshed on 31 October showed 40 updates waiting, 13 of them for security, whereas freshly refreshed lists showed 56 and 29. The 29 security updates were therefore installed by hand on 8 November, after a database backup, and no container restarted.</p>
+<p>The lasting fix was applied on 8 November: Debian's <code>unattended-upgrades</code> package now installs updates every morning through the system's own timers, running as root. It should be noted, however, that a filter for Debian security alone would have missed two important libraries on this Pi, because Raspberry Pi OS rebuilds <code>libc6</code> and OpenSSL (<code>libssl3t64</code>) and ships their fixes from its own repository. The configuration therefore admits that repository as well, whereas it blocks kernel, firmware and boot packages, since those need a reboot and remain a manual task:</p>
+<pre><code class="language-bash">sudo apt install unattended-upgrades
+sudo unattended-upgrade --dry-run --debug     # check what the first run would do
+</code></pre>
+<pre><code class="language-text">// /etc/apt/apt.conf.d/20auto-upgrades
+APT::Periodic::Update-Package-Lists &quot;1&quot;;
+APT::Periodic::Unattended-Upgrade &quot;1&quot;;
+
+// /etc/apt/apt.conf.d/52unattended-upgrades-local
+// Debian security, plus the Raspberry Pi repository, which rebuilds libc6 and
+// libssl3t64 (OpenSSL) and ships their fixes. Debian point releases, Docker and
+// NordVPN are NOT included. Kernel, firmware and boot packages are blocked: they
+// need a reboot and are done by hand. Never reboots by itself.
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+        &quot;origin=Debian,codename=${distro_codename},label=Debian-Security&quot;;
+        &quot;origin=Debian,codename=${distro_codename}-security,label=Debian-Security&quot;;
+        &quot;origin=Raspberry Pi Foundation,codename=${distro_codename}&quot;;
+};
+Unattended-Upgrade::Package-Blacklist {
+        &quot;linux-image-&quot;;
+        &quot;linux-headers-&quot;;
+        &quot;linux-kbuild-&quot;;
+        &quot;raspi-firmware&quot;;
+        &quot;rpi-eeprom&quot;;
+        &quot;firmware-&quot;;
+        &quot;initramfs-tools&quot;;
+};
+Unattended-Upgrade::Automatic-Reboot &quot;false&quot;;
+Unattended-Upgrade::Remove-Unused-Dependencies &quot;false&quot;;
+</code></pre>
+<p>A dry run listed 15 packages for the first automatic run, namely the browsers, a code editor and the graphics libraries, and none of them restarts Docker, SSH or systemd. The run also held back the newer 6.18 kernel, as intended, because a package that depends on a blocked kernel package is skipped rather than forced. Finally, the three <code>apt</code> lines were removed from the weekly job, whose Docker half continues unchanged, and the installer's log is kept in <code>/var/log/unattended-upgrades/</code> for the next check.</p>
+<h2>Step 9: Testing it like a QA engineer</h2>
+<p>The table lists each check, its command and its result on 8 November 2026.</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Command</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Site served through Cloudflare</td>
+<td><code>curl -s -o /dev/null -w '%{http_code}' https://example.co.uk/</code></td>
+<td>200, 40,030 bytes, 0.15 s</td>
+</tr>
+<tr>
+<td>Products API works</td>
+<td><code>curl -s https://example.co.uk/api/products</code></td>
+<td>200, 8 products</td>
+</tr>
+<tr>
+<td>Anonymous write refused</td>
+<td><code>curl -X POST https://example.co.uk/api/products</code></td>
+<td>401 Unauthorized, still 8 products</td>
+</tr>
+<tr>
+<td>Home IP hidden</td>
+<td><code>dig +short @1.1.1.1 example.co.uk</code></td>
+<td>Cloudflare addresses only</td>
+</tr>
+<tr>
+<td>Edge in front</td>
+<td><code>curl -sI https://example.co.uk</code></td>
+<td><code>server: cloudflare</code></td>
+</tr>
+<tr>
+<td>Container is not root</td>
+<td><code>docker exec &lt;app&gt; id</code></td>
+<td>uid=1001(nextjs)</td>
+</tr>
+<tr>
+<td>No Docker socket inside</td>
+<td><code>docker inspect &lt;app&gt;</code> mounts</td>
+<td>none</td>
+</tr>
+<tr>
+<td>Tunnel service up</td>
+<td><code>systemctl is-active cloudflared</code></td>
+<td>active since 24 October</td>
+</tr>
+<tr>
+<td>VPN peers</td>
+<td><code>sudo wg show</code></td>
+<td>phone connected (handshake 75 s ago on re-check); second peer never connected since 24 October</td>
+</tr>
+<tr>
+<td>Backup ran</td>
+<td><code>tail ~/backups/backup.log</code></td>
+<td>03:00, 109 MB, complete</td>
+</tr>
+<tr>
+<td><strong>Finding:</strong> SSH method</td>
+<td><code>journalctl -u ssh</code></td>
+<td>phone logged in by password until 8 Nov; now key only, password attempt refused with <code>Permission denied (publickey)</code></td>
+</tr>
+<tr>
+<td><strong>Finding:</strong> OS updates</td>
+<td><code>/var/log/apt/history.log*</code></td>
+<td>last upgrade 27 Jan 2026; 29 security updates installed 8 Nov; automatic updates set up 8 Nov, kernel blocked, no reboot</td>
+</tr>
+</tbody>
+</table>
+<h2>Rules worth keeping</h2>
+<p>Taken together, the steps above suggest ten rules worth keeping.</p>
+<ol>
+<li>Visitors should reach Cloudflare and never the house, which means publishing the site through an outbound tunnel rather than through a forwarded port.</li>
+<li>The configuration to edit is the one the service actually reads, as <code>systemctl cat &lt;unit&gt;</code> shows, rather than the copy kept in the home folder.</li>
+<li>Each project deserves a tunnel of its own, so that one project's mistake cannot take another project offline.</li>
+<li>Real secrets belong at runtime and never in build arguments, where <code>docker history</code> exposes them to anyone who holds the image.</li>
+<li>The container should run <code>migrate deploy</code> on every start and seed the database exactly once.</li>
+<li>Anything that only the tunnel needs should be bound to <code>127.0.0.1</code> rather than to every network interface.</li>
+<li>A data endpoint should be checked after every deploy, since <code>/api/health</code> alone can stay green while the shop is broken.</li>
+<li>The phone's key must be installed and tested before passwords are switched off, or the phone loses its only way in.</li>
+<li>A job that runs is not necessarily a job that works, and its log is therefore the only reliable evidence of what it did.</li>
+<li>Automatic renewal should be switched on for the domain, because an expired name takes the site offline without warning.</li>
+</ol>
+<h2>Summary and conclusion</h2>
+<p>This guide set out to record, step by step, how a Next.js shop is packaged with Docker, published through a Cloudflare Tunnel and administered from a phone over WireGuard and Termux. The setup works: the site is served through Cloudflare's edge, the home address stays out of public DNS, anonymous writes are refused, and the database is backed up every night to a private repository.</p>
+<p>This guide does not claim, however, that the setup is complete. Rather, it shows that two of the risks found while writing it have since been fixed, namely an operating system that went unpatched from January until 8 November and an SSH server that accepted passwords, whereas three remain: a tunnel program that never updates; a phone profile that depends on a home address which can change without notice; and the absence of any external check on availability. In addition, the shop runs on one Pi, one drive, one power supply and one broadband line; the router and the phone were not inspected directly; a second WireGuard peer has not connected since the Pi last started; and the install routes for Docker, cloudflared and the WireGuard keys were not recorded, so the standard documented routes are shown in their place. Everything marked as not yet applied therefore remains untested on this Pi.</p>
+<p>It should be noted, finally, that five of the first readings taken while writing this guide were wrong: a 30-day log that held only 15 days, a memory figure of zero, a DNS dependency that did not exist, a claim of no open ports that WireGuard disproved, and an admin-route test that reached a page which did not exist. The same discipline therefore applies here as in testing AI output, namely that the first answer is a hypothesis until the running system confirms it.</p>
+</article>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
+</body>
+</html>
