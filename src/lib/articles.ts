@@ -11,6 +11,24 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'self-hosted-pi-storefront',
+    title: 'The Four-Pound Storefront: Self-Hosting a Shop on a Raspberry Pi, Measured',
+    summary:
+      'A shop self-hosted on a Raspberry Pi 5, measured: the domain costs £3.97 a year, the whole Pi about £6.82 in electricity, and the real risks sit in availability, shared hosting and neglected updates.',
+    date: '2026-11-08',
+    readingMinutes: 8,
+    tags: ['Self-hosting', 'Raspberry Pi', 'Cloudflare', 'Risk'],
+  },
+  {
+    slug: 'pi-shop-hosting-guide',
+    title: 'Hosting a Next.js Shop on a Raspberry Pi 5: Docker, Cloudflare Tunnel and WireGuard, Step by Step',
+    summary:
+      'Step by step: a Next.js shop packaged with Docker, published through a Cloudflare Tunnel with no port opened for the site, and administered from a phone over WireGuard and Termux. Every file is the real one.',
+    date: '2026-11-08',
+    readingMinutes: 20,
+    tags: ['Docker', 'Cloudflare Tunnel', 'WireGuard', 'Raspberry Pi'],
+  },
+  {
     slug: 'auditing-scheduled-ai-jobs',
     title: 'Auditing Eight Scheduled AI Jobs: What Execution Status Does Not Measure',
     summary:
