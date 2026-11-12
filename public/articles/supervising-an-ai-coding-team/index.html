@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Five People, Five Agents, Twenty-Four Hours: Supervising an AI Coding Team at a Hackathon</title>
+<meta name="description" content="A five-person hackathon team supervised five AI coding agents for 24 hours: one supervisor, specialised workers, and reviewers who never mark their own work. The constraint was not agent speed but the handoffs between them.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/supervising-an-ai-coding-team/">
+<meta property="og:title" content="Five People, Five Agents, Twenty-Four Hours: Supervising an AI Coding Team at a Hackathon">
+<meta property="og:description" content="A five-person hackathon team supervised five AI coding agents for 24 hours: one supervisor, specialised workers, and reviewers who never mark their own work. The constraint was not agent speed but the handoffs between them.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://mattkari.github.io/og/supervising-an-ai-coding-team.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Five People, Five Agents, Twenty-Four Hours: Supervising an AI Coding Team at a Hackathon">
+<meta name="twitter:description" content="A five-person hackathon team supervised five AI coding agents for 24 hours: one supervisor, specialised workers, and reviewers who never mark their own work. The constraint was not agent speed but the handoffs between them.">
+<meta name="twitter:image" content="https://mattkari.github.io/og/supervising-an-ai-coding-team.png">
+<meta name="theme-color" content="#020617">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500&display=swap">
+<link rel="stylesheet" href="/articles/_article.css">
+</head>
+<body>
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+</div>
+</header>
+<article>
+<h1>Five People, Five Agents, Twenty-Four Hours: Supervising an AI Coding Team at a Hackathon</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 12 November 2026 · 3 min read</p>
+<h2>Introduction</h2>
+<p>It should be noted at the outset that this article does not describe the product that was built. Rather, it describes the way the building was organised. The setting was a 24-hour hackathon, in which a team of five (engineers and subject matter experts) was asked to build an intelligent document retrieval system: in other words, a retrieval-augmented generation (RAG) assistant that answers questions across many PDF documents. The overall structure of this article is organised as follows: first, the division of labour between people and models; second, the supervision pattern used for the coding agents; third, what the arrangement revealed in practice; and finally, a summary and conclusion.</p>
+<h2>People, platforms and models</h2>
+<p>The team made a deliberate distinction between the model that serves the product and the models that write the code. The embeddings, retrieval and chat functions ran on the cloud deployments the event provided, so that no document left the approved environment. The coding, on the other hand, was delegated to a group of agents: Claude Code, OpenAI Codex CLI and Hermes Agent. In addition, the subject matter experts remained the authority on what a correct answer looks like, since a retrieval system can only be judged by people who already know the documents.</p>
+<h2>The supervision pattern</h2>
+<p>To this end, the agents were arranged in herdr (an open-source terminal workspace for coding agents) as a small hierarchy rather than as a crowd. The first tab held the Lead Supervisor (Claude Code), whose task was to set the goal for each cycle, divide it into tickets and accept or return finished work. The second tab held the workers:</p>
+<ol>
+<li>a senior developer (Claude Code), which built the ingestion, extraction and retrieval pipeline;</li>
+<li>a UI polisher (Claude Code), which built the chat interface;</li>
+<li>Hermes Agent as the reviewer, which read each change against its ticket and its tests before the supervisor accepted it;</li>
+<li>Codex CLI as a second, independent reviewer of the interface work.</li>
+</ol>
+<p>According to this arrangement, no agent reviewed its own output. In other words, the separation of author and reviewer, which is ordinary practice in test engineering, was applied to the agents themselves. Figure 1 sets out the arrangement.</p>
+<p><img loading="lazy" alt="Diagram: the Lead Supervisor in herdr tab 1 above four workers in tab 2: a senior developer and a UI polisher (Claude Code), Hermes Agent as reviewer and Codex CLI as UI reviewer; the product runs on cloud embeddings, retrieval and chat deployments" src="/articles/supervising-an-ai-coding-team/img/01-agent-team.png" /></p>
+<p><em>Figure 1. The supervision pattern: one supervisor, two builders and two reviewers. Illustration.</em></p>
+<h2>What the arrangement revealed</h2>
+<p>Interestingly, the speed of the agents was not the constraint. The work was delivered in vertical slices, and each slice was tested in the browser before the next one was released; the constraint, it seems, lay in the joints between the agents rather than in the agents themselves. Three observations support this view.</p>
+<p>First, the supervisor's permissions became a bottleneck. While the supervisor remained in a read-only planning mode, it could not commit, so finished slices accumulated in the working folder until a human changed its mode. Second, silence was the most expensive failure. The supervisor could relay progress only when a worker reported, and a worker that had not reported left the whole cycle waiting; therefore every report needed a deadline. Third, independent review paid for itself: the second reviewer returned one merge request with six defects that its author had not seen. Figure 2 illustrates what the workers' tab looks like when this pattern runs.</p>
+<p><img loading="lazy" alt="Illustration of a terminal workspace with four panes: a reviewer accepting a merge request, a UI reviewer listing six findings, a UI polisher fixing them, and a senior developer indexing sample documents" src="/articles/supervising-an-ai-coding-team/img/02-workers-tab-illustration.png" /></p>
+<p><em>Figure 2. The workers' tab, redrawn with fictional content. It is not a screenshot of the event.</em></p>
+<p>Taken together, these observations suggest that the most valuable human contribution was not code but definition, namely precise tickets, test questions supplied by the subject matter experts, and clear rules for when work is accepted.</p>
+<h2>Summary and conclusion</h2>
+<p>This article has described how a five-person team supervised five AI agents for 24 hours. The pattern was simple: one supervisor, specialised workers, and reviewers who never mark their own work. It does not claim that agents replace the team. Rather, it suggests that, in a regulated environment, the team's expertise is best spent on goals, evidence and review, while the agents carry the volume of implementation.</p>
+<p>An earlier article describes the same supervision pattern applied to an ordinary working day: <a href="/articles/supervised-claude-code-sessions/">Three Claude Code Sessions, One Orchestrator, One Auditor</a>.</p>
+</article>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
+</body>
+</html>
