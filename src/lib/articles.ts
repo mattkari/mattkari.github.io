@@ -11,6 +11,15 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'supervising-an-ai-coding-team',
+    title: 'Five People, Five Agents, Twenty-Four Hours: Supervising an AI Coding Team at a Hackathon',
+    summary:
+      'A five-person hackathon team supervised five AI coding agents for 24 hours: one supervisor, specialised workers, and reviewers who never mark their own work. The constraint was not agent speed but the handoffs between them.',
+    date: '2026-11-12',
+    readingMinutes: 3,
+    tags: ['AI agents', 'Claude Code', 'Code review', 'RAG'],
+  },
+  {
     slug: 'self-hosted-pi-storefront',
     title: 'The Four-Pound Storefront: Self-Hosting a Shop on a Raspberry Pi, Measured',
     summary:
