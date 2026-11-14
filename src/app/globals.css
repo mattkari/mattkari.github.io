@@ -36,26 +36,21 @@
   }
 }
 
-html {
-  scroll-behavior: smooth;
+/* Smooth in-page scrolling only for people who have not asked for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: hsl(var(--secondary));
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary));
-  border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.8);
+/* One gold focus ring for every link and control that does not style its own.
+   :where() keeps specificity at zero so component classes still override it. */
+@layer base {
+  :where(a, button, summary):focus-visible {
+    outline: 2px solid rgb(252 211 77);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
 }
 
 /* Writing section: thin gold scrollbar and soft fade at the list edges */

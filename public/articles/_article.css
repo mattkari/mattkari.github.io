@@ -1,5 +1,5 @@
 /* Shared chrome for every standalone article under /articles/<slug>/.
-   One source of truth: edit this file, not the 7 HTML files.
+   One source of truth: edit this file, not the individual HTML files.
    Applied by scripts/apply-article-chrome.py — re-run it after adding an article. */
 
 :root {
@@ -36,13 +36,17 @@ body {
   top: 0;
   z-index: 10;
   background: rgba(2, 6, 23, 0.9);
+  -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--line);
 }
 
+/* The chrome is set in 15px type and the article in 19px, so the same 55ch
+   measure would be narrower up here. Scale it so the logo and links line up
+   with the edges of the text column below. */
 .site-header .inner,
 .site-footer .inner {
-  max-width: 55ch;
+  max-width: calc(55ch * 19 / 15);
   margin: 0 auto;
   padding: 14px 24px;
   display: flex;
@@ -104,7 +108,12 @@ article {
   max-width: 55ch;
   margin: 0 auto;
   padding: 56px 24px 0;
+  /* long URLs in reference lists must wrap instead of widening the page */
+  overflow-wrap: break-word;
 }
+
+/* in-page targets (footnotes, heading anchors) clear the sticky header */
+[id] { scroll-margin-top: 84px; }
 
 h1, h2, h3, h4 {
   font-family: var(--display);
@@ -150,6 +159,9 @@ pre {
   font-size: 14px;
   line-height: 1.6;
 }
+
+/* inline code such as a long method call may break mid-token on narrow screens */
+:not(pre) > code { overflow-wrap: anywhere; }
 
 pre code {
   background: none;
