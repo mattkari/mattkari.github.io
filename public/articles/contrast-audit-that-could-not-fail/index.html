@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Contrast Audit That Could Not Fail: Testing the Colours of a Small Shop</title>
+<meta name="description" content="A small shop&#x27;s colours treated as a test target: the brand brown failed the contrast minimum, and the audit only counted once it was shown to fail.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/contrast-audit-that-could-not-fail/">
+<meta property="og:title" content="A Contrast Audit That Could Not Fail: Testing the Colours of a Small Shop">
+<meta property="og:description" content="A small shop&#x27;s colours treated as a test target: the brand brown failed the contrast minimum, and the audit only counted once it was shown to fail.">
+<meta property="article:published_time" content="2026-11-14">
+<link rel="alternate" type="application/rss+xml" title="Matt Karimov: Writing" href="https://mattkari.github.io/feed.xml">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BlogPosting",
+ "headline": "A Contrast Audit That Could Not Fail: Testing the Colours of a Small Shop",
+ "description": "A small shop's colours treated as a test target: the brand brown failed the contrast minimum, and the audit only counted once it was shown to fail.",
+ "datePublished": "2026-11-14",
+ "inLanguage": "en-GB",
+ "url": "https://mattkari.github.io/articles/contrast-audit-that-could-not-fail/",
+ "mainEntityOfPage": "https://mattkari.github.io/articles/contrast-audit-that-could-not-fail/",
+ "image": "https://mattkari.github.io/og/contrast-audit-that-could-not-fail.png",
+ "author": {
+  "@type": "Person",
+  "name": "Matt Karimov",
+  "url": "https://mattkari.github.io"
+ }
+}
+</script>
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://mattkari.github.io/og/contrast-audit-that-could-not-fail.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="A Contrast Audit That Could Not Fail: Testing the Colours of a Small Shop">
+<meta name="twitter:description" content="A small shop&#x27;s colours treated as a test target: the brand brown failed the contrast minimum, and the audit only counted once it was shown to fail.">
+<meta name="twitter:image" content="https://mattkari.github.io/og/contrast-audit-that-could-not-fail.png">
+<meta name="theme-color" content="#020617">
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/articles/_article.css">
+</head>
+<body>
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+</div>
+</header>
+<article>
+<h1>A Contrast Audit That Could Not Fail: Testing the Colours of a Small Shop</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 14 November 2026 · 5 min read</p>
+<p>The colours of a small online shop are usually chosen by feel: a brand brown that suits leather, an off-white page that looks softer than pure white, and a grey border that seems quiet enough. This article explores a different method, in which colour is treated as a test target rather than a matter of taste. The case is EcoHaven, a small shop for handmade lambskin baby boots, whose palette and home page were reworked by an AI coding agent working from a written brief. To this end, the article is organised as follows: first, what the research says; second, what the existing pages measured; third, how the palette became a set of tests; fourth, why the audit itself had to be tested; and finally, how the same method shaped the landing page.</p>
+<p>This article does not argue that measurement replaces design judgement. Rather, it claims that a design choice which can be measured should be measured before it is defended, and that the measuring tool deserves the same suspicion as the design.</p>
+<h2>1. Start from the evidence, not the mood board</h2>
+<p>The research points in a fairly consistent direction. Dark text on a light background (positive polarity) reads better than the reverse, and according to Piepenbrock, Mayr and Buchner the advantage holds most clearly for small text. In addition, the brightness gap between text and background appears to matter more than the hue of either (Hall and Hanna, 2004; WebAIM). Interestingly, Rello and Bigham (2017) found in a study of 341 readers, 89 of them with dyslexia, that warm backgrounds such as peach, orange and yellow improved reading performance over cool ones such as blue and green. However, the colours tested were far stronger than an off-white, so the study supports the direction of a warm page rather than any particular shade. It should also be noted that no source found shows pure white reading worse than off-white; the off-white is therefore a choice of feel, and it is acceptable only if it costs nothing in contrast.</p>
+<p>The thresholds come from WCAG 2.2: 4.5:1 for normal text, 7:1 for the stricter level, and 3:1 for the edges of controls such as form fields. In other words, the standard turns "is it readable?" into a number that a test can check.</p>
+<h2>2. Measure what is actually there</h2>
+<p>Measured against those thresholds, the existing palette had real defects. The brand brown, used for links and prices, measured 4.43:1 on the page and lower still on the beige panels, which is just under the minimum in both places, whereas white text on the brown buttons passed at 4.70:1, but only narrowly. The edges of form fields and of unchosen size and colour buttons measured about 1.5:1, which means a parent on a phone could hardly see where to tap, and the "only 2 left" and error text measured about 3.7:1.</p>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Brand brown as text</td>
+<td>4.43:1</td>
+<td>6.5:1 (#6E5639)</td>
+</tr>
+<tr>
+<td>White on brown buttons</td>
+<td>4.70:1</td>
+<td>6.9:1</td>
+</tr>
+<tr>
+<td>Field and option edges</td>
+<td>about 1.5:1</td>
+<td>3.7:1 or more</td>
+</tr>
+<tr>
+<td>Low-stock and error text</td>
+<td>about 3.7:1</td>
+<td>5.6:1 or more</td>
+</tr>
+<tr>
+<td>Body text on the page</td>
+<td>near-black</td>
+<td>14.4:1 (#2B241E)</td>
+</tr>
+</tbody>
+</table>
+<p>The new palette keeps the warm off-white page (#FBF8F3) and a warm cream panel (#F4EDE1), and the brown is visibly deeper than before. To be more precise, that deeper brown is the price of passing on every surface, and it was accepted as such.</p>
+<h2>3. Turn the palette into tests</h2>
+<p>Before any colour changed, the agent wrote 19 contrast tests that encode each pairing and its threshold, and watched them fail on the old palette; thus a later edit that drifts a colour below the line breaks the build, rather than waiting to be noticed by a customer.</p>
+<h2>4. Test the audit, not only the page</h2>
+<p>A palette that passes on paper can still fail on screen, because text sits on images, panels and banners that a colour list does not describe, and the agent therefore measured every piece of text in a real browser against the background it actually sits on: 818 text elements on twelve pages at phone width, none below the minimum.</p>
+<p>The important step, however, came next: on two of those pages, the old colours had also produced zero failures, and from this it can be assumed that the audit might simply be unable to see a failure. The agent therefore planted a deliberately faint line of text and ran the audit again, which caught it. In other words, a check that passes on both the old and the new design proves nothing until it has been shown to fail. This is the same discipline as writing a test that fails before the fix: the evidence is the red run, not the green one.</p>
+<h2>5. A landing page ordered by the buyer's questions</h2>
+<p>The same method shaped the home page, whose sections now follow the order of a buyer's questions: what it is and what it costs (the hero shows "From £24.00", the cheapest product in stock); whether it can be trusted; which size fits (the three sizes side by side with age and foot length); why lambskin, using only product facts the owner had confirmed; how ordering, delivery and returns work; what other buyers say on Etsy; and finally five common questions. Moreover, the delivery prices in that answer come from the same code the checkout uses, so the page and the checkout cannot disagree. Taken together, twelve tests for this page were written first and failed as expected.</p>
+<h2>Limits</h2>
+<p>Several limits should be kept in view, and the first is that the landing-page guidance relies mostly on secondary sources, because Baymard's full research is paywalled. Second, the warm-background evidence comes from one study using stronger colours than this palette. Third, a contrast ratio measures legibility, not reading speed or sales; no claim is made here about conversion. Finally, the pages were checked with sample products and stand-in photos before release; the changes went live on 14 November 2026, and the live page was confirmed to use the new page and text colours, but the full browser audit has not yet been repeated against the real catalogue.</p>
+<h2>Summary and conclusion</h2>
+<p>This article set out to show that colour on a small shop can be handled as a testable requirement. The main finding is that the familiar palette failed in places nobody had looked: the brand brown fell just under the minimum, and the field edges were almost invisible. The second finding, and perhaps the more useful one, is that the audit itself had to be tested, because a measurement that cannot fail looks exactly like a pass. It can therefore be said that the method is less about colour than about evidence: decide the threshold, measure what is there, make the rule a test, and prove the test can see a failure before trusting its silence.</p>
+<h2>References</h2>
+<ul>
+<li>Hall, R. and Hanna, P. (2004). The impact of web page text-background colour combinations on readability, retention, aesthetics and behavioural intention.</li>
+<li>Piepenbrock, C., Mayr, S. and Buchner, A. Positive display polarity is particularly advantageous for small character sizes.</li>
+<li>Rello, L. and Bigham, J. P. (2017). Good Background Colors for Readers: A Study of People with and without Dyslexia. ASSETS 2017.</li>
+<li>W3C (2023). Web Content Accessibility Guidelines (WCAG) 2.2.</li>
+<li>WebAIM. Contrast and Color Accessibility.</li>
+<li>Baymard Institute. Ecommerce homepage UX (summary articles).</li>
+</ul>
+<p>An earlier article describes how the same shop is hosted and what it costs to run: <a href="/articles/self-hosted-pi-storefront/">The Four-Pound Storefront</a>.</p>
+</article>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
+</body>
+</html>
