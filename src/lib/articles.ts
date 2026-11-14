@@ -11,6 +11,15 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'contrast-audit-that-could-not-fail',
+    title: 'A Contrast Audit That Could Not Fail: Testing the Colours of a Small Shop',
+    summary:
+      "A small shop's colours treated as a test target: the brand brown failed the contrast minimum, and the audit only counted once it was shown to fail.",
+    date: '2026-11-14',
+    readingMinutes: 5,
+    tags: ['Accessibility', 'Testing', 'Web design', 'AI agents'],
+  },
+  {
     slug: 'supervising-an-ai-coding-team',
     title: 'Five People, Five Agents, Twenty-Four Hours: Supervising an AI Coding Team at a Hackathon',
     summary:
