@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { SiteFooter } from '@/components/site-footer';
+import { SubpageHeader } from '@/components/subpage-header';
 
 export const metadata: Metadata = {
   title: 'Page not found | Matt Karimov',
@@ -18,16 +19,7 @@ export default function NotFound() {
         <div className="absolute -right-32 top-1/2 h-[26rem] w-[26rem] rounded-full bg-amber-400/10 blur-3xl" />
       </div>
 
-      <nav aria-label="Primary" className="relative border-b border-white/10">
-        <div className="mx-auto flex h-16 max-w-4xl items-center px-4 sm:px-6">
-          <Link href="/" className="flex items-center space-x-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
-              MK
-            </span>
-            <span className="text-lg font-semibold text-white">Matt Karimov</span>
-          </Link>
-        </div>
-      </nav>
+      <SubpageHeader />
 
       <main className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center px-4 py-24 sm:px-6">
         <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-amber-300/80">

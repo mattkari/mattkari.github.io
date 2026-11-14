@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { ArticleRow } from '@/components/article-row';
 import { SiteFooter } from '@/components/site-footer';
+import { SubpageHeader } from '@/components/subpage-header';
 import { formatDate, sortedArticles } from '@/lib/articles';
 import { SITE_URL } from '@/lib/site';
 
@@ -10,7 +9,12 @@ export const metadata: Metadata = {
   title: 'Writing | Matt Karimov',
   description:
     'Practical, tested guides on AI quality, LLM evaluation, AI agents and test automation by Matt Karimov.',
-  alternates: { canonical: `${SITE_URL}/writing` },
+  alternates: {
+    canonical: `${SITE_URL}/writing`,
+    types: {
+      'application/rss+xml': [{ url: `${SITE_URL}/feed.xml`, title: 'Matt Karimov: Writing' }],
+    },
+  },
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/writing`,
@@ -44,23 +48,7 @@ export default function WritingPage() {
         <div className="absolute -right-32 top-1/2 h-[26rem] w-[26rem] rounded-full bg-amber-400/10 blur-3xl" />
       </div>
 
-      <nav aria-label="Primary" className="relative border-b border-white/10">
-        <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center space-x-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
-              MK
-            </span>
-            <span className="hidden text-lg font-semibold text-white sm:block">Matt Karimov</span>
-          </Link>
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 py-2 text-sm font-medium text-slate-300 transition-colors hover:text-amber-300"
-          >
-            <ArrowLeft size={16} aria-hidden="true" />
-            Home
-          </Link>
-        </div>
-      </nav>
+      <SubpageHeader back={{ href: '/', label: 'Home' }} />
 
       <main className="relative mx-auto max-w-4xl px-4 py-20 sm:px-6">
         <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-amber-300/80">Journal</p>
