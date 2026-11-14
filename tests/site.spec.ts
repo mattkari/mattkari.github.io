@@ -44,12 +44,27 @@ test.describe('every page', () => {
       page.on('response', (response) => {
         if (response.status() >= 400) problems.push(`${response.status()} ${response.url()}`);
       });
+      // Fonts, styles and scripts are all served by the site itself.
+      page.on('request', (request) => {
+        if (!isLocal(new URL(request.url()))) problems.push(`third-party request: ${request.url()}`);
+      });
 
       await page.goto(path);
       await loadWholePage(page);
 
       await expect(page.locator('h1')).toHaveCount(1);
       expect(await page.title()).not.toBe('');
+
+      const fontsLoaded = await page.evaluate(async () => {
+        await document.fonts.ready;
+        return ['Inter', 'Playfair Display'].filter(
+          (family) =>
+            !Array.from(document.fonts).some(
+              (face) => face.family.replace(/["']/g, '').includes(family) && face.status === 'loaded',
+            ),
+        );
+      });
+      expect(fontsLoaded, 'font families that did not load').toEqual([]);
 
       const brokenImages = await page.evaluate(() =>
         Array.from(document.images)
@@ -172,12 +187,48 @@ test.describe('links and registries', () => {
     await expect(activeNavLinks(page)).toHaveCount(0);
   });
 
-  test('arriving at /#writing opens the essay list', async ({ page }) => {
+  test('the home page lists the latest three essays and links to the archive', async ({ page }) => {
     await page.goto('/#writing');
-    const toggle = page.locator('[aria-controls="writing-list"]');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('#writing-list a[href^="/articles/"]')).toHaveCount(articles.length);
+    const rows = page.locator('#writing a[href^="/articles/"]');
+    await expect(rows).toHaveCount(3);
+    const latest = [...articles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+    for (const [i, article] of latest.entries()) {
+      await expect(rows.nth(i)).toHaveAttribute('href', `/articles/${article.slug}/`);
+    }
+    await page.locator('#writing').getByRole('link', { name: `All ${articles.length} essays` }).click();
+    await expect(page).toHaveURL(/\/writing$/);
   });
+});
+
+test.describe('tap targets on a phone', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'measured at phone width');
+  });
+
+  // One of each page type. Links inside article prose are exempt, as inline
+  // text links are in WCAG 2.5.8; everything else must be 44px tall.
+  const samples = ['/', '/writing', projectPaths[0], articlePaths[0], '/no-such-page'];
+
+  for (const path of samples) {
+    test(`${path} has no link, button or field under 44px tall`, async ({ page }) => {
+      await page.goto(path);
+      const tooSmall = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('a[href], button, summary, input, textarea'))
+          .filter((element) => {
+            const box = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            // not rendered, or visually hidden until focused (the skip link)
+            if (box.width <= 1 || box.height <= 1 || style.visibility === 'hidden') return false;
+            if (style.display === 'inline' && element.closest('article p, article li, article td')) {
+              return false;
+            }
+            return box.height < 44;
+          })
+          .map((element) => `${element.textContent?.trim().slice(0, 30)} (${Math.round(element.getBoundingClientRect().height)}px)`),
+      );
+      expect(tooSmall).toEqual([]);
+    });
+  }
 });
 
 test.describe('mobile menu', () => {

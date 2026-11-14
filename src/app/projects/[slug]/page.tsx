@@ -52,7 +52,6 @@ export default async function ProjectPage({ params }: Params) {
   if (!project) notFound();
 
   const study = project.caseStudy;
-  const evidence = study.evidence ?? project.evidence;
   const index = projects.indexOf(project);
   const previous = projects[(index - 1 + projects.length) % projects.length];
   const next = projects[(index + 1) % projects.length];
@@ -236,16 +235,17 @@ export default async function ProjectPage({ params }: Params) {
           </section>
         )}
 
-        {evidence.length > 0 && (
-          <section className="mt-16">
-            <SectionTitle>Evidence</SectionTitle>
-            <ul className="max-w-3xl space-y-3">
-              {evidence.map((item) => (
-                <CheckItem key={item}>{item}</CheckItem>
-              ))}
-            </ul>
-          </section>
-        )}
+        <section className="mt-16">
+          <SectionTitle>Evidence</SectionTitle>
+          {study.evidenceNote && (
+            <p className="mb-5 text-sm text-slate-400">{study.evidenceNote}</p>
+          )}
+          <ul className="max-w-3xl space-y-3">
+            {project.evidence.map((item) => (
+              <CheckItem key={item}>{item}</CheckItem>
+            ))}
+          </ul>
+        </section>
 
         {study.limits && (
           <section className="mt-16">
@@ -286,7 +286,7 @@ export default async function ProjectPage({ params }: Params) {
           </p>
           <Link
             href="/#contact"
-            className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-amber-300 hover:text-amber-200"
+            className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-amber-300 hover:text-amber-200"
           >
             Get in touch <ArrowRight size={16} aria-hidden="true" />
           </Link>
