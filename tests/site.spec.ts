@@ -1,0 +1,279 @@
+import { expect, test, type Page } from '@playwright/test';
+import { articles, formatDate } from '../src/lib/articles';
+import { projects } from '../src/lib/projects';
+import { SITE_URL } from '../src/lib/site';
+
+// Every address the site publishes, taken from the same registries the site
+// itself is built from, so a new article or project is covered automatically.
+const articlePaths = articles.map((article) => `/articles/${article.slug}/`);
+const projectPaths = projects.map((project) => `/projects/${project.slug}`);
+const allPaths = ['/', '/writing', ...projectPaths, ...articlePaths];
+
+const isLocal = (url: URL) => url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+
+test.beforeEach(async ({ page }) => {
+  // Nothing leaves the machine: third-party requests (web fonts) get an empty reply.
+  await page.route(
+    (url) => !isLocal(url),
+    (route) => route.fulfill({ status: 200, contentType: 'text/css', body: '' }),
+  );
+});
+
+/** Scroll the whole page so lazy images load, then return to the top. */
+async function loadWholePage(page: Page) {
+  await page.evaluate(async () => {
+    for (let y = 0; y < document.body.scrollHeight; y += 600) {
+      window.scrollTo({ top: y, behavior: 'instant' });
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    }
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
+  await page.waitForFunction(() => Array.from(document.images).every((image) => image.complete));
+}
+
+const activeNavLinks = (page: Page) => page.locator('nav [aria-current="location"]');
+
+test.describe('every page', () => {
+  for (const path of allPaths) {
+    test(`${path} renders cleanly`, async ({ page }) => {
+      const problems: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error') problems.push(`console: ${message.text()}`);
+      });
+      page.on('pageerror', (error) => problems.push(`exception: ${error.message}`));
+      page.on('response', (response) => {
+        if (response.status() >= 400) problems.push(`${response.status()} ${response.url()}`);
+      });
+
+      await page.goto(path);
+      await loadWholePage(page);
+
+      await expect(page.locator('h1')).toHaveCount(1);
+      expect(await page.title()).not.toBe('');
+
+      const brokenImages = await page.evaluate(() =>
+        Array.from(document.images)
+          .filter((image) => image.naturalWidth === 0)
+          .map((image) => image.src),
+      );
+      expect(brokenImages, 'images that failed to load').toEqual([]);
+
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      expect(overflow, 'pixels of sideways scrolling').toBe(0);
+
+      expect(problems).toEqual([]);
+    });
+  }
+});
+
+test.describe('links and registries', () => {
+  // These do not depend on the viewport, so one project is enough.
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'viewport-independent');
+  });
+
+  test('every internal link resolves, including its #fragment', async ({ page, request }) => {
+    test.setTimeout(120_000);
+    const idsByPath = new Map<string, Set<string>>();
+    const links: { from: string; path: string; hash: string }[] = [];
+
+    for (const path of allPaths) {
+      await page.goto(path);
+      const found = await page.evaluate(() => ({
+        ids: Array.from(document.querySelectorAll('[id]'), (element) => element.id),
+        hrefs: Array.from(document.querySelectorAll<HTMLAnchorElement>('a[href]'), (a) => a.href),
+      }));
+      idsByPath.set(path, new Set(found.ids));
+      for (const href of found.hrefs) {
+        const url = new URL(href);
+        if (url.protocol.startsWith('http') && isLocal(url)) {
+          links.push({ from: path, path: url.pathname, hash: decodeURIComponent(url.hash.slice(1)) });
+        }
+      }
+    }
+
+    const broken: string[] = [];
+    const statusByPath = new Map<string, number>();
+    for (const link of links) {
+      if (!statusByPath.has(link.path)) {
+        statusByPath.set(link.path, (await request.get(link.path)).status());
+      }
+      if (statusByPath.get(link.path) !== 200) {
+        broken.push(`${link.from} -> ${link.path} (${statusByPath.get(link.path)})`);
+      } else if (link.hash && idsByPath.has(link.path) && !idsByPath.get(link.path)!.has(link.hash)) {
+        broken.push(`${link.from} -> ${link.path}#${link.hash} (no such id)`);
+      }
+    }
+    expect(broken).toEqual([]);
+  });
+
+  test('every article has its page, social card and a byline matching the registry', async ({ request }) => {
+    for (const article of articles) {
+      const page = await request.get(`/articles/${article.slug}/`);
+      expect(page.status(), article.slug).toBe(200);
+      const html = await page.text();
+      expect(html, `${article.slug} byline`).toContain(
+        `· ${formatDate(article.date)} · ${article.readingMinutes} min read</p>`,
+      );
+      expect(html, `${article.slug} structured data`).toContain('"@type": "BlogPosting"');
+      expect((await request.get(`/og/${article.slug}.png`)).status(), `${article.slug} card`).toBe(200);
+    }
+  });
+
+  test('the sitemap lists every page and the feed lists every article', async ({ request }) => {
+    const sitemap = await (await request.get('/sitemap.xml')).text();
+    for (const path of allPaths) {
+      expect(sitemap).toContain(`<loc>${SITE_URL}${path}</loc>`);
+    }
+    const feed = await (await request.get('/feed.xml')).text();
+    for (const path of articlePaths) {
+      expect(feed).toContain(`<link>${SITE_URL}${path}</link>`);
+    }
+    expect(await (await request.get('/robots.txt')).text()).toContain(`${SITE_URL}/sitemap.xml`);
+  });
+
+  test('an unknown address shows the branded 404 page', async ({ page }) => {
+    const response = await page.goto('/no-such-page');
+    expect(response?.status()).toBe(404);
+    await expect(page.locator('h1')).toHaveText('Page not found');
+    await page.getByRole('link', { name: 'Browse the writing' }).click();
+    await expect(page).toHaveURL(/\/writing$/);
+    await expect(page.locator('h1')).toContainText('Writing');
+  });
+
+  test('a project card opens its case study', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: `${projects[0].name}: read the case study` }).click();
+    await expect(page).toHaveURL(new RegExp(`/projects/${projects[0].slug}$`));
+    await expect(page.locator('h1')).toHaveText(projects[0].name);
+    await page.getByRole('link', { name: 'All projects' }).click();
+    await expect(page).toHaveURL(/\/#projects$/);
+  });
+
+  test('the nav highlights the section in view and clears at the top', async ({ page }) => {
+    await page.goto('/');
+    await expect(activeNavLinks(page)).toHaveCount(0);
+
+    for (const [id, label] of [
+      ['projects', 'Projects'],
+      ['skills', 'Experience'],
+      ['contact', 'Contact'],
+    ]) {
+      await page.evaluate((sectionId) => {
+        const top = document.getElementById(sectionId)!.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: top - 64, behavior: 'instant' });
+      }, id);
+      await expect(activeNavLinks(page)).toHaveText(label);
+    }
+
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+    await expect(activeNavLinks(page)).toHaveCount(0);
+  });
+
+  test('arriving at /#writing opens the essay list', async ({ page }) => {
+    await page.goto('/#writing');
+    const toggle = page.locator('[aria-controls="writing-list"]');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('#writing-list a[href^="/articles/"]')).toHaveCount(articles.length);
+  });
+});
+
+test.describe('mobile menu', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'the menu button only exists on small screens');
+  });
+
+  test('opens, closes on Escape and closes after choosing a link', async ({ page }) => {
+    await page.goto('/');
+    const button = page.locator('button[aria-controls="mobile-menu"]');
+    const menu = page.locator('#mobile-menu');
+
+    await button.click();
+    await expect(menu).toBeVisible();
+    await expect(button).toHaveAttribute('aria-expanded', 'true');
+
+    await page.keyboard.press('Escape');
+    await expect(menu).toHaveCount(0);
+    await expect(button).toBeFocused();
+
+    await button.click();
+    await menu.getByRole('link', { name: 'Projects' }).click();
+    await expect(menu).toHaveCount(0);
+    await expect(page).toHaveURL(/#projects$/);
+  });
+});
+
+test.describe('contact form', () => {
+  const ENDPOINT = 'https://api.web3forms.com/submit';
+
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== 'desktop', 'viewport-independent');
+    await page.goto('/');
+    // Without NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY at build time the form is disabled by design.
+    test.skip(await page.locator('#name').isDisabled(), 'site was built without a form key');
+  });
+
+  async function fill(page: Page) {
+    await page.fill('#name', 'Test Person');
+    await page.fill('#email', 'test@example.com');
+    await page.fill('#message', 'Hello from the test suite.');
+  }
+
+  test('does not submit until every field is valid', async ({ page }) => {
+    let requests = 0;
+    await page.route(ENDPOINT, (route) => {
+      requests += 1;
+      return route.fulfill({ json: { success: true } });
+    });
+    const submit = page.locator('#contact-form button[type="submit"]');
+
+    await submit.click();
+    await fill(page);
+    await page.fill('#email', 'not-an-email');
+    await submit.click();
+    expect(requests).toBe(0);
+  });
+
+  test('confirms a sent message and clears the fields', async ({ page }) => {
+    let payload: Record<string, unknown> = {};
+    await page.route(ENDPOINT, (route) => {
+      payload = route.request().postDataJSON();
+      return route.fulfill({ json: { success: true } });
+    });
+
+    await fill(page);
+    await page.locator('#contact-form button[type="submit"]').click();
+
+    await expect(page.getByText('Message sent')).toBeVisible();
+    await expect(page.locator('#name')).toHaveValue('');
+    expect(payload).toMatchObject({ name: 'Test Person', email: 'test@example.com' });
+  });
+
+  test('reports a rejected message, keeps the text and offers the email address', async ({ page }) => {
+    await page.route(ENDPOINT, (route) =>
+      route.fulfill({ status: 400, json: { success: false, message: 'Invalid access key.' } }),
+    );
+
+    await fill(page);
+    await page.locator('#contact-form button[type="submit"]').click();
+
+    const alert = page.locator('#contact-form [role="alert"]');
+    await expect(alert).toContainText('Message not sent');
+    await expect(alert).toContainText('Invalid access key.');
+    await expect(alert.getByRole('link')).toHaveAttribute('href', /^mailto:/);
+    await expect(page.locator('#message')).toHaveValue('Hello from the test suite.');
+  });
+
+  test('reports a network failure', async ({ page }) => {
+    await page.route(ENDPOINT, (route) => route.abort());
+
+    await fill(page);
+    await page.locator('#contact-form button[type="submit"]').click();
+
+    await expect(page.locator('#contact-form [role="alert"]')).toContainText(
+      'Could not reach the mail service',
+    );
+  });
+});
