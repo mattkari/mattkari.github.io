@@ -308,7 +308,7 @@ export default function Home() {
   // Three parallel counts. The PhD moved into the About copy: a credential in
   // a numeric slot read as an inconsistency, and it is already stated below.
   const stats = [
-    { value: '5+', label: 'Years in banking QA' },
+    { value: '8+', label: 'Years in UK financial services' },
     { value: String(sortedArticles.length), label: 'Technical essays' },
     { value: String(projects.length), label: 'Systems running' },
   ];
@@ -503,9 +503,9 @@ export default function Home() {
                   My path to AI engineering runs through evidence. A PhD in governance and
                   international affairs (Durham, 2018) trained me to work the way a
                   trustworthy LLM system must: read sources closely, separate what a source
-                  says from what I infer, and defend every claim. Five years in banking QA
-                  taught me what regulated systems demand: traceability, reconciliation,
-                  and claims you can verify.
+                  says from what I infer, and defend every claim. More than eight years in UK
+                  financial services taught me what regulated systems demand: traceability,
+                  reconciliation, and claims you can verify.
                 </p>
                 <p className="mt-6 text-lg leading-relaxed text-slate-300">
                   Day to day I am a Test Automation Engineer at Barclays Investment Bank,
