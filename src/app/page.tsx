@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Bot,
   Briefcase,
@@ -15,6 +15,7 @@ import {
   Layers,
   Linkedin,
   Loader2,
+  Lock,
   Mail,
   MapPin,
   Menu,
@@ -28,13 +29,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
+import { SiteFooter } from '@/components/site-footer';
 import { WritingShowcase } from '@/components/writing-showcase';
 import { sortedArticles } from '@/lib/articles';
+import { EMAIL, GITHUB_URL, LINKEDIN_URL } from '@/lib/site';
 
 const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
-const GITHUB_URL = 'https://github.com/mattkari';
-const LINKEDIN_URL = 'https://www.linkedin.com/in/mattkari';
-const EMAIL = 'mattkarimov@outlook.com';
 // Rebuild with: python3 scripts/build-cv-pdf.py
 // Keep CV_VERSION in step with CV_VERSION in that script.
 const CV_URL = '/cv/matt-karimov-cv.pdf';
@@ -102,6 +102,7 @@ export default function Home() {
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
 
   // Injected at build time from the WEB3FORMS_ACCESS_KEY repo secret. Without it
   // there is nowhere for submissions to go, so the form renders in a disabled
@@ -117,9 +118,10 @@ export default function Home() {
     { name: 'Contact', href: '#contact' },
   ];
 
-  // Highlight the nav link for whichever section is currently in view.
+  // Highlight the nav link for whichever section is currently in view. The hero
+  // is observed too, so the highlight clears again on the way back to the top.
   useEffect(() => {
-    const ids = ['about', 'projects', 'writing', 'experience', 'contact'];
+    const ids = ['home', 'about', 'projects', 'writing', 'experience', 'skills', 'contact'];
     const nodes = ids
       .map((id) => document.getElementById(id))
       .filter((n): n is HTMLElement => n !== null);
@@ -150,9 +152,32 @@ export default function Home() {
     return () => window.removeEventListener('hashchange', openIfWriting);
   }, []);
 
+  // The mobile menu closes on Escape (focus returns to its button) and when
+  // the viewport grows past the breakpoint where the desktop links take over.
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setIsMobileMenuOpen(false);
+      menuButtonRef.current?.focus();
+    };
+    const desktop = window.matchMedia('(min-width: 768px)');
+    const onBreakpoint = () => desktop.matches && setIsMobileMenuOpen(false);
+    window.addEventListener('keydown', onKeyDown);
+    desktop.addEventListener('change', onBreakpoint);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      desktop.removeEventListener('change', onBreakpoint);
+    };
+  }, [isMobileMenuOpen]);
+
   const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth' });
   };
+
+  // "The stack" has no nav link of its own; it reads as part of Experience.
+  const activeNavSection = activeSection === 'skills' ? 'experience' : activeSection;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -413,12 +438,12 @@ export default function Home() {
 
             <div className="hidden md:flex items-center space-x-7">
               {navLinks.map((link) => {
-                const isActive = link.href === `#${activeSection}`;
+                const isActive = link.href === `#${activeNavSection}`;
                 return (
                   <a
                     key={link.name}
                     href={link.href}
-                    aria-current={isActive ? 'true' : undefined}
+                    aria-current={isActive ? 'location' : undefined}
                     onClick={() => link.href === '#writing' && setIsWritingOpen(true)}
                     className={`border-b-2 pb-0.5 text-sm font-medium transition-colors ${
                       isActive
@@ -440,10 +465,12 @@ export default function Home() {
             </div>
 
             <button
-              className="md:hidden text-slate-200 hover:text-amber-300"
+              ref={menuButtonRef}
+              className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md text-slate-200 hover:text-amber-300 md:hidden"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Toggle menu"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
+              aria-controls="mobile-menu"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -451,17 +478,18 @@ export default function Home() {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-white/10 bg-slate-950">
+          <div id="mobile-menu" className="md:hidden border-t border-white/10 bg-slate-950">
             <div className="px-4 pt-2 pb-4 space-y-1">
               {navLinks.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
+                  aria-current={link.href === `#${activeNavSection}` ? 'location' : undefined}
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     if (link.href === '#writing') setIsWritingOpen(true);
                   }}
-                  className="block px-3 py-2.5 rounded-md text-base font-medium text-slate-200 hover:text-amber-300 hover:bg-white/5"
+                  className="block px-3 py-2.5 rounded-md text-base font-medium text-slate-200 hover:text-amber-300 hover:bg-white/5 aria-[current]:text-amber-300"
                 >
                   {link.name}
                 </a>
@@ -482,7 +510,7 @@ export default function Home() {
         )}
       </nav>
 
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1} className="outline-none">
         {/* Hero */}
         <section
           id="home"
@@ -490,12 +518,12 @@ export default function Home() {
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -left-32 -top-40 h-[32rem] w-[32rem] rounded-full bg-blue-600/20 blur-3xl" />
-            <div className="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-amber-200/20 blur-3xl" />
+            <div className="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
           </div>
 
           <div className="relative mx-auto max-w-5xl text-center">
-            <p className="mb-6 text-xs font-medium uppercase tracking-[0.3em] text-slate-400">
+            <p className="mb-6 text-xs font-medium uppercase leading-relaxed tracking-[0.22em] text-slate-400 sm:tracking-[0.3em]">
               Matt Karimov · Test Automation Engineer · PhD, Durham
             </p>
             <h1 className="font-display text-4xl leading-[1.15] text-white sm:text-6xl">
@@ -558,7 +586,7 @@ export default function Home() {
                     loading="lazy"
                     className="w-full rounded-2xl border border-white/10 object-cover shadow-2xl shadow-slate-950/60"
                   />
-                  <figcaption className="mt-3 text-sm text-slate-500">
+                  <figcaption className="mt-3 text-sm text-slate-400">
                     Matt Karimov, {LOCATION}
                   </figcaption>
                 </figure>
@@ -655,37 +683,42 @@ export default function Home() {
                         <CheckItem key={item}>{item}</CheckItem>
                       ))}
                     </ul>
-                    <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
-                      <ul className="flex flex-wrap gap-2">
-                        {project.technologies.map((tech) => (
-                          <li key={tech}>
-                            <Tag>{tech}</Tag>
-                          </li>
-                        ))}
-                      </ul>
-                      {project.repo ? (
-                        <a
-                          href={project.repo}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-amber-300 hover:text-amber-200"
-                        >
-                          <Github size={15} aria-hidden="true" /> Repo
-                        </a>
-                      ) : project.liveUrl ? (
-                        <a
-                          href={project.liveUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-amber-300 hover:text-amber-200"
-                        >
-                          <Globe size={15} aria-hidden="true" /> Visit
-                        </a>
-                      ) : (
-                        <span className="max-w-[16rem] text-right text-xs text-slate-500">
-                          {project.status}
-                        </span>
-                      )}
+                    <div className="mt-auto pt-7">
+                      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-4 border-t border-white/10 pt-5">
+                        <ul className="flex flex-wrap gap-2">
+                          {project.technologies.map((tech) => (
+                            <li key={tech}>
+                              <Tag>{tech}</Tag>
+                            </li>
+                          ))}
+                        </ul>
+                        {project.repo ? (
+                          <a
+                            href={project.repo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`${project.name}: repository on GitHub`}
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap py-1 text-sm font-medium text-amber-300 hover:text-amber-200"
+                          >
+                            <Github size={15} aria-hidden="true" /> Repo
+                          </a>
+                        ) : project.liveUrl ? (
+                          <a
+                            href={project.liveUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`${project.name}: visit the live site`}
+                            className="inline-flex items-center gap-1.5 whitespace-nowrap py-1 text-sm font-medium text-amber-300 hover:text-amber-200"
+                          >
+                            <Globe size={15} aria-hidden="true" /> Visit
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center gap-2 text-xs text-slate-400">
+                            <Lock size={13} aria-hidden="true" className="shrink-0" />
+                            {project.status}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -703,75 +736,76 @@ export default function Home() {
           className="border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16"
         >
           <div className="mx-auto max-w-7xl">
-            <div className="mb-14 flex flex-wrap items-end justify-between gap-6">
-              <div className="max-w-3xl">
-                <Kicker>Career</Kicker>
-                <h2 className="font-display text-3xl leading-tight text-white sm:text-4xl">
-                  Professional <span className="italic text-slate-400">experience</span>
-                </h2>
-                <div aria-hidden="true" className="mt-5 h-px w-16 bg-amber-300/60" />
-              </div>
-              <a
-                href={CV_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                type="application/pdf"
-                download
-                className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-amber-300/60 hover:text-amber-300"
-              >
-                <Download size={15} aria-hidden="true" />
-                Download CV (PDF, {CV_VERSION})
-              </a>
-            </div>
-
-            <div className="max-w-3xl space-y-5">
-              {experience.map((role) => (
-                <article
-                  key={role.title + role.company}
-                  className="rounded-2xl border border-white/10 bg-slate-900/60 p-7 transition-colors duration-300 hover:border-white/20"
+            <div className="grid gap-x-12 gap-y-2 lg:grid-cols-[1fr,2fr]">
+              <div className="lg:sticky lg:top-28 lg:self-start">
+                <SectionHeading kicker="Career" title="Professional" italic="experience" />
+                <a
+                  href={CV_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  type="application/pdf"
+                  download
+                  className="-mt-4 mb-10 inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-amber-300/60 hover:text-amber-300 lg:mb-0"
                 >
-                  <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-display text-xl text-white">{role.title}</h3>
-                      <p className="mt-1 text-sm font-medium text-amber-300/90">{role.company}</p>
+                  <Download size={15} aria-hidden="true" />
+                  Download CV (PDF, {CV_VERSION})
+                </a>
+              </div>
+
+              <div className="space-y-5">
+                {experience.map((role) => (
+                  <article
+                    key={role.title + role.company}
+                    className="rounded-2xl border border-white/10 bg-slate-900/60 p-7 transition-colors duration-300 hover:border-white/20"
+                  >
+                    <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="font-display text-xl text-white">{role.title}</h3>
+                        <p className="mt-1 text-sm font-medium text-amber-300/90">{role.company}</p>
+                      </div>
+                      <span className="rounded-full border border-white/15 px-3 py-1 text-xs tracking-wide text-slate-300">
+                        {role.period}
+                      </span>
                     </div>
-                    <span className="rounded-full border border-white/15 px-3 py-1 text-xs tracking-wide text-slate-300">
-                      {role.period}
-                    </span>
-                  </div>
-                  <ul className="max-w-prose space-y-2.5">
-                    {role.highlights.map((item) => (
-                      <CheckItem key={item}>{item}</CheckItem>
-                    ))}
-                  </ul>
-                  <ul className="mt-6 flex flex-wrap gap-2 border-t border-white/10 pt-5">
-                    {role.technologies.map((tech) => (
-                      <li key={tech}>
-                        <Tag>{tech}</Tag>
+                    <ul className="max-w-prose space-y-2.5">
+                      {role.highlights.map((item) => (
+                        <CheckItem key={item}>{item}</CheckItem>
+                      ))}
+                    </ul>
+                    <ul className="mt-6 flex flex-wrap gap-2 border-t border-white/10 pt-5">
+                      {role.technologies.map((tech) => (
+                        <li key={tech}>
+                          <Tag>{tech}</Tag>
+                        </li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+
+                <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-7">
+                  <h3 className="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+                    Earlier roles
+                  </h3>
+                  <ul className="mt-5 space-y-5">
+                    {earlierRoles.map((role) => (
+                      <li
+                        key={role.company}
+                        className="grid gap-x-6 gap-y-1 sm:grid-cols-[1fr,auto] sm:items-baseline"
+                      >
+                        <p className="font-medium text-slate-200">
+                          {role.title}
+                          <span className="font-normal text-slate-400"> · {role.company}</span>
+                        </p>
+                        <span className="whitespace-nowrap text-xs tracking-wide text-slate-400">
+                          {role.period}
+                        </span>
+                        <p className="max-w-prose text-sm text-slate-400 sm:col-span-2">
+                          {role.scope}
+                        </p>
                       </li>
                     ))}
                   </ul>
-                </article>
-              ))}
-
-              <div className="rounded-2xl border border-white/10 bg-slate-900/40 p-7">
-                <h3 className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500">
-                  Earlier roles
-                </h3>
-                <ul className="mt-5 space-y-4">
-                  {earlierRoles.map((role) => (
-                    <li key={role.company}>
-                      <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-                        <p className="font-medium text-slate-200">
-                          {role.title}
-                          <span className="text-slate-500"> · {role.company}</span>
-                        </p>
-                        <span className="text-xs tracking-wide text-slate-500">{role.period}</span>
-                      </div>
-                      <p className="mt-1 max-w-prose text-sm text-slate-400">{role.scope}</p>
-                    </li>
-                  ))}
-                </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -801,9 +835,12 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="mt-16 max-w-3xl">
-              <h3 className="font-display text-2xl text-white">Education</h3>
-              <ul className="mt-6 divide-y divide-white/10 rounded-2xl border border-white/10 bg-slate-900/60 px-6">
+            <div className="mt-20 grid gap-x-12 gap-y-6 lg:grid-cols-[1fr,2fr]">
+              <div>
+                <h3 className="font-display text-2xl text-white sm:text-3xl">Education</h3>
+                <div aria-hidden="true" className="mt-5 h-px w-16 bg-amber-300/60" />
+              </div>
+              <ul className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-slate-900/60 px-6">
                 {education.map((item) => (
                   <li key={item.program} className="flex items-start gap-4 py-5">
                     <GraduationCap
@@ -830,7 +867,7 @@ export default function Home() {
           className="relative overflow-hidden border-t border-white/5 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-amber-200/20 blur-3xl" />
+            <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
           </div>
           <div className="relative mx-auto max-w-7xl">
             <SectionHeading
@@ -892,7 +929,7 @@ export default function Home() {
                       <row.icon size={19} aria-hidden="true" />
                     </span>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{row.label}</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-400">{row.label}</p>
                       <p className="mt-1">{row.content}</p>
                     </div>
                   </div>
@@ -902,7 +939,7 @@ export default function Home() {
                     <MapPin size={19} aria-hidden="true" />
                   </span>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Location</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Location</p>
                     <p className="mt-1 text-slate-300">{LOCATION_LONG}</p>
                   </div>
                 </div>
@@ -925,7 +962,7 @@ export default function Home() {
                   </div>
                 </a>
                 <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
                     Response time
                   </p>
                   <p className="mt-1.5 text-sm leading-relaxed text-slate-300">
@@ -941,7 +978,7 @@ export default function Home() {
                 <CardHeader>
                   <CardTitle className="font-display text-2xl text-white">Get in touch</CardTitle>
                   <CardDescription className="text-slate-400">
-                    Typically replies within 24 hours.
+                    All three fields are required.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -1007,6 +1044,7 @@ export default function Home() {
                         value={formData.name}
                         onChange={handleInputChange}
                         required
+                        autoComplete="name"
                         disabled={!isFormEnabled || status === 'submitting'}
                         placeholder="Your name"
                         className="border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
@@ -1023,6 +1061,7 @@ export default function Home() {
                         value={formData.email}
                         onChange={handleInputChange}
                         required
+                        autoComplete="email"
                         disabled={!isFormEnabled || status === 'submitting'}
                         placeholder="you@example.com"
                         className="border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
@@ -1066,49 +1105,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 bg-slate-950">
-        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center gap-6 text-center">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
-              MK
-            </span>
-            <div>
-              <p className="font-display text-xl text-white">Matt Karimov</p>
-              <p className="mt-1 text-sm text-slate-400">Test automation · AI engineering</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-8 text-sm text-slate-400">
-              <a
-                href={LINKEDIN_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 transition-colors hover:text-amber-300"
-              >
-                <Linkedin size={15} aria-hidden="true" /> LinkedIn
-              </a>
-              <a
-                href={GITHUB_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 transition-colors hover:text-amber-300"
-              >
-                <Github size={15} aria-hidden="true" /> GitHub
-              </a>
-              <a
-                href={`mailto:${EMAIL}`}
-                className="inline-flex items-center gap-2 transition-colors hover:text-amber-300"
-              >
-                <Mail size={15} aria-hidden="true" /> {EMAIL}
-              </a>
-            </div>
-            <div className="w-full border-t border-white/10 pt-6">
-              <p className="text-xs text-slate-500">
-                © {new Date().getFullYear()} Matt Karimov. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

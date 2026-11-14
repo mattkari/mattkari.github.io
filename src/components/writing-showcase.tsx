@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { ArrowRight, ChevronDown } from 'lucide-react';
 import { ArticleRow } from '@/components/article-row';
 import { formatDate, sortedArticles } from '@/lib/articles';
@@ -36,7 +37,7 @@ export function WritingShowcase({ open, onToggle }: { open: boolean; onToggle: (
             Tested, step-by-step essays on AI quality, AI agents and test automation. Everything
             described was built and measured by me, and the limits are stated.
           </p>
-          <p className="mt-6 text-xs uppercase tracking-[0.2em] text-slate-500">
+          <p className="mt-6 text-xs uppercase tracking-[0.2em] text-slate-400">
             {sortedArticles.length} essays
             <span aria-hidden="true" className="mx-3 text-slate-700">
               ◆
@@ -122,14 +123,14 @@ export function WritingShowcase({ open, onToggle }: { open: boolean; onToggle: (
                 ))}
               </ul>
               <div className="flex items-center justify-between border-t border-white/10 px-6 py-4 text-sm">
-                <span className="text-slate-500">Newest first</span>
-                <a
+                <span className="text-slate-400">Newest first</span>
+                <Link
                   href="/writing"
-                  className="inline-flex items-center gap-2 font-medium text-amber-300 hover:text-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-300"
+                  className="inline-flex items-center gap-2 py-1 font-medium text-amber-300 hover:text-amber-200"
                 >
                   Open the archive page
                   <ArrowRight size={16} aria-hidden="true" />
-                </a>
+                </Link>
               </div>
             </div>
           </div>

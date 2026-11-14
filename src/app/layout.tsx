@@ -5,9 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 const display = Playfair_Display({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
-const SITE_URL = "https://mattkari.github.io";
-const GITHUB_URL = "https://github.com/mattkari";
-const LINKEDIN_URL = "https://www.linkedin.com/in/mattkari";
+import { EMAIL, GITHUB_URL, LINKEDIN_URL, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -76,7 +74,7 @@ const personSchema = {
   "@type": "Person",
   name: "Matt Karimov",
   url: SITE_URL,
-  email: "mailto:mattkarimov@outlook.com",
+  email: `mailto:${EMAIL}`,
   jobTitle: "Test Automation Engineer",
   description:
     "Builds source-grounded AI tools for banking test teams. They cite their sources, refuse when the evidence runs out, and prove what they claim.",
@@ -111,7 +109,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en-GB">
       <body className={`${inter.className} ${display.variable}`}>
         <script
           type="application/ld+json"

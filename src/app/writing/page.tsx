@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { ArticleRow } from '@/components/article-row';
+import { SiteFooter } from '@/components/site-footer';
 import { formatDate, sortedArticles } from '@/lib/articles';
-
-const SITE_URL = 'https://mattkari.github.io';
+import { SITE_URL } from '@/lib/site';
 
 export const metadata: Metadata = {
   title: 'Writing | Matt Karimov',
@@ -45,32 +46,32 @@ export default function WritingPage() {
 
       <nav aria-label="Primary" className="relative border-b border-white/10">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6">
-          <a href="/" className="flex items-center space-x-3">
+          <Link href="/" className="flex items-center space-x-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
               MK
             </span>
             <span className="hidden text-lg font-semibold text-white sm:block">Matt Karimov</span>
-          </a>
-          <a
+          </Link>
+          <Link
             href="/"
-            className="inline-flex items-center gap-2 font-medium text-slate-300 hover:text-amber-300"
+            className="inline-flex items-center gap-2 py-2 text-sm font-medium text-slate-300 transition-colors hover:text-amber-300"
           >
-            <ArrowLeft size={18} aria-hidden="true" />
+            <ArrowLeft size={16} aria-hidden="true" />
             Home
-          </a>
+          </Link>
         </div>
       </nav>
 
       <main className="relative mx-auto max-w-4xl px-4 py-20 sm:px-6">
         <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-amber-300/80">Journal</p>
-        <h1 className="font-display text-5xl leading-tight text-white sm:text-6xl">
+        <h1 className="font-display text-4xl leading-tight text-white sm:text-6xl">
           Writing <span className="italic text-slate-400">from the workbench</span>
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-300">
           Practical guides from my own projects on AI quality, LLM evaluation, AI agents and test
           automation. Everything described was built and tested by me, and the limits are stated.
         </p>
-        <p className="mt-6 text-xs uppercase tracking-[0.2em] text-slate-500">
+        <p className="mt-6 text-xs uppercase tracking-[0.2em] text-slate-400">
           {sortedArticles.length} essays
           <span aria-hidden="true" className="mx-3 text-slate-700">
             ◆
@@ -90,6 +91,8 @@ export default function WritingPage() {
           ))}
         </ul>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }

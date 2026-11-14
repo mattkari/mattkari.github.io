@@ -1,48 +1,48 @@
 # mattkari.github.io
 
-Personal portfolio website for Matt Karimov, QA Automation Specialist & Senior
-Automation Tester, built with Next.js 15, React 18, and Tailwind CSS.
+Personal site for Matt Karimov: a single-page portfolio, a writing archive and
+a set of standalone articles. Built with Next.js 15 (static export), React 18,
+TypeScript and Tailwind CSS, and published to GitHub Pages.
 
 **Live site:** https://mattkari.github.io
 
-## Features
+## How it is put together
 
-- Modern, responsive design
-- Client-side navigation with smooth scrolling
-- Professional profile, core technical skills, work experience, and education
-- Contact form
-- Mobile-friendly layout
+| Path | What it is |
+| --- | --- |
+| `src/app/page.tsx` | The home page: hero, about, projects, writing, experience, stack, contact |
+| `src/app/writing/page.tsx` | The `/writing` archive, listing every article |
+| `src/app/not-found.tsx` | The 404 page (GitHub Pages serves it for any unknown address) |
+| `src/app/layout.tsx` | Fonts, metadata, Open Graph tags and the JSON-LD person schema |
+| `src/lib/articles.ts` | The registry of articles: the one list the home page, the archive and the OG script read |
+| `src/lib/site.ts` | Site URL, profile links and contact email |
+| `src/components/` | The writing section, article rows, shared footer and small UI primitives |
+| `public/articles/<slug>/index.html` | Each article, as a standalone static HTML page |
+| `public/articles/_article.css` | The one stylesheet every article shares |
+| `scripts/` | Python helpers that generate the article chrome, OG cards, icons and CV PDF |
 
-## Tech Stack
-
-- **Next.js 15** - React framework
-- **React 18** - UI library
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **Lucide React** - Icons
-- **Class Variance Authority** - Component variants
-
-## Getting Started
-
-### Installation
+## Getting started
 
 ```bash
 npm install
+npm run dev      # http://localhost:3000
+npm run lint     # ESLint with the Next.js rules
+npm run build    # static export to ./out
 ```
 
-### Development
+## Adding an article
 
-```bash
-npm run dev
-```
+1. Put the article at `public/articles/<slug>/index.html` (images in an `img/`
+   folder beside it).
+2. Add its entry to `src/lib/articles.ts`.
+3. Run `python3 scripts/apply-article-chrome.py` to give it the shared header,
+   footer and stylesheet.
+4. Run `python3 scripts/generate-og-images.py` to render its social card.
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Build
-
-```bash
-npm run build
-```
+The other two scripts are run only when their source changes:
+`scripts/generate-icons.py` (favicon and app icons from `public/icon-master.svg`)
+and `scripts/build-cv-pdf.py` (the downloadable CV; keep `CV_VERSION` in the
+script and in `src/app/page.tsx` in step).
 
 ## Contact form
 
@@ -61,20 +61,6 @@ address, rather than silently discarding messages.
 
 Pushes to `main` trigger `.github/workflows/nextjs.yml`, which builds a static
 export (`output: 'export'` in `next.config.js`) and publishes it to GitHub Pages.
-
-## Project Structure
-
-- `src/app/` - Next.js app directory
-- `src/components/` - React components
-- `src/lib/` - Utility functions
-- `public/` - Static assets
-
-## Components
-
-- Reusable UI components (Button, Card, Input, etc.)
-- Responsive navigation
-- Contact form
-- Hero, about, skills, experience, education, and contact sections
 
 ## License
 
