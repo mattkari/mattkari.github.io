@@ -330,10 +330,10 @@ export default function Home() {
 
   // Three parallel counts. The PhD moved into the About copy: a credential in
   // a numeric slot read as an inconsistency, and it is already stated below.
-  const stats = [
+  const stats: { value: string; label: string; href?: string }[] = [
     { value: '8+', label: 'Years in UK financial services' },
-    { value: String(sortedArticles.length), label: 'Technical essays' },
-    { value: String(projects.length), label: 'Systems running' },
+    { value: String(sortedArticles.length), label: 'Technical essays', href: '/writing' },
+    { value: String(projects.length), label: 'Systems running', href: '#projects' },
   ];
 
   const education = [
@@ -485,15 +485,47 @@ export default function Home() {
               </Button>
             </div>
 
-            <div className="mx-auto mt-10 grid max-w-3xl grid-cols-3 gap-6 border-t border-white/10 pt-8 sm:mt-14 sm:pt-10">
-              {stats.map((stat) => (
-                <div key={stat.label} className="text-center">
-                  <p className="font-display text-3xl text-amber-300 sm:text-4xl">{stat.value}</p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.15em] text-slate-400 sm:text-sm sm:normal-case sm:tracking-normal">
-                    {stat.label}
-                  </p>
-                </div>
-              ))}
+            <div className="mx-auto mt-10 grid max-w-3xl grid-cols-3 items-start gap-4 border-t border-white/10 pt-6 sm:mt-12 sm:gap-6 sm:pt-8">
+              {stats.map((stat) => {
+                // Gold marks an action, so only the two stats that lead somewhere use it.
+                const body = (
+                  <>
+                    <span
+                      className={`block font-display text-4xl sm:text-5xl ${
+                        stat.href ? 'text-amber-300' : 'text-white'
+                      }`}
+                    >
+                      {stat.value}
+                    </span>
+                    <span
+                      className={`mt-2 block text-sm leading-snug sm:text-base ${
+                        stat.href
+                          ? 'text-slate-200 underline decoration-amber-300/50 underline-offset-4 group-hover:text-amber-200'
+                          : 'text-slate-200'
+                      }`}
+                    >
+                      {stat.label}
+                    </span>
+                  </>
+                );
+                if (!stat.href) {
+                  return (
+                    <p key={stat.label} className="py-2 text-center">
+                      {body}
+                    </p>
+                  );
+                }
+                const linkClass = 'group block rounded-lg py-2 text-center';
+                return stat.href.startsWith('#') ? (
+                  <a key={stat.label} href={stat.href} className={linkClass}>
+                    {body}
+                  </a>
+                ) : (
+                  <Link key={stat.label} href={stat.href} className={linkClass}>
+                    {body}
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>
