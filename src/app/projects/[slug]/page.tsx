@@ -286,7 +286,7 @@ export default async function ProjectPage({ params }: Params) {
           </p>
           <Link
             href="/#contact"
-            className="mt-6 inline-flex items-center gap-2 text-sm font-medium text-amber-300 hover:text-amber-200"
+            className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-amber-300 hover:text-amber-200"
           >
             Get in touch <ArrowRight size={16} aria-hidden="true" />
           </Link>

@@ -48,26 +48,34 @@ body {
 .site-footer .inner {
   max-width: calc(55ch * 19 / 15);
   margin: 0 auto;
-  padding: 14px 24px;
+  padding: 9px 24px;
   display: flex;
   align-items: center;
   gap: 16px;
   font-size: 15px;
 }
 
+/* every link in the header and footer is a 44px tap target */
+.site-header .inner a,
+.site-footer .inner a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .site-header .mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   border: 1px solid rgba(252, 211, 77, 0.5);
   border-radius: 999px;
   font-family: var(--display);
   color: var(--accent);
   text-decoration: none;
-  font-size: 15px;
+  font-size: 17px;
 }
 
 .site-header .name {
@@ -94,8 +102,8 @@ body {
 }
 
 .site-footer .inner {
-  padding-top: 28px;
-  padding-bottom: 48px;
+  padding-top: 18px;
+  padding-bottom: 38px;
   flex-wrap: wrap;
   color: var(--muted);
 }

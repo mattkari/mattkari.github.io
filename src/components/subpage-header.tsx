@@ -7,7 +7,7 @@ export function SubpageHeader({ back }: { back?: { href: string; label: string }
   return (
     <nav aria-label="Primary" className="relative border-b border-white/10">
       <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4 sm:px-6">
-        <Link href="/" className="flex items-center space-x-3">
+        <Link href="/" className="flex min-h-11 items-center space-x-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
             MK
           </span>
@@ -16,7 +16,7 @@ export function SubpageHeader({ back }: { back?: { href: string; label: string }
         {back && (
           <Link
             href={back.href}
-            className="inline-flex items-center gap-2 py-2 text-sm font-medium text-slate-300 transition-colors hover:text-amber-300"
+            className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-amber-300"
           >
             <ArrowLeft size={16} aria-hidden="true" />
             {back.label}

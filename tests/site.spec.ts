@@ -180,6 +180,37 @@ test.describe('links and registries', () => {
   });
 });
 
+test.describe('tap targets on a phone', () => {
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== 'mobile', 'measured at phone width');
+  });
+
+  // One of each page type. Links inside article prose are exempt, as inline
+  // text links are in WCAG 2.5.8; everything else must be 44px tall.
+  const samples = ['/', '/writing', projectPaths[0], articlePaths[0], '/no-such-page'];
+
+  for (const path of samples) {
+    test(`${path} has no link, button or field under 44px tall`, async ({ page }) => {
+      await page.goto(path);
+      const tooSmall = await page.evaluate(() =>
+        Array.from(document.querySelectorAll('a[href], button, summary, input, textarea'))
+          .filter((element) => {
+            const box = element.getBoundingClientRect();
+            const style = getComputedStyle(element);
+            // not rendered, or visually hidden until focused (the skip link)
+            if (box.width <= 1 || box.height <= 1 || style.visibility === 'hidden') return false;
+            if (style.display === 'inline' && element.closest('article p, article li, article td')) {
+              return false;
+            }
+            return box.height < 44;
+          })
+          .map((element) => `${element.textContent?.trim().slice(0, 30)} (${Math.round(element.getBoundingClientRect().height)}px)`),
+      );
+      expect(tooSmall).toEqual([]);
+    });
+  }
+});
+
 test.describe('mobile menu', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile', 'the menu button only exists on small screens');

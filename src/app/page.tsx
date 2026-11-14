@@ -359,7 +359,7 @@ export default function Home() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <a href="#home" className="flex items-center space-x-3">
+            <a href="#home" className="flex min-h-11 items-center space-x-3">
               <span className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
                 MK
               </span>
@@ -552,12 +552,12 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <div className="mt-6 flex flex-wrap gap-6 text-sm font-medium sm:mt-8">
+                <div className="mt-3 flex flex-wrap gap-x-6 text-sm font-medium sm:mt-5">
                   <a
                     href={LINKEDIN_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
+                    className="inline-flex min-h-11 items-center gap-2 text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
                   >
                     <Linkedin size={16} aria-hidden="true" /> LinkedIn
                   </a>
@@ -565,7 +565,7 @@ export default function Home() {
                     href={GITHUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
+                    className="inline-flex min-h-11 items-center gap-2 text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
                   >
                     <Github size={16} aria-hidden="true" /> GitHub
                   </a>
@@ -592,24 +592,19 @@ export default function Home() {
               {projects.map((project) => (
                 <article
                   key={project.name}
-                  className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition-colors duration-300 hover:border-amber-300/30"
+                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition-colors duration-300 hover:border-amber-300/30"
                 >
                   <ScreenshotFrame
                     src={project.cardImage}
                     alt={project.imageAlt}
                     label={project.frameLabel}
                   />
-                  <div className="flex flex-1 flex-col p-5 sm:p-6">
+                  <div className="flex flex-1 flex-col p-5 pb-2.5 sm:p-6 sm:pb-3">
                     <p className="mb-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-amber-300/90">
                       {project.tag}
                     </p>
-                    <h3 className="font-display text-xl leading-snug text-white sm:text-2xl">
-                      <Link
-                        href={`/projects/${project.slug}`}
-                        className="transition-colors hover:text-amber-100"
-                      >
-                        {project.name}
-                      </Link>
+                    <h3 className="font-display text-xl leading-snug text-white transition-colors group-hover:text-amber-100 sm:text-2xl">
+                      {project.name}
                     </h3>
                     {/* Phones show the opening lines; the case study carries the detail. */}
                     <p className="mt-3 max-w-prose text-sm leading-relaxed text-slate-300 max-sm:line-clamp-4">
@@ -627,11 +622,11 @@ export default function Home() {
                       ))}
                     </ul>
                     <div className="mt-auto pt-5">
-                      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-t border-white/10 pt-4">
+                      <div className="flex flex-wrap items-center justify-between gap-x-6 border-t border-white/10 pt-1.5">
                         <Link
                           href={`/projects/${project.slug}`}
                           aria-label={`${project.name}: read the case study`}
-                          className="group/link inline-flex items-center gap-2 py-1 text-sm font-medium text-amber-300 hover:text-amber-200"
+                          className="group/link inline-flex min-h-11 items-center gap-2 text-sm font-medium text-amber-300 after:absolute after:inset-0 hover:text-amber-200"
                         >
                           Read the case study
                           <ArrowRight
@@ -646,7 +641,7 @@ export default function Home() {
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`${project.name}: repository on GitHub`}
-                            className="inline-flex items-center gap-1.5 whitespace-nowrap py-1 text-sm font-medium text-amber-300 hover:text-amber-200"
+                            className="relative z-10 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-sm font-medium text-amber-300 hover:text-amber-200"
                           >
                             <Github size={15} aria-hidden="true" /> Repo
                           </a>
@@ -656,12 +651,12 @@ export default function Home() {
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`${project.name}: visit the live site`}
-                            className="inline-flex items-center gap-1.5 whitespace-nowrap py-1 text-sm font-medium text-amber-300 hover:text-amber-200"
+                            className="relative z-10 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-sm font-medium text-amber-300 hover:text-amber-200"
                           >
                             <Globe size={15} aria-hidden="true" /> Visit
                           </a>
                         ) : (
-                          <span className="inline-flex items-center gap-2 text-xs text-slate-400">
+                          <span className="inline-flex items-center gap-2 py-1.5 text-xs text-slate-400">
                             <Lock size={13} aria-hidden="true" className="shrink-0" />
                             {project.status}
                           </span>
@@ -693,7 +688,7 @@ export default function Home() {
                   rel="noopener noreferrer"
                   type="application/pdf"
                   download
-                  className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:border-amber-300/60 hover:text-amber-300 lg:mb-0"
+                  className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-5 text-sm font-medium text-slate-200 transition-colors hover:border-amber-300/60 hover:text-amber-300 lg:mb-0"
                 >
                   <Download size={15} aria-hidden="true" />
                   Download CV (PDF, {CV_VERSION})
@@ -975,7 +970,7 @@ export default function Home() {
                         autoComplete="name"
                         disabled={!isFormEnabled || status === 'submitting'}
                         placeholder="Your name"
-                        className="border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
+                        className="h-11 border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
                       />
                     </div>
                     <div className="space-y-2">
@@ -992,7 +987,7 @@ export default function Home() {
                         autoComplete="email"
                         disabled={!isFormEnabled || status === 'submitting'}
                         placeholder="you@example.com"
-                        className="border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
+                        className="h-11 border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
                       />
                     </div>
                     <div className="space-y-2">
