@@ -48,12 +48,12 @@ AUTHOR = "Dusmamat (Matt) Karimov"
 MONTHS = ["January", "February", "March", "April", "May", "June", "July",
           "August", "September", "October", "November", "December"]
 
+# The fonts are self-hosted (see scripts/copy-article-fonts.py), so an article
+# makes no third-party request. Preloading the two Latin files lets the text
+# paint in the right face straight away.
 FONTS = (
-    '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
-    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
-    "family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,500"
-    '&display=swap">'
+    '<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>\n'
+    '<link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>'
 )
 
 STYLESHEET = '<link rel="stylesheet" href="/articles/_article.css">'
@@ -88,7 +88,11 @@ OLD_FOOTER_RE = re.compile(r"[ \t]*<footer style=.*?</footer>\n?", re.DOTALL)
 IMG_STYLE_RE = re.compile(r'\s*style="max-width:100%;height:auto;border:1px solid #ddd"')
 HEADER_RE = re.compile(r'<header class="site-header">.*?</header>\n?', re.DOTALL)
 FOOTER_RE = re.compile(r'<footer class="site-footer">.*?</footer>\n?', re.DOTALL)
-FONTS_RE = re.compile(r'[ \t]*<link rel="(?:preconnect|stylesheet)" href="https://fonts\.[^"]*"[^>]*>\n?')
+# the Google Fonts links older runs inserted, and this script's own preloads
+FONTS_RE = re.compile(
+    r'[ \t]*<link rel="(?:preconnect|stylesheet)" href="https://fonts\.[^"]*"[^>]*>\n?'
+    r'|[ \t]*<link rel="preload" href="/fonts/[^"]*"[^>]*>\n?'
+)
 SHEET_RE = re.compile(r'[ \t]*<link rel="stylesheet" href="/articles/_article\.css">\n?')
 THEME_RE = re.compile(r'[ \t]*<meta name="theme-color"[^>]*>\n?')
 # every byline form used so far: with or without the class, either name

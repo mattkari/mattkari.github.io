@@ -44,12 +44,27 @@ test.describe('every page', () => {
       page.on('response', (response) => {
         if (response.status() >= 400) problems.push(`${response.status()} ${response.url()}`);
       });
+      // Fonts, styles and scripts are all served by the site itself.
+      page.on('request', (request) => {
+        if (!isLocal(new URL(request.url()))) problems.push(`third-party request: ${request.url()}`);
+      });
 
       await page.goto(path);
       await loadWholePage(page);
 
       await expect(page.locator('h1')).toHaveCount(1);
       expect(await page.title()).not.toBe('');
+
+      const fontsLoaded = await page.evaluate(async () => {
+        await document.fonts.ready;
+        return ['Inter', 'Playfair Display'].filter(
+          (family) =>
+            !Array.from(document.fonts).some(
+              (face) => face.family.replace(/["']/g, '').includes(family) && face.status === 'loaded',
+            ),
+        );
+      });
+      expect(fontsLoaded, 'font families that did not load').toEqual([]);
 
       const brokenImages = await page.evaluate(() =>
         Array.from(document.images)

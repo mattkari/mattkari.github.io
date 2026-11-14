@@ -83,6 +83,11 @@ the case-study page at `/projects/<slug>`. Every statement in a case study
 should be backed by something public or verified, and `source` (shown on the
 page) says what that is.
 
+Articles use the same Inter and Playfair Display files as the rest of the site,
+served from `public/fonts`. If the fonts in `src/app/layout.tsx` ever change,
+run `npm run build` and then `python3 scripts/copy-article-fonts.py` to copy the
+new files and rewrite the `@font-face` rules in `_article.css`.
+
 The other two scripts are run only when their source changes:
 `scripts/generate-icons.py` (favicon and app icons from `public/icon-master.svg`)
 and `scripts/build-cv-pdf.py` (the downloadable CV; keep `CV_VERSION` in the
