@@ -13,7 +13,15 @@ export type Project = {
   slug: string;
   name: string;
   tag: string;
+  /** The full capture, shown on the case-study page. */
   image: string;
+  /**
+   * A 2:1 crop of `image` for the home-page card, cut where the text is
+   * readable. Crops only: nothing is drawn or added.
+   */
+  cardImage: string;
+  /** The text in the card's window title bar. */
+  frameLabel: string;
   imageAlt: string;
   repo: string | null;
   liveUrl?: string;
@@ -48,6 +56,8 @@ export const projects: Project[] = [
     name: 'Source-Grounded RAG Research Assistant',
     tag: 'Flagship · Open source',
     image: '/images/projects/sgrag.png',
+    cardImage: '/images/projects/cards/source-grounded-rag.png',
+    frameLabel: 'source-grounded-rag',
     imageAlt: 'The source-grounded research assistant answering a question with page-level citations',
     repo: 'https://github.com/mattkari/source-grounded-rag',
     description:
@@ -155,6 +165,8 @@ export const projects: Project[] = [
     name: 'Family Finance, Self-Hosted',
     tag: 'Private repo · Home infrastructure',
     image: '/images/projects/family-finance.png',
+    cardImage: '/images/projects/cards/family-finance.png',
+    frameLabel: 'family-finance · docker compose · raspberry-pi-5',
     imageAlt: 'Verified metrics from the family-finance system: transfers excluded, tests green, backups nightly',
     repo: null,
     description:
@@ -194,6 +206,8 @@ export const projects: Project[] = [
     name: 'AI-Assisted Crypto Signal Engine',
     tag: 'Private repo · Live on Raspberry Pi 5',
     image: '/images/projects/crypto.png',
+    cardImage: '/images/projects/cards/crypto-signal-engine.png',
+    frameLabel: 'Crypto Signal Engine · 23 Oct 2026',
     imageAlt: 'The crypto signal engine dashboard showing live indicators and condition scores',
     repo: null,
     description:
@@ -287,6 +301,8 @@ export const projects: Project[] = [
     name: 'EcoHaven Boots, Self-Hosted Storefront',
     tag: 'Live site · Stripe test mode',
     image: '/images/projects/ecohaven.png',
+    cardImage: '/images/projects/cards/ecohaven-boots.png',
+    frameLabel: 'ecohavenboots.co.uk',
     imageAlt: 'The EcoHaven Boots storefront: handcrafted leather baby boots',
     repo: null,
     liveUrl: 'https://ecohavenboots.co.uk',

@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
 import { CheckItem, Kicker, Tag } from '@/components/primitives';
+import { ScreenshotFrame } from '@/components/screenshot-frame';
 import { SiteFooter } from '@/components/site-footer';
 import { WritingShowcase } from '@/components/writing-showcase';
 import { sortedArticles } from '@/lib/articles';
@@ -593,15 +594,11 @@ export default function Home() {
                   key={project.name}
                   className="group flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition-colors duration-300 hover:border-amber-300/30"
                 >
-                  <div className="overflow-hidden border-b border-white/10">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={project.image}
-                      alt={project.imageAlt}
-                      loading="lazy"
-                      className="aspect-[16/10] w-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.02]"
-                    />
-                  </div>
+                  <ScreenshotFrame
+                    src={project.cardImage}
+                    alt={project.imageAlt}
+                    label={project.frameLabel}
+                  />
                   <div className="flex flex-1 flex-col p-5 sm:p-6">
                     <p className="mb-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-amber-300/90">
                       {project.tag}
