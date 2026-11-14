@@ -14,7 +14,8 @@ TypeScript and Tailwind CSS, and published to GitHub Pages.
 | `src/app/writing/page.tsx` | The `/writing` archive, listing every article |
 | `src/app/not-found.tsx` | The 404 page (GitHub Pages serves it for any unknown address) |
 | `src/app/layout.tsx` | Fonts, metadata, Open Graph tags and the JSON-LD person schema |
-| `src/lib/articles.ts` | The registry of articles: the one list the home page, the archive and the OG script read |
+| `src/lib/articles.ts` | The registry of articles: the one list the home page, the archive, the feed, the sitemap and the scripts read |
+| `src/app/sitemap.ts`, `robots.ts`, `feed.xml/route.ts` | Build `/sitemap.xml`, `/robots.txt` and the RSS feed at `/feed.xml` |
 | `src/lib/site.ts` | Site URL, profile links and contact email |
 | `src/components/` | The writing section, article rows, shared footer and small UI primitives |
 | `public/articles/<slug>/index.html` | Each article, as a standalone static HTML page |
@@ -35,9 +36,13 @@ npm run build    # static export to ./out
 1. Put the article at `public/articles/<slug>/index.html` (images in an `img/`
    folder beside it).
 2. Add its entry to `src/lib/articles.ts`.
-3. Run `python3 scripts/apply-article-chrome.py` to give it the shared header,
-   footer and stylesheet.
+3. Run `python3 scripts/apply-article-chrome.py`. It adds the shared header,
+   footer and stylesheet, writes the byline (date and reading time) under the
+   title, and adds the search-engine metadata, all from the registry entry.
 4. Run `python3 scripts/generate-og-images.py` to render its social card.
+
+The sitemap and RSS feed pick the new article up from the registry on the next
+build.
 
 The other two scripts are run only when their source changes:
 `scripts/generate-icons.py` (favicon and app icons from `public/icon-master.svg`)

@@ -10,7 +10,12 @@ export const metadata: Metadata = {
   title: 'Writing | Matt Karimov',
   description:
     'Practical, tested guides on AI quality, LLM evaluation, AI agents and test automation by Matt Karimov.',
-  alternates: { canonical: `${SITE_URL}/writing` },
+  alternates: {
+    canonical: `${SITE_URL}/writing`,
+    types: {
+      'application/rss+xml': [{ url: `${SITE_URL}/feed.xml`, title: 'Matt Karimov: Writing' }],
+    },
+  },
   openGraph: {
     type: 'website',
     url: `${SITE_URL}/writing`,

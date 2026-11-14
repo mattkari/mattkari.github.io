@@ -29,6 +29,9 @@ export const metadata: Metadata = {
   ],
   alternates: {
     canonical: SITE_URL,
+    types: {
+      "application/rss+xml": [{ url: `${SITE_URL}/feed.xml`, title: "Matt Karimov: Writing" }],
+    },
   },
   manifest: "/site.webmanifest",
   icons: {

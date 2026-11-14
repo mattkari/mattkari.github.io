@@ -1,4 +1,4 @@
-import { Github, Linkedin, Mail } from 'lucide-react';
+import { Github, Linkedin, Mail, Rss } from 'lucide-react';
 import { EMAIL, GITHUB_URL, LINKEDIN_URL } from '@/lib/site';
 
 const linkClass =
@@ -29,6 +29,9 @@ export function SiteFooter() {
             </a>
             <a href={`mailto:${EMAIL}`} className={linkClass}>
               <Mail size={15} aria-hidden="true" /> {EMAIL}
+            </a>
+            <a href="/feed.xml" className={linkClass}>
+              <Rss size={15} aria-hidden="true" /> RSS
             </a>
           </div>
           <div className="w-full border-t border-white/10 pt-6">
