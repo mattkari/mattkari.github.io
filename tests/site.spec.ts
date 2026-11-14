@@ -172,11 +172,16 @@ test.describe('links and registries', () => {
     await expect(activeNavLinks(page)).toHaveCount(0);
   });
 
-  test('arriving at /#writing opens the essay list', async ({ page }) => {
+  test('the home page lists the latest three essays and links to the archive', async ({ page }) => {
     await page.goto('/#writing');
-    const toggle = page.locator('[aria-controls="writing-list"]');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('#writing-list a[href^="/articles/"]')).toHaveCount(articles.length);
+    const rows = page.locator('#writing a[href^="/articles/"]');
+    await expect(rows).toHaveCount(3);
+    const latest = [...articles].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3);
+    for (const [i, article] of latest.entries()) {
+      await expect(rows.nth(i)).toHaveAttribute('href', `/articles/${article.slug}/`);
+    }
+    await page.locator('#writing').getByRole('link', { name: `All ${articles.length} essays` }).click();
+    await expect(page).toHaveURL(/\/writing$/);
   });
 });
 

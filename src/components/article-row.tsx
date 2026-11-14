@@ -3,11 +3,24 @@ import { type Article, formatDate } from '@/lib/articles';
 
 // One essay in the dark "journal" list. Shared by the home-page Writing section
 // and the /writing archive, so both stay identical. The whole row is the link.
-export function ArticleRow({ article, index }: { article: Article; index: number }) {
+//
+// `compact` is for the short list on the home page: it tightens the row and,
+// on phones, leaves the topic tags to the article itself.
+export function ArticleRow({
+  article,
+  index,
+  compact = false,
+}: {
+  article: Article;
+  index: number;
+  compact?: boolean;
+}) {
   return (
     <a
       href={`/articles/${article.slug}/`}
-      className="group grid grid-cols-[auto,1fr,auto] items-start gap-4 sm:gap-6 rounded-xl px-3 sm:px-5 py-6 transition-colors duration-300 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
+      className={`group grid grid-cols-[auto,1fr,auto] items-start gap-4 sm:gap-6 rounded-xl px-3 sm:px-5 ${
+        compact ? 'py-4 sm:py-5' : 'py-6'
+      } transition-colors duration-300 hover:bg-white/[0.04] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300`}
     >
       <span
         aria-hidden="true"
@@ -28,7 +41,10 @@ export function ArticleRow({ article, index }: { article: Article; index: number
           {article.title}
         </h3>
         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-slate-400">{article.summary}</p>
-        <ul className="mt-4 flex flex-wrap gap-2" aria-label="Topics">
+        <ul
+          className={`flex flex-wrap gap-2 ${compact ? 'mt-3 max-sm:hidden' : 'mt-4'}`}
+          aria-label="Topics"
+        >
           {article.tags.map((t) => (
             <li
               key={t}

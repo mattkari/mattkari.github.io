@@ -30,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
-import { CheckItem, Kicker, Tag } from '@/components/primitives';
+import { CheckItem, SectionHeading, Tag } from '@/components/primitives';
 import { ScreenshotFrame } from '@/components/screenshot-frame';
 import { SiteFooter } from '@/components/site-footer';
 import { WritingShowcase } from '@/components/writing-showcase';
@@ -48,33 +48,9 @@ const LOCATION_LONG = 'Liverpool, UK \u00b7 North West England';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
-function SectionHeading({
-  kicker,
-  title,
-  italic,
-  sub,
-}: {
-  kicker: string;
-  title: string;
-  italic?: string;
-  sub?: string;
-}) {
-  return (
-    <div className="mb-6 max-w-3xl sm:mb-8">
-      <Kicker>{kicker}</Kicker>
-      <h2 className="font-display text-3xl leading-tight text-white sm:text-4xl">
-        {title} {italic && <span className="italic text-slate-400">{italic}</span>}
-      </h2>
-      <div aria-hidden="true" className="mt-4 h-px w-16 bg-amber-300/60 sm:mt-5" />
-      {sub && <p className="mt-4 leading-relaxed text-slate-300 sm:mt-5 sm:text-lg">{sub}</p>}
-    </div>
-  );
-}
-
 export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('');
-  const [isWritingOpen, setIsWritingOpen] = useState(false);
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
@@ -117,16 +93,6 @@ export default function Home() {
     );
     nodes.forEach((n) => observer.observe(n));
     return () => observer.disconnect();
-  }, []);
-
-  // Arriving at /#writing (or clicking the Writing nav link) opens the essay list.
-  useEffect(() => {
-    const openIfWriting = () => {
-      if (window.location.hash === '#writing') setIsWritingOpen(true);
-    };
-    openIfWriting();
-    window.addEventListener('hashchange', openIfWriting);
-    return () => window.removeEventListener('hashchange', openIfWriting);
   }, []);
 
   // The mobile menu closes on Escape (focus returns to its button) and when
@@ -374,7 +340,6 @@ export default function Home() {
                     key={link.name}
                     href={link.href}
                     aria-current={isActive ? 'location' : undefined}
-                    onClick={() => link.href === '#writing' && setIsWritingOpen(true)}
                     className={`border-b-2 pb-0.5 text-sm font-medium transition-colors ${
                       isActive
                         ? 'border-amber-300 text-amber-300'
@@ -415,10 +380,7 @@ export default function Home() {
                   key={link.name}
                   href={link.href}
                   aria-current={link.href === `#${activeNavSection}` ? 'location' : undefined}
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    if (link.href === '#writing') setIsWritingOpen(true);
-                  }}
+                  onClick={() => setIsMobileMenuOpen(false)}
                   className="block px-3 py-2.5 rounded-md text-base font-medium text-slate-200 hover:text-amber-300 hover:bg-white/5 aria-[current]:text-amber-300"
                 >
                   {link.name}
@@ -444,7 +406,7 @@ export default function Home() {
         {/* Hero */}
         <section
           id="home"
-          className="relative overflow-hidden px-4 py-10 sm:px-6 sm:py-16 lg:px-8 scroll-mt-16"
+          className="relative overflow-hidden px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -left-32 -top-40 h-[32rem] w-[32rem] rounded-full bg-blue-600/20 blur-3xl" />
@@ -476,10 +438,7 @@ export default function Home() {
                 size="lg"
                 variant="outline"
                 className="border-white/30 px-6 text-base text-white hover:border-amber-300/60 hover:bg-white/5 sm:px-8"
-                onClick={() => {
-                  setIsWritingOpen(true);
-                  scrollTo('writing');
-                }}
+                onClick={() => scrollTo('writing')}
               >
                 Read the writing
               </Button>
@@ -531,7 +490,7 @@ export default function Home() {
         </section>
 
         {/* About */}
-        <section id="about" className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-16 lg:px-8 scroll-mt-16">
+        <section id="about" className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-x-12 gap-y-2 lg:grid-cols-[1fr,2fr]">
               <div className="flex items-start justify-between gap-5 lg:block">
@@ -610,7 +569,7 @@ export default function Home() {
         {/* Projects */}
         <section
           id="projects"
-          className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-16 lg:px-8 scroll-mt-16"
+          className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
         >
           <div className="mx-auto max-w-7xl">
             <SectionHeading
@@ -703,12 +662,12 @@ export default function Home() {
         </section>
 
         {/* Writing */}
-        <WritingShowcase open={isWritingOpen} onToggle={() => setIsWritingOpen((o) => !o)} />
+        <WritingShowcase />
 
         {/* Experience */}
         <section
           id="experience"
-          className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-16 lg:px-8 scroll-mt-16"
+          className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
         >
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-x-12 gap-y-2 lg:grid-cols-[1fr,2fr]">
@@ -736,7 +695,7 @@ export default function Home() {
                       key={roleKey}
                       className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 transition-colors duration-300 hover:border-white/20 sm:p-6"
                     >
-                      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                      <div className="mb-3.5 flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <h3 className="font-display text-xl text-white">{role.title}</h3>
                           <p className="mt-1 text-sm font-medium text-amber-300/90">{role.company}</p>
@@ -770,7 +729,7 @@ export default function Home() {
                         </button>
                       )}
                       <ul
-                        className={`mt-5 flex flex-wrap gap-2 border-t border-white/10 pt-5 ${
+                        className={`mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-4 ${
                           isExpanded ? '' : 'max-sm:hidden'
                         }`}
                       >
@@ -824,7 +783,7 @@ export default function Home() {
         </section>
 
         {/* Stack and education */}
-        <section id="skills" className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-16 lg:px-8 scroll-mt-16">
+        <section id="skills" className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-x-12 gap-y-12 lg:grid-cols-[2fr,1fr]">
               <div>
@@ -871,7 +830,7 @@ export default function Home() {
         {/* Contact */}
         <section
           id="contact"
-          className="relative overflow-hidden border-t border-white/5 px-4 py-10 sm:px-6 sm:py-16 lg:px-8 scroll-mt-16"
+          className="relative overflow-hidden border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
             <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
