@@ -12,10 +12,12 @@ TypeScript and Tailwind CSS, and published to GitHub Pages.
 | --- | --- |
 | `src/app/page.tsx` | The home page: hero, about, projects, writing, experience, stack, contact |
 | `src/app/writing/page.tsx` | The `/writing` archive, listing every article |
+| `src/app/projects/[slug]/page.tsx` | One case-study page per project |
 | `src/app/not-found.tsx` | The 404 page (GitHub Pages serves it for any unknown address) |
 | `src/app/layout.tsx` | Fonts, metadata, Open Graph tags and the JSON-LD person schema |
 | `src/lib/articles.ts` | The registry of articles: the one list the home page, the archive, the feed, the sitemap and the scripts read |
 | `src/app/sitemap.ts`, `robots.ts`, `feed.xml/route.ts` | Build `/sitemap.xml`, `/robots.txt` and the RSS feed at `/feed.xml` |
+| `src/lib/projects.ts` | The registry of projects: the home-page cards and the case-study pages both read it |
 | `src/lib/site.ts` | Site URL, profile links and contact email |
 | `src/components/` | The writing section, article rows, shared footer and small UI primitives |
 | `public/articles/<slug>/index.html` | Each article, as a standalone static HTML page |
@@ -43,6 +45,13 @@ npm run build    # static export to ./out
 
 The sitemap and RSS feed pick the new article up from the registry on the next
 build.
+
+## Adding or editing a project
+
+Edit `src/lib/projects.ts`. Each entry feeds both the card on the home page and
+the case-study page at `/projects/<slug>`. Every statement in a case study
+should be backed by something public or verified, and `source` (shown on the
+page) says what that is.
 
 The other two scripts are run only when their source changes:
 `scripts/generate-icons.py` (favicon and app icons from `public/icon-master.svg`)

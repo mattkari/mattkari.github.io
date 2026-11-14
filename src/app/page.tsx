@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import {
+  ArrowRight,
   Bot,
   Briefcase,
-  Check,
   Cloud,
   Database,
   Download,
@@ -29,9 +30,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
+import { CheckItem, Kicker, Tag } from '@/components/primitives';
 import { SiteFooter } from '@/components/site-footer';
 import { WritingShowcase } from '@/components/writing-showcase';
 import { sortedArticles } from '@/lib/articles';
+import { projects } from '@/lib/projects';
 import { EMAIL, GITHUB_URL, LINKEDIN_URL } from '@/lib/site';
 
 const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
@@ -43,17 +46,6 @@ const LOCATION = 'Liverpool, UK';
 const LOCATION_LONG = 'Liverpool, UK \u00b7 North West England';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
-
-// ---------------------------------------------------------------------------
-// Small shared pieces so every section speaks the same design language:
-// dark navy, one gold accent, Playfair Display for display type.
-// ---------------------------------------------------------------------------
-
-function Kicker({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="mb-4 text-xs font-medium uppercase tracking-[0.35em] text-amber-300/80">{children}</p>
-  );
-}
 
 function SectionHeading({
   kicker,
@@ -75,23 +67,6 @@ function SectionHeading({
       <div aria-hidden="true" className="mt-5 h-px w-16 bg-amber-300/60" />
       {sub && <p className="mt-5 text-lg leading-relaxed text-slate-300">{sub}</p>}
     </div>
-  );
-}
-
-function Tag({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border border-white/15 px-2.5 py-0.5 text-[0.72rem] tracking-wide text-slate-300">
-      {children}
-    </span>
-  );
-}
-
-function CheckItem({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex items-start gap-3">
-      <Check size={16} aria-hidden="true" className="mt-1 shrink-0 text-amber-300" />
-      <span className="text-sm leading-relaxed text-slate-300">{children}</span>
-    </li>
   );
 }
 
@@ -327,74 +302,6 @@ export default function Home() {
       company: 'HSBC, Leeds, UK',
       period: 'May 2017 – Nov 2017',
       scope: 'Manual verification and SQL database testing of financial complaint calculators',
-    },
-  ];
-
-  const projects = [
-    {
-      name: 'Source-Grounded RAG Research Assistant',
-      tag: 'Flagship · Open source',
-      image: '/images/projects/sgrag.png',
-      imageAlt: 'The source-grounded research assistant answering a question with page-level citations',
-      repo: 'https://github.com/mattkari/source-grounded-rag',
-      description:
-        'A scholarly research assistant built to reduce and expose hallucination. It answers only from an authorised corpus, cites at printed-page level, separates AI interpretation from source claims, and refuses plainly when evidence is insufficient.',
-      evidence: [
-        'Verified live: an answerable question returned 7 cited definitions across 5 page ranges; an out-of-corpus question was refused as retrieval scores collapsed from 0.77 to 0.11',
-        'Presented at ITCC-2026 (conference deck and speaker notes)',
-        'Corpus swapped to my own 288-page PhD thesis via a branch and PR — corpus-agnostic by design',
-      ],
-      status: 'In use for my own research',
-      technologies: ['Python', 'Retrieval', 'Anthropic API', 'Streamlit', 'Docker', 'Evaluation'],
-    },
-    {
-      name: 'Family Finance, Self-Hosted',
-      tag: 'Private repo · Home infrastructure',
-      image: '/images/projects/family-finance.png',
-      imageAlt: 'Verified metrics from the family-finance system: transfers excluded, tests green, backups nightly',
-      repo: null,
-      description:
-        'A self-hosted household finance system that replaced a Google Sheets workflow: FastAPI, PostgreSQL/pgvector, Redis and Celery, React, deployed with Docker Compose on a Raspberry Pi 5. Six bank-statement formats are parsed, each row reconciled against the statement totals, and transfers between the household’s own accounts are excluded so moving money is never counted as income.',
-      evidence: [
-        '354 backend and 214 frontend tests green in CI',
-        'One real month verified: £9,174.62 of internal transfers correctly excluded from spending and income',
-        'Nightly paired backups of database and statement PDFs; HTTPS from a private CA',
-      ],
-      status: 'Private by design — architecture walkthrough on request',
-      technologies: ['FastAPI', 'PostgreSQL', 'Celery', 'React', 'Docker', 'Raspberry Pi'],
-    },
-    {
-      name: 'AI-Assisted Crypto Signal Engine',
-      tag: 'Private repo · Live on Raspberry Pi 5',
-      image: '/images/projects/crypto.png',
-      imageAlt: 'The crypto signal engine dashboard showing live indicators and condition scores',
-      repo: null,
-      description:
-        'A position-aware trading engine for Binance Spot, dockerised on a Raspberry Pi 5 with Telegram control. A dual-mode strategy engine sits behind three macro gates and eight indicators, with ATR-based stops. An LLM analyst arbitrates borderline signals only, at 80%+ stated confidence; hard risk guards are rules the AI can never override.',
-      evidence: [
-        'Live container with auto-restart and a Telegram health check — up 6+ days, zero restarts',
-        'A 1,000-candle dual-mode backtest replay completes in about 12 seconds on the Pi',
-        'The LLM analyst is confidence-gated by design: borderline scores only, never a risk guard',
-      ],
-      status: 'Read-only signal engine — architecture walkthrough on request',
-      technologies: ['Python', 'ccxt', 'GLM API', 'Telegram', 'Docker', 'Raspberry Pi'],
-    },
-    {
-      name: 'EcoHaven Boots, Live E-Commerce',
-      tag: 'In production · Real small business',
-      image: '/images/projects/ecohaven.png',
-      imageAlt: 'The EcoHaven Boots storefront: handcrafted leather baby boots',
-      repo: null,
-      liveUrl: 'https://ecohavenboots.co.uk',
-      description:
-        'A production e-commerce platform for a handmade leather baby boots business: storefront with search and filtering, cart and Stripe checkout in GBP, and an admin panel behind iron-session auth. Next.js 14 with server components over Prisma, deployed as a Docker multi-stage build behind Nginx and a Cloudflare Tunnel on the Raspberry Pi 5.',
-      evidence: [
-        'Live right now at ecohavenboots.co.uk — a real public URL, not a screenshot',
-        'Payments hardened in phases: Stripe webhook idempotency, stock decrement on capture, consistent GBP pricing',
-        'Security shipped: upload validation and path sanitisation, required session secret, sameSite cookies',
-      ],
-      status: 'Operating in production for a real business',
-      technologies: ['Next.js 14', 'TypeScript', 'Prisma', 'Stripe', 'Docker', 'Nginx'],
     },
   ];
 
@@ -673,7 +580,12 @@ export default function Home() {
                       {project.tag}
                     </p>
                     <h3 className="font-display text-xl leading-snug text-white sm:text-2xl">
-                      {project.name}
+                      <Link
+                        href={`/projects/${project.slug}`}
+                        className="transition-colors hover:text-amber-100"
+                      >
+                        {project.name}
+                      </Link>
                     </h3>
                     <p className="mt-4 max-w-prose text-sm leading-relaxed text-slate-300">
                       {project.description}
@@ -683,6 +595,18 @@ export default function Home() {
                         <CheckItem key={item}>{item}</CheckItem>
                       ))}
                     </ul>
+                    <Link
+                      href={`/projects/${project.slug}`}
+                      aria-label={`${project.name}: read the case study`}
+                      className="group/link mt-6 inline-flex items-center gap-2 self-start py-1 text-sm font-medium text-amber-300 hover:text-amber-200"
+                    >
+                      Read the case study
+                      <ArrowRight
+                        size={16}
+                        aria-hidden="true"
+                        className="transition-transform duration-300 group-hover/link:translate-x-1"
+                      />
+                    </Link>
                     <div className="mt-auto pt-7">
                       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-4 border-t border-white/10 pt-5">
                         <ul className="flex flex-wrap gap-2">
