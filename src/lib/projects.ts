@@ -35,11 +35,8 @@ export type Project = {
     details?: { heading: string; items: string[] }[];
     limits?: string[];
     figures?: ProjectFigure[];
-    /**
-     * Evidence lines for the case-study page, when they should differ from the
-     * card's. An empty list leaves the section out.
-     */
-    evidence?: string[];
+    /** A short note above the evidence list, when its lines need dating. */
+    evidenceNote?: string;
     /** Slugs from src/lib/articles.ts. */
     relatedArticles?: string[];
   };
@@ -280,9 +277,8 @@ export const projects: Project[] = [
           caption: 'The bot’s reply for Bitcoin, rendered from its real output text rather than a phone screenshot.',
         },
       ],
-      // The card's evidence lines describe the earlier trading bot. This page
-      // follows the 23 October write-up, whose evidence is the section above.
-      evidence: [],
+      // The evidence lines were written in August 2026, before the write-up.
+      evidenceNote: 'Recorded in August 2026, before the write-up above.',
       relatedArticles: ['crypto-signal-engine'],
     },
   },

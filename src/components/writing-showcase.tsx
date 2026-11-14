@@ -16,7 +16,7 @@ export function WritingShowcase({ open, onToggle }: { open: boolean; onToggle: (
     <section
       id="writing"
       aria-labelledby="writing-heading"
-      className="relative overflow-hidden bg-slate-950 px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16"
+      className="relative overflow-hidden bg-slate-950 px-4 py-12 sm:px-6 sm:py-16 lg:px-8 scroll-mt-16"
     >
       {/* Decorative light: a hairline at the top and two soft glows */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">

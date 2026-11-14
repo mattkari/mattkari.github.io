@@ -18,9 +18,15 @@ export function Tag({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function CheckItem({ children }: { children: React.ReactNode }) {
+export function CheckItem({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <li className="flex items-start gap-3">
+    <li className={`flex items-start gap-3 ${className}`}>
       <Check size={16} aria-hidden="true" className="mt-1 shrink-0 text-amber-300" />
       <span className="text-sm leading-relaxed text-slate-300">{children}</span>
     </li>
