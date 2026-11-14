@@ -23,6 +23,7 @@ TypeScript and Tailwind CSS, and published to GitHub Pages.
 | `public/articles/<slug>/index.html` | Each article, as a standalone static HTML page |
 | `public/articles/_article.css` | The one stylesheet every article shares |
 | `scripts/` | Python helpers that generate the article chrome, OG cards, icons and CV PDF |
+| `tests/` | Playwright tests and the small static server they run against |
 
 ## Getting started
 
@@ -31,7 +32,36 @@ npm install
 npm run dev      # http://localhost:3000
 npm run lint     # ESLint with the Next.js rules
 npm run build    # static export to ./out
+npm test         # browser tests against ./out (build first)
 ```
+
+## Tests
+
+`tests/site.spec.ts` runs in Playwright against the built site, served the way
+GitHub Pages serves it, at a desktop and a phone width. It takes its list of
+pages from the article and project registries, so new content is covered
+without touching the tests. It checks that:
+
+- every page loads with no console errors, failed requests, broken images or
+  sideways scrolling;
+- every internal link resolves, including its `#fragment`;
+- every article has its page, its social card and a byline that matches the
+  registry, and the sitemap and feed list everything;
+- the nav highlight, the mobile menu, the 404 page and the case-study links
+  behave;
+- the contact form validates, confirms a sent message and reports failures.
+  The mail service is answered by the tests, so nothing is sent.
+
+The form tests need the form enabled, so build with a placeholder key:
+
+```bash
+NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY=test-key npm run build && npm test
+```
+
+To run all of this on every pull request, copy `tests/ci.workflow.yml` to
+`.github/workflows/ci.yml`. It runs the article check, lint, the build and
+these tests. To make a failing check block a merge, add a branch protection
+rule for `main` in the repository settings and require the "Checks" workflow.
 
 ## Adding an article
 
@@ -57,6 +87,27 @@ The other two scripts are run only when their source changes:
 `scripts/generate-icons.py` (favicon and app icons from `public/icon-master.svg`)
 and `scripts/build-cv-pdf.py` (the downloadable CV; keep `CV_VERSION` in the
 script and in `src/app/page.tsx` in step).
+
+## Moving to a custom domain
+
+The site address is defined once, in `src/lib/site.ts`. To move the site to a
+domain of its own:
+
+1. Register the domain and point it at GitHub Pages, then set it as the custom
+   domain under the repository's Settings → Pages. GitHub's guide:
+   https://docs.github.com/pages/configuring-a-custom-domain-for-your-github-pages-site
+2. Change `SITE_URL` in `src/lib/site.ts`. The metadata, sitemap, feed and
+   structured data all follow it.
+3. Run `python3 scripts/apply-article-chrome.py`, which rewrites the canonical
+   and social-card addresses in every article to the new address.
+4. Update the address printed on the social cards and the CV
+   (`scripts/generate-og-images.py`, `scripts/build-cv-pdf.py`) and re-run them.
+5. `public/etsy-callback/` is the return address of a private Etsy login flow.
+   If the domain changes, register the new address with the Etsy app and
+   update the address quoted on that page. Do not remove the page while the
+   flow is in use.
+
+GitHub redirects the old `mattkari.github.io` addresses to the custom domain.
 
 ## Contact form
 

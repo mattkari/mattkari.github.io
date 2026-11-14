@@ -30,7 +30,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ARTICLES = ROOT / "public" / "articles"
 REGISTRY = ROOT / "src" / "lib" / "articles.ts"
-SITE_URL = "https://mattkari.github.io"  # keep in step with src/lib/site.ts
+SITE_FILE = ROOT / "src" / "lib" / "site.ts"
+
+
+def read_site_url() -> str:
+    """The site address, from the one place the app defines it."""
+    match = re.search(r"SITE_URL\s*=\s*'([^']+)'", SITE_FILE.read_text(encoding="utf-8"))
+    if not match:
+        raise ValueError("no SITE_URL found in src/lib/site.ts")
+    return match.group(1).rstrip("/")
+
+
+SITE_URL = read_site_url()
 
 # The name as it appears on every article, matching the "Karimov, D." citations.
 AUTHOR = "Dusmamat (Matt) Karimov"
@@ -89,6 +100,11 @@ FEED_LINK = (
 FEED_RE = re.compile(r'[ \t]*<link rel="alternate" type="application/rss\+xml"[^>]*>\n?')
 PUBLISHED_RE = re.compile(r'[ \t]*<meta property="article:(?:published_time|author)"[^>]*>\n?')
 JSONLD_RE = re.compile(r'[ \t]*<script type="application/ld\+json">.*?</script>\n?', re.DOTALL)
+# absolute addresses in <head> that must follow the site address if it changes
+ORIGIN_RE = re.compile(
+    r'((?:rel="canonical" href|property="og:(?:url|image)" content|name="twitter:image" content)=")'
+    r'https?://[^/"]+'
+)
 TITLE_RE = re.compile(r"<title>(.*?)</title>", re.DOTALL)
 DESCRIPTION_RE = re.compile(r'<meta name="description" content="([^"]*)">')
 H1_RE = re.compile(r"<h1>.*?</h1>\n?", re.DOTALL)
@@ -150,6 +166,9 @@ def transform(html: str, slug: str, entry: dict) -> str:
     html = OLD_NAV_RE.sub("", html)
     html = OLD_FOOTER_RE.sub("", html)
     html = IMG_STYLE_RE.sub("", html)
+
+    # canonical and social-card addresses point at the current site address
+    html = ORIGIN_RE.sub(lambda m: m.group(1) + SITE_URL, html)
 
     # one byline, directly under the title
     html = BYLINE_RE.sub("", html)
