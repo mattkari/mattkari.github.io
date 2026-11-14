@@ -6,6 +6,10 @@ inline <style> block and its own text nav. This script replaces both with a
 single stylesheet link (public/articles/_article.css) plus a shared header and
 footer, so the chrome has ONE source of truth.
 
+It also writes the byline under each title ("author · date · N min read") from
+src/lib/articles.ts, so the date and reading time shown on an article can never
+disagree with the listing on the home page and the archive.
+
 Idempotent: safe to re-run after adding a new article.
 
     python3 scripts/apply-article-chrome.py          # apply
@@ -20,6 +24,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 ARTICLES = ROOT / "public" / "articles"
+REGISTRY = ROOT / "src" / "lib" / "articles.ts"
+
+# The name as it appears on every article, matching the "Karimov, D." citations.
+AUTHOR = "Dusmamat (Matt) Karimov"
+MONTHS = ["January", "February", "March", "April", "May", "June", "July",
+          "August", "September", "October", "November", "December"]
 
 FONTS = (
     '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
@@ -64,9 +74,28 @@ FOOTER_RE = re.compile(r'<footer class="site-footer">.*?</footer>\n?', re.DOTALL
 FONTS_RE = re.compile(r'[ \t]*<link rel="(?:preconnect|stylesheet)" href="https://fonts\.[^"]*"[^>]*>\n?')
 SHEET_RE = re.compile(r'[ \t]*<link rel="stylesheet" href="/articles/_article\.css">\n?')
 THEME_RE = re.compile(r'[ \t]*<meta name="theme-color"[^>]*>\n?')
+# every byline form used so far: with or without the class, either name
+BYLINE_RE = re.compile(r'[ \t]*<p(?: class="meta")?>(?:Dusmamat \(Matt\)|Matt) Karimov · [^<]*</p>\n?')
+H1_RE = re.compile(r"<h1>.*?</h1>\n?", re.DOTALL)
+ENTRY_RE = re.compile(
+    r"slug:\s*'([^']+)'.*?date:\s*'(\d{4})-(\d{2})-(\d{2})',\s*readingMinutes:\s*(\d+)",
+    re.DOTALL,
+)
 
 
-def transform(html: str) -> str:
+def read_registry() -> dict[str, dict]:
+    """slug -> date and reading time, from the TypeScript registry."""
+    entries = {}
+    for slug, year, month, day, minutes in ENTRY_RE.findall(REGISTRY.read_text(encoding="utf-8")):
+        entries[slug] = {
+            "iso": f"{year}-{month}-{day}",
+            "display": f"{int(day)} {MONTHS[int(month) - 1]} {year}",
+            "minutes": int(minutes),
+        }
+    return entries
+
+
+def transform(html: str, entry: dict) -> str:
     # strip anything this script previously inserted, so a re-run is clean
     html = HEADER_RE.sub("", html)
     html = FOOTER_RE.sub("", html)
@@ -79,6 +108,14 @@ def transform(html: str) -> str:
     html = OLD_NAV_RE.sub("", html)
     html = OLD_FOOTER_RE.sub("", html)
     html = IMG_STYLE_RE.sub("", html)
+
+    # one byline, directly under the title
+    html = BYLINE_RE.sub("", html)
+    title = H1_RE.search(html)
+    if not title:
+        raise ValueError("no <h1> found")
+    byline = f'<p class="meta">{AUTHOR} · {entry["display"]} · {entry["minutes"]} min read</p>\n'
+    html = html[: title.end()] + byline + html[title.end():]
 
     head_block = f"{THEME_META}\n{FONTS}\n{STYLESHEET}\n"
     if "</head>" not in html:
@@ -105,11 +142,17 @@ def main() -> int:
         print("no articles found", file=sys.stderr)
         return 1
 
+    registry = read_registry()
+    unregistered = [p.parent.name for p in pages if p.parent.name not in registry]
+    if unregistered:
+        print(f"not in src/lib/articles.ts: {', '.join(unregistered)}", file=sys.stderr)
+        return 1
+
     changed = 0
     for page in pages:
         before = page.read_text(encoding="utf-8")
-        after = transform(before)
         slug = page.parent.name
+        after = transform(before, registry[slug])
         if before == after:
             print(f"  ok       {slug}")
             continue

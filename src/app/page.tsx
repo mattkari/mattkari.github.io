@@ -604,7 +604,7 @@ export default function Home() {
                   Day to day I am a Test Automation Engineer at Barclays Investment Bank,
                   connecting LLM tooling to internal systems over MCP and building a RAG test
                   assistant for API test authoring. Outside work I build and self-host my own
-                  systems on a Raspberry Pi 5. My target for 2026: an AI engineering role where
+                  systems on a Raspberry Pi 5. I am looking for an AI engineering role where
                   source grounding, evaluation and honesty about limits are the product.
                 </p>
                 <ul className="mt-8 flex flex-wrap gap-2.5" aria-label="What I bring">

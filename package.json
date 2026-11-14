@@ -1,7 +1,7 @@
 {
   "name": "mattkari-portfolio",
   "version": "0.1.0",
-  "description": "Portfolio website for Matt Karimov, QA Automation Specialist & Senior Automation Tester.",
+  "description": "Personal site of Matt Karimov, Test Automation Engineer: portfolio, case studies and writing.",
   "private": true,
   "scripts": {
     "dev": "next dev",
