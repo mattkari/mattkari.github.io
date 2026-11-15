@@ -22,7 +22,7 @@ export const articles: Article[] = [
     summary:
       'A personal writing section audited against research on long pages: no contents lists, dead-end endings and 37 tags, fixed and shown before and after.',
     date: '2026-11-15',
-    readingMinutes: 5,
+    readingMinutes: 6,
     topic: 'Testing',
     tags: ['Web design', 'Accessibility', 'Testing', 'AI agents'],
   },

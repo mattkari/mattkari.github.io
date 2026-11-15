@@ -105,7 +105,21 @@
 </header>
 <article>
 <h1>Twelve Articles, Thirty-Seven Tags: Auditing a Writing Section Against the Research</h1>
-<p class="meta">Dusmamat (Matt) Karimov · 15 November 2026 · 5 min read</p>
+<p class="meta">Dusmamat (Matt) Karimov · 15 November 2026 · 6 min read</p>
+<nav class="toc" aria-label="On this page">
+<details open>
+<summary>On this page</summary>
+<ol>
+<li><a href="#1-why-the-reader-from-a-link-matters">1. Why the reader from a link matters</a></li>
+<li><a href="#2-what-the-audit-measured">2. What the audit measured</a></li>
+<li><a href="#3-what-changed">3. What changed</a></li>
+<li><a href="#4-how-the-change-was-tested">4. How the change was tested</a></li>
+<li><a href="#limits">Limits</a></li>
+<li><a href="#summary-and-conclusion">Summary and conclusion</a></li>
+<li><a href="#references">References</a></li>
+</ol>
+</details>
+</nav>
 <p>A personal writing section usually grows one article at a time, and each article is judged on its own words rather than on how a reader moves through the collection. This article explores what happened when the writing section of this site was audited as a whole, against published research on how people read long pages, and then changed to close the gaps. The work was carried out by an AI coding agent from a written brief, and each change was reviewed before it went live on 15 November 2026. The article is organised as follows: first, why the reader who arrives from a link matters most; second, what the audit measured; third, what changed, with screenshots taken before and after; fourth, how the change was tested; and finally, the limits of what can be claimed.</p>
 <p>This article does not argue that these changes bring more readers. Rather, it claims that a writing section can be measured against stated guidance in the same way as any other product, and that the gaps it reveals are concrete enough to fix and to test.</p>
 <h2 id="1-why-the-reader-from-a-link-matters">1. Why the reader from a link matters</h2>
@@ -119,14 +133,14 @@
 <p><strong>Topics instead of tags.</strong> When the change went live, the archive gained one row of topic buttons with counts: All (12), AI agents (4), LLMs and RAG (3), Testing (3) and Self-hosting (2). The distinction matters: a tag describes one article, whereas a topic groups several. For a collection this small, a single filter appears more useful than a faceted search (Nielsen Norman Group, filters versus facets), and the tags remain on each row as description.</p>
 <p><img src="/articles/twelve-articles-thirty-seven-tags/img/01-archive.png" alt="The writing archive before and after the topic filter" width="760" height="856" loading="lazy"></p>
 <p><em>Figure 1: The archive before and after: the same list, with one row of topics and counts above it.</em></p>
-<p><strong>A contents list on longer articles.</strong> Eight articles, those with at least five sections and 1,500 words, now open with an "On this page" list in the main text, and every heading can be linked to directly. Shorter articles do not receive one, because a list of three headings adds length without adding direction.</p>
+<p><strong>A contents list on every article.</strong> At first, only the eight articles with at least five sections and 1,500 words received an "On this page" list in the main text, on the reasoning that a list of three headings adds length without adding direction. However, that left readers seeing a list on some articles and not on others, so a follow-up change gave it to every article with three or more sections, which is all twelve. In addition, every heading can now be linked to directly.</p>
 <p><img src="/articles/twelve-articles-thirty-seven-tags/img/02-contents.png" alt="The top of a long article before and after the contents list" width="680" height="1416" loading="lazy"></p>
 <p><em>Figure 2: The top of the longest article: the reader now sees nine sections before the first paragraph.</em></p>
 <p><strong>An ending that leads somewhere.</strong> Every article now closes with "Keep reading": the next newer and older essays, and a link to the full list. Moreover, a labelled "Back to top" button appears in the lower right once the reader has scrolled, and code blocks in the step-by-step guides have a copy button.</p>
 <p><img src="/articles/twelve-articles-thirty-seven-tags/img/03-ending.png" alt="The end of an article before and after the Keep reading block" width="680" height="1226" loading="lazy"></p>
 <p><em>Figure 3: The end of an article: before, the page ran straight into the footer; after, it offers the next essay.</em></p>
 <h2 id="4-how-the-change-was-tested">4. How the change was tested</h2>
-<p>The new pieces were covered by an automated suite, and all 206 tests were reported passing before the change was merged. The more useful evidence, however, came from a check written for an earlier piece of work. The contrast audit described in an earlier article measures every piece of text against the background it actually sits on. It flagged the new archive rows: in the dark theme, the small date line fell just under 7:1 where it sat over the gold glow of the page background, and the colour was therefore corrected before release. In other words, a test written for one change caught a regression in the next, which is precisely what such a test is for.</p>
+<p>The new pieces were covered by an automated suite: 206 tests were reported passing before the change was merged, and 208 after the follow-up, which added a test that no article is left without its contents list. The more useful evidence, however, came from a check written for an earlier piece of work. The contrast audit described in an earlier article measures every piece of text against the background it actually sits on. It flagged the new archive rows: in the dark theme, the small date line fell just under 7:1 where it sat over the gold glow of the page background, and the colour was therefore corrected before release. In other words, a test written for one change caught a regression in the next, which is precisely what such a test is for.</p>
 <h2 id="limits">Limits</h2>
 <p>Several limits should be kept in view, and the first is that the site has no analytics, so nothing here shows that readers now go further; the claim is conformance to guidance, not a measured effect. Second, the research is general guidance on long web pages, not a study of personal technical blogs. Third, each article was assigned to its topic from its title and tags, and at least one assignment is a judgement call. For example, the crypto signal engine sits under Testing because its argument rests on tests that prove it cannot trade. Finally, the screenshots were rendered from the site's own build, before and after the change, in the dark theme at desktop width.</p>
 <h2 id="summary-and-conclusion">Summary and conclusion</h2>
