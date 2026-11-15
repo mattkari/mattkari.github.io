@@ -106,6 +106,19 @@
 <article>
 <h1>Auditing Eight Scheduled AI Jobs: What Execution Status Does Not Measure</h1>
 <p class="meta">Dusmamat (Matt) Karimov · 7 November 2026 · 7 min read</p>
+<nav class="toc" aria-label="On this page">
+<details open>
+<summary>On this page</summary>
+<ol>
+<li><a href="#the-distribution-of-scheduled-work">The distribution of scheduled work</a></li>
+<li><a href="#execution-status-as-a-measure-of-value">Execution status as a measure of value</a></li>
+<li><a href="#four-failures-of-the-verification-method">Four failures of the verification method</a></li>
+<li><a href="#silence-as-an-intended-output">Silence as an intended output</a></li>
+<li><a href="#the-limits-of-a-decision-model">The limits of a decision model</a></li>
+<li><a href="#summary-and-conclusion">Summary and conclusion</a></li>
+</ol>
+</details>
+</nav>
 <p>A personal AI agent running on a Raspberry Pi had accumulated eight scheduled jobs over several months: compiling notes, producing a morning brief, monitoring a small shop for orders, digesting household finances, verifying database backups, triaging recruitment email, and scanning job boards. Each job had been created for a defensible reason, and each reported a healthy status on every run. This article reports the findings of a systematic audit of those eight jobs, and argues that the conventional health signal, namely successful execution, measures very little of what matters.</p>
 <p>The overall structure of this article is organised as follows: the first section examines the distribution of scheduled work across the eight jobs; the second considers why execution status fails as a measure of value; the third documents four failures in the verification method itself; the fourth addresses silence as an intended output rather than a symptom; the fifth examines the limits of a probabilistic decision model used to adjudicate the pruning; and the final section provides a summary and conclusion.</p>
 <h2 id="the-distribution-of-scheduled-work">The distribution of scheduled work</h2>

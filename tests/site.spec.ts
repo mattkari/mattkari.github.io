@@ -264,6 +264,13 @@ test.describe('writing', () => {
     await expect(page.locator(`[id="${target}"]`)).toHaveText((await third.textContent())!);
   });
 
+  test('every article has a contents list', async ({ request }) => {
+    for (const article of articles) {
+      const html = await (await request.get(`/articles/${article.slug}/`)).text();
+      expect(html, article.slug).toContain('<nav class="toc"');
+    }
+  });
+
   test('every article ends with its neighbours and the way back to the list', async ({ request }) => {
     for (const [i, article] of sorted.entries()) {
       const html = await (await request.get(`/articles/${article.slug}/`)).text();
