@@ -9,7 +9,7 @@ export function ScreenshotFrame({ src, alt, label }: { src: string; alt: string;
           <span aria-hidden="true" className="h-2 w-2 rounded-full bg-slate-600" />
           <span aria-hidden="true" className="h-2 w-2 rounded-full bg-slate-600" />
           <span aria-hidden="true" className="h-2 w-2 rounded-full bg-slate-600" />
-          <span className="ml-2 truncate text-[0.7rem] tracking-wide text-slate-400">{label}</span>
+          <span className="ml-2 truncate text-[0.7rem] tracking-wide text-slate-300">{label}</span>
         </div>
         <div className="overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}

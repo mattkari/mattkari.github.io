@@ -56,7 +56,7 @@ export function WritingShowcase() {
             </ul>
             <Link
               href="/writing"
-              className="group mt-4 flex min-h-14 items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-5 text-sm font-medium text-amber-300 transition-colors hover:border-amber-300/40 hover:text-amber-200 sm:px-6"
+              className="group mt-4 flex min-h-14 items-center justify-between gap-4 rounded-2xl border border-input bg-white/[0.03] px-5 text-sm font-medium text-amber-300 transition-colors hover:border-amber-300/40 hover:text-amber-200 sm:px-6"
             >
               All {sortedArticles.length} essays
               <ArrowRight

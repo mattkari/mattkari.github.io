@@ -295,7 +295,7 @@ export default async function ProjectPage({ params }: Params) {
         <nav aria-label="More projects" className="mt-12 grid gap-4 sm:grid-cols-2">
           <Link
             href={`/projects/${previous.slug}`}
-            className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-colors hover:border-amber-300/40"
+            className="group rounded-2xl border border-input bg-white/[0.03] p-5 transition-colors hover:border-amber-300/40"
           >
             <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
               <ArrowLeft size={14} aria-hidden="true" /> Previous
@@ -306,7 +306,7 @@ export default async function ProjectPage({ params }: Params) {
           </Link>
           <Link
             href={`/projects/${next.slug}`}
-            className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-colors hover:border-amber-300/40 sm:text-right"
+            className="group rounded-2xl border border-input bg-white/[0.03] p-5 transition-colors hover:border-amber-300/40 sm:text-right"
           >
             <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
               Next <ArrowRight size={14} aria-hidden="true" />

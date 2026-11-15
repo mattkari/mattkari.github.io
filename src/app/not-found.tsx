@@ -42,7 +42,7 @@ export default function NotFound() {
           </Link>
           <Link
             href="/writing"
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-white/30 px-8 text-base font-medium text-white transition-colors hover:border-amber-300/60 hover:bg-white/5"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-input px-8 text-base font-medium text-white transition-colors hover:border-amber-300/60 hover:bg-white/5"
           >
             Browse the writing
             <ArrowRight size={16} aria-hidden="true" />
