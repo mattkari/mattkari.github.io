@@ -200,6 +200,40 @@ test.describe('links and registries', () => {
   });
 });
 
+test.describe('light and dark themes', () => {
+  const pageColour = (page: Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  const LIGHT = 'rgb(251, 248, 243)';
+  const DARK = 'rgb(2, 6, 23)';
+  // a theme change reaches the page a moment after it is asked for
+  const expectColour = (page: Page, colour: string) => expect.poll(() => pageColour(page)).toBe(colour);
+
+  test('the page follows the system setting, and follows it when it changes', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'dark' });
+    await page.goto('/');
+    await expectColour(page, DARK);
+    await page.emulateMedia({ colorScheme: 'light' });
+    await expectColour(page, LIGHT);
+  });
+
+  test('the toggle overrides the system setting and the choice carries across pages', async ({ page }) => {
+    await page.emulateMedia({ colorScheme: 'light' });
+    await page.goto('/');
+    await expectColour(page, LIGHT);
+    await page.locator('[data-theme-toggle]:visible').click();
+    await expectColour(page, DARK);
+
+    // an article is a separate static page; it must open in the chosen theme
+    await page.goto(articlePaths[0]);
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    await expectColour(page, DARK);
+
+    await page.locator('[data-theme-toggle]:visible').click();
+    await expectColour(page, LIGHT);
+    await page.goto('/writing');
+    await expectColour(page, LIGHT);
+  });
+});
+
 test.describe('tap targets on a phone', () => {
   test.beforeEach(({}, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile', 'measured at phone width');

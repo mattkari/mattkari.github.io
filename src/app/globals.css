@@ -2,8 +2,164 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Two themes, one set of names.
+ *
+ * Research on screen reading (see README, "Colour and themes") finds that dark
+ * text on a light page reads better for most people, most clearly at small
+ * sizes, that about a third of people prefer a dark page, and that a site
+ * should follow the reader's system setting and let them switch. So:
+ *
+ *   - light is the default,
+ *   - a system set to dark gets the dark theme,
+ *   - the toggle in the header overrides both (it sets data-theme on <html>).
+ *
+ * The dark values appear twice below, once for the system setting and once for
+ * the toggle. Keep them identical; a test checks that they are.
+ */
 @layer base {
   :root {
+    color-scheme: light;
+
+    /* site tokens: space-separated RGB, so Tailwind can add opacity */
+    --page: 251 248 243;          /* warm off-white */
+    --surface: 255 255 255;       /* cards and panels */
+    --ink: 28 25 23;              /* headings */
+    --ink-soft: 41 37 36;
+    --ink-body: 43 36 30;         /* body text */
+    --ink-muted: 79 74 69;        /* captions and small labels */
+    --ink-faint: 168 162 158;     /* decoration only */
+    --ink-hover: 120 53 15;       /* a heading inside a hovered card */
+    --line: 28 25 23;             /* hairlines and tints, always used with opacity */
+    --brand: 120 53 15;           /* links and actions: deep gold */
+    --brand-hover: 69 26 3;
+    --kicker: 120 53 15;          /* small gold labels */
+    --brand-fill: 120 53 15;      /* solid buttons */
+    --brand-fill-hover: 146 64 14;
+    --brand-ink: 255 251 235;     /* text on a solid button */
+    --glow-a: 253 230 138;
+    --glow-b: 252 211 77;
+    --shade: 168 162 158;         /* drop shadows */
+    --ok: 6 78 59;
+    --ok-bg: 236 253 245;
+    --ok-line: 110 231 183;
+    --bad: 127 29 29;
+    --bad-bg: 254 242 242;
+    --bad-line: 252 165 165;
+    --warn: 69 26 3;
+    --warn-bg: 255 251 235;
+    --warn-line: 252 211 77;
+
+    /* component tokens (HSL), used by the form and button primitives */
+    --background: 38 50% 97%;
+    --foreground: 24 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 24 10% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 24 10% 10%;
+    --primary: 22 78% 26%;
+    --primary-foreground: 48 100% 96%;
+    --secondary: 36 30% 92%;
+    --secondary-foreground: 24 10% 10%;
+    --muted: 36 30% 92%;
+    --muted-foreground: 27 7% 29%;
+    --accent: 36 30% 92%;
+    --accent-foreground: 24 10% 10%;
+    --destructive: 0 72% 41%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 30 15% 85%;
+    /* The edge of anything a person taps or types in: at least 3:1 against
+       the page and the cards (tests/contrast.spec.ts). */
+    --input: 25 5% 45%;
+    --ring: 22 78% 26%;
+    --radius: 0.75rem;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      color-scheme: dark;
+
+      --page: 2 6 23;               /* slate-950 */
+      --surface: 15 23 42;          /* slate-900, mostly used at 60% */
+      --ink: 255 255 255;
+      --ink-soft: 226 232 240;      /* slate-200 */
+      --ink-body: 203 213 225;      /* slate-300 */
+      --ink-muted: 148 163 184;     /* slate-400 */
+      --ink-faint: 100 116 139;     /* slate-500, decoration only */
+      --ink-hover: 254 243 199;
+      --line: 255 255 255;
+      --brand: 252 211 77;          /* amber-300 */
+      --brand-hover: 253 230 138;
+      --kicker: 222 187 70;
+      --brand-fill: 252 211 77;
+      --brand-fill-hover: 253 230 138;
+      --brand-ink: 2 6 23;
+      --glow-a: 37 99 235;
+      --glow-b: 251 191 36;
+      --shade: 2 6 23;
+      --ok: 167 243 208;
+      --ok-bg: 6 30 35;
+      --ok-line: 6 95 70;
+      --bad: 254 202 202;
+      --bad-bg: 40 12 23;
+      --bad-line: 127 29 29;
+      --warn: 253 230 138;
+      --warn-bg: 34 19 23;
+      --warn-line: 146 64 14;
+
+      --background: 222 47% 5%;
+      --foreground: 210 40% 98%;
+      --card: 222 44% 8%;
+      --card-foreground: 210 40% 98%;
+      --popover: 222 44% 7%;
+      --popover-foreground: 210 40% 98%;
+      --primary: 45 96% 62%;
+      --primary-foreground: 226 60% 8%;
+      --secondary: 220 33% 14%;
+      --secondary-foreground: 210 40% 96%;
+      --muted: 220 30% 12%;
+      --muted-foreground: 215 20% 68%;
+      --accent: 220 33% 16%;
+      --accent-foreground: 210 40% 96%;
+      --destructive: 0 72% 51%;
+      --destructive-foreground: 210 40% 98%;
+      --border: 218 30% 18%;
+      /* slate-500: at least 3:1 against the page, the cards and the glows */
+      --input: 215 16% 47%;
+      --ring: 45 96% 62%;
+    }
+  }
+
+  :root[data-theme='dark'] {
+    color-scheme: dark;
+
+    --page: 2 6 23;               /* slate-950 */
+    --surface: 15 23 42;          /* slate-900, mostly used at 60% */
+    --ink: 255 255 255;
+    --ink-soft: 226 232 240;      /* slate-200 */
+    --ink-body: 203 213 225;      /* slate-300 */
+    --ink-muted: 148 163 184;     /* slate-400 */
+    --ink-faint: 100 116 139;     /* slate-500, decoration only */
+    --ink-hover: 254 243 199;
+    --line: 255 255 255;
+    --brand: 252 211 77;          /* amber-300 */
+    --brand-hover: 253 230 138;
+    --kicker: 222 187 70;
+    --brand-fill: 252 211 77;
+    --brand-fill-hover: 253 230 138;
+    --brand-ink: 2 6 23;
+    --glow-a: 37 99 235;
+    --glow-b: 251 191 36;
+    --shade: 2 6 23;
+    --ok: 167 243 208;
+    --ok-bg: 6 30 35;
+    --ok-line: 6 95 70;
+    --bad: 254 202 202;
+    --bad-bg: 40 12 23;
+    --bad-line: 127 29 29;
+    --warn: 253 230 138;
+    --warn-bg: 34 19 23;
+    --warn-line: 146 64 14;
+
     --background: 222 47% 5%;
     --foreground: 210 40% 98%;
     --card: 222 44% 8%;
@@ -21,11 +177,9 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
     --border: 218 30% 18%;
-    /* The edge of anything a person taps or types in: slate-500, which is at
-       least 3:1 against the page, the cards and the glows (tests/contrast.spec.ts). */
+    /* slate-500: at least 3:1 against the page, the cards and the glows */
     --input: 215 16% 47%;
     --ring: 45 96% 62%;
-    --radius: 0.75rem;
   }
 }
 
@@ -33,8 +187,9 @@
   * {
     @apply border-border;
   }
+  /* the same page colour as every section, so overscroll never shows a seam */
   body {
-    @apply bg-background text-foreground;
+    @apply bg-page text-ink-body;
   }
 }
 
@@ -45,37 +200,50 @@
   }
 }
 
-/* One gold focus ring for every link and control that does not style its own.
+/* One focus ring for every link and control that does not style its own.
    :where() keeps specificity at zero so component classes still override it. */
 @layer base {
   :where(a, button, summary):focus-visible {
-    outline: 2px solid rgb(252 211 77);
+    outline: 2px solid rgb(var(--brand));
     outline-offset: 3px;
     border-radius: 4px;
   }
 }
 
-/* Writing section: thin gold scrollbar and soft fade at the list edges */
-.writing-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(252 211 77 / 0.45) transparent;
-}
-.writing-scroll::-webkit-scrollbar {
-  width: 6px;
-}
-.writing-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.writing-scroll::-webkit-scrollbar-thumb {
-  background: rgb(252 211 77 / 0.45);
-  border-radius: 9999px;
-}
-.fade-y {
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent);
-  mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent);
+::selection {
+  background: rgb(var(--brand-fill) / 0.9);
+  color: rgb(var(--brand-ink));
 }
 
-::selection {
-  background: rgb(252 211 77 / 0.9);
-  color: rgb(2 6 23);
+/* Form messages. Each has its own text, background and edge in both themes. */
+.notice-ok {
+  color: rgb(var(--ok));
+  background: rgb(var(--ok-bg));
+  border-color: rgb(var(--ok-line));
+}
+.notice-bad {
+  color: rgb(var(--bad));
+  background: rgb(var(--bad-bg));
+  border-color: rgb(var(--bad-line));
+}
+.notice-warn {
+  color: rgb(var(--warn));
+  background: rgb(var(--warn-bg));
+  border-color: rgb(var(--warn-line));
+}
+
+/* The theme toggle shows the icon for the theme it switches to. It needs the
+   small script in <head> to work, so it stays hidden until that has run. */
+.theme-toggle {
+  display: none;
+}
+:root[data-theme] .theme-toggle {
+  display: inline-flex;
+}
+.theme-toggle .to-light,
+:root[data-theme='dark'] .theme-toggle .to-dark {
+  display: none;
+}
+:root[data-theme='dark'] .theme-toggle .to-light {
+  display: block;
 }

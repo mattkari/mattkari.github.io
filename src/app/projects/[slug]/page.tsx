@@ -40,8 +40,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-8">
-      <h2 className="font-display text-2xl leading-tight text-white sm:text-3xl">{children}</h2>
-      <div aria-hidden="true" className="mt-4 h-px w-16 bg-amber-300/60" />
+      <h2 className="font-display text-2xl leading-tight text-ink sm:text-3xl">{children}</h2>
+      <div aria-hidden="true" className="mt-4 h-px w-16 bg-brand/60" />
     </div>
   );
 }
@@ -70,14 +70,14 @@ export default async function ProjectPage({ params }: Params) {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-950">
+    <div className="relative min-h-screen overflow-hidden bg-page">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema).replace(/</g, '\\u003c') }}
       />
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-blue-600/20 blur-3xl" />
-        <div className="absolute -right-32 top-[40rem] h-[26rem] w-[26rem] rounded-full bg-amber-400/10 blur-3xl" />
+        <div className="absolute -left-40 -top-40 h-[30rem] w-[30rem] rounded-full bg-glow-a/20 blur-3xl" />
+        <div className="absolute -right-32 top-[40rem] h-[26rem] w-[26rem] rounded-full bg-glow-b/10 blur-3xl" />
       </div>
 
       <SubpageHeader back={{ href: '/#projects', label: 'All projects' }} />
@@ -85,8 +85,8 @@ export default async function ProjectPage({ params }: Params) {
       <main className="relative mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
         <header>
           <Kicker>Case study · {project.tag}</Kicker>
-          <h1 className="font-display text-4xl leading-tight text-white sm:text-5xl">{project.name}</h1>
-          <p className="mt-6 max-w-3xl text-lg leading-relaxed text-slate-300">{study.summary}</p>
+          <h1 className="font-display text-4xl leading-tight text-ink sm:text-5xl">{project.name}</h1>
+          <p className="mt-6 max-w-3xl text-lg leading-relaxed text-ink-body">{study.summary}</p>
 
           <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
             {project.repo && (
@@ -94,7 +94,7 @@ export default async function ProjectPage({ params }: Params) {
                 href={project.repo}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-11 items-center gap-2 rounded-md bg-amber-300 px-6 font-semibold text-slate-950 transition-colors hover:bg-amber-200"
+                className="inline-flex h-11 items-center gap-2 rounded-md bg-brand-fill px-6 font-semibold text-brand-ink transition-colors hover:bg-brand-fill-hover"
               >
                 <Github size={16} aria-hidden="true" /> View the repository
               </a>
@@ -104,13 +104,13 @@ export default async function ProjectPage({ params }: Params) {
                 href={project.liveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-11 items-center gap-2 rounded-md bg-amber-300 px-6 font-semibold text-slate-950 transition-colors hover:bg-amber-200"
+                className="inline-flex h-11 items-center gap-2 rounded-md bg-brand-fill px-6 font-semibold text-brand-ink transition-colors hover:bg-brand-fill-hover"
               >
                 <Globe size={16} aria-hidden="true" /> Visit the live site
               </a>
             )}
             {!project.repo && !project.liveUrl && (
-              <span className="inline-flex items-center gap-2 text-slate-400">
+              <span className="inline-flex items-center gap-2 text-ink-muted">
                 <Lock size={14} aria-hidden="true" className="shrink-0" />
                 {project.status}
               </span>
@@ -131,9 +131,9 @@ export default async function ProjectPage({ params }: Params) {
           <img
             src={project.image}
             alt={project.imageAlt}
-            className="w-full rounded-2xl border border-white/10 shadow-2xl shadow-slate-950/60"
+            className="w-full rounded-2xl border border-line/10 shadow-xl shadow-shade/25"
           />
-          <figcaption className="mt-3 text-sm leading-relaxed text-slate-400">
+          <figcaption className="mt-3 text-sm leading-relaxed text-ink-muted">
             {study.imageCaption}
           </figcaption>
         </figure>
@@ -144,7 +144,7 @@ export default async function ProjectPage({ params }: Params) {
           </SectionTitle>
           <div className="max-w-3xl space-y-5">
             {study.background.map((paragraph) => (
-              <p key={paragraph} className="text-lg leading-relaxed text-slate-300">
+              <p key={paragraph} className="text-lg leading-relaxed text-ink-body">
                 {paragraph}
               </p>
             ))}
@@ -155,24 +155,24 @@ export default async function ProjectPage({ params }: Params) {
           <section className="mt-16">
             <SectionTitle>{study.steps.heading}</SectionTitle>
             {study.steps.intro && (
-              <p className="mb-8 max-w-3xl leading-relaxed text-slate-300">{study.steps.intro}</p>
+              <p className="mb-8 max-w-3xl leading-relaxed text-ink-body">{study.steps.intro}</p>
             )}
             <ol className="max-w-3xl">
               {study.steps.items.map((step, i) => (
                 <li key={step.title} className="relative flex gap-5 pb-8 last:pb-0">
                   {/* the line that joins one step to the next */}
                   {i < study.steps!.items.length - 1 && (
-                    <span aria-hidden="true" className="absolute left-[1.0625rem] top-9 h-full w-px bg-white/10" />
+                    <span aria-hidden="true" className="absolute left-[1.0625rem] top-9 h-full w-px bg-line/10" />
                   )}
                   <span
                     aria-hidden="true"
-                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-300/40 bg-slate-950 font-display text-sm text-amber-300"
+                    className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand/40 bg-page font-display text-sm text-brand"
                   >
                     {i + 1}
                   </span>
                   <div className="pt-1">
-                    <h3 className="font-semibold text-white">{step.title}</h3>
-                    <p className="mt-1.5 text-sm leading-relaxed text-slate-300">{step.detail}</p>
+                    <h3 className="font-semibold text-ink">{step.title}</h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-ink-body">{step.detail}</p>
                   </div>
                 </li>
               ))}
@@ -185,13 +185,13 @@ export default async function ProjectPage({ params }: Params) {
             <SectionTitle>{study.layers.heading}</SectionTitle>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {study.layers.items.map((layer) => (
-                <div key={layer.label} className="rounded-2xl border border-white/10 bg-slate-900/60 p-5">
-                  <h3 className="text-xs font-medium uppercase tracking-[0.2em] text-amber-300/90">
+                <div key={layer.label} className="rounded-2xl border border-line/10 bg-surface/60 p-5">
+                  <h3 className="text-xs font-medium uppercase tracking-[0.2em] text-kicker">
                     {layer.label}
                   </h3>
                   <ul className="mt-3 space-y-1.5">
                     {layer.items.map((item) => (
-                      <li key={item} className="text-sm leading-relaxed text-slate-200">
+                      <li key={item} className="text-sm leading-relaxed text-ink-soft">
                         {item}
                       </li>
                     ))}
@@ -224,9 +224,9 @@ export default async function ProjectPage({ params }: Params) {
                     src={figure.src}
                     alt={figure.alt}
                     loading="lazy"
-                    className="w-full rounded-xl border border-white/10"
+                    className="w-full rounded-xl border border-line/10"
                   />
-                  <figcaption className="mt-3 text-sm leading-relaxed text-slate-400">
+                  <figcaption className="mt-3 text-sm leading-relaxed text-ink-muted">
                     {figure.caption}
                   </figcaption>
                 </figure>
@@ -238,7 +238,7 @@ export default async function ProjectPage({ params }: Params) {
         <section className="mt-16">
           <SectionTitle>Evidence</SectionTitle>
           {study.evidenceNote && (
-            <p className="mb-5 text-sm text-slate-400">{study.evidenceNote}</p>
+            <p className="mb-5 text-sm text-ink-muted">{study.evidenceNote}</p>
           )}
           <ul className="max-w-3xl space-y-3">
             {project.evidence.map((item) => (
@@ -253,8 +253,8 @@ export default async function ProjectPage({ params }: Params) {
             <ul className="max-w-3xl space-y-3">
               {study.limits.map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <Minus size={16} aria-hidden="true" className="mt-1 shrink-0 text-slate-500" />
-                  <span className="text-sm leading-relaxed text-slate-300">{item}</span>
+                  <Minus size={16} aria-hidden="true" className="mt-1 shrink-0 text-ink-faint" />
+                  <span className="text-sm leading-relaxed text-ink-body">{item}</span>
                 </li>
               ))}
             </ul>
@@ -264,7 +264,7 @@ export default async function ProjectPage({ params }: Params) {
         {related.length > 0 && (
           <section className="mt-16">
             <SectionTitle>The full write-up</SectionTitle>
-            <ul className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-slate-900/60 px-1 py-1 sm:px-3">
+            <ul className="divide-y divide-line/5 rounded-2xl border border-line/10 bg-surface/60 px-1 py-1 sm:px-3">
               {related.map((article, i) => (
                 <li key={article.slug}>
                   <ArticleRow article={article} index={i} />
@@ -274,19 +274,19 @@ export default async function ProjectPage({ params }: Params) {
           </section>
         )}
 
-        <p className="mt-12 border-t border-white/10 pt-6 text-sm text-slate-400">
+        <p className="mt-12 border-t border-line/10 pt-6 text-sm text-ink-muted">
           Source for this page: {study.source}
         </p>
 
-        <section className="mt-12 rounded-2xl border border-amber-300/30 bg-amber-300/5 p-7 sm:p-9">
-          <h2 className="font-display text-2xl text-white">Want the detail?</h2>
-          <p className="mt-3 max-w-2xl leading-relaxed text-slate-300">
+        <section className="mt-12 rounded-2xl border border-brand/30 bg-brand/5 p-7 sm:p-9">
+          <h2 className="font-display text-2xl text-ink">Want the detail?</h2>
+          <p className="mt-3 max-w-2xl leading-relaxed text-ink-body">
             I am happy to walk through the architecture, the trade-offs and the evidence behind
             any of this.
           </p>
           <Link
             href="/#contact"
-            className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-amber-300 hover:text-amber-200"
+            className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-brand hover:text-brand-hover"
           >
             Get in touch <ArrowRight size={16} aria-hidden="true" />
           </Link>
@@ -295,23 +295,23 @@ export default async function ProjectPage({ params }: Params) {
         <nav aria-label="More projects" className="mt-12 grid gap-4 sm:grid-cols-2">
           <Link
             href={`/projects/${previous.slug}`}
-            className="group rounded-2xl border border-input bg-white/[0.03] p-5 transition-colors hover:border-amber-300/40"
+            className="group rounded-2xl border border-input bg-line/[0.03] p-5 transition-colors hover:border-brand/40"
           >
-            <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+            <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-ink-muted">
               <ArrowLeft size={14} aria-hidden="true" /> Previous
             </span>
-            <span className="mt-2 block font-display text-lg text-white group-hover:text-amber-100">
+            <span className="mt-2 block font-display text-lg text-ink group-hover:text-ink-hover">
               {previous.name}
             </span>
           </Link>
           <Link
             href={`/projects/${next.slug}`}
-            className="group rounded-2xl border border-input bg-white/[0.03] p-5 transition-colors hover:border-amber-300/40 sm:text-right"
+            className="group rounded-2xl border border-input bg-line/[0.03] p-5 transition-colors hover:border-brand/40 sm:text-right"
           >
-            <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
+            <span className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-ink-muted">
               Next <ArrowRight size={14} aria-hidden="true" />
             </span>
-            <span className="mt-2 block font-display text-lg text-white group-hover:text-amber-100">
+            <span className="mt-2 block font-display text-lg text-ink group-hover:text-ink-hover">
               {next.name}
             </span>
           </Link>

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
@@ -69,8 +71,15 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbf8f3" },
+    { media: "(prefers-color-scheme: dark)", color: "#020617" },
+  ],
+  colorScheme: "light dark",
 };
+
+// Inlined into <head> so the theme is settled before the first paint.
+const themeInit = readFileSync(join(process.cwd(), "src/lib/theme-init.js"), "utf8");
 
 const personSchema = {
   "@context": "https://schema.org",
@@ -112,7 +121,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-GB">
+    // The script below sets data-theme on <html> before React starts, which
+    // React would otherwise report as a mismatch.
+    <html lang="en-GB" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInit }} />
+      </head>
       <body className={`${inter.className} ${display.variable}`}>
         <script
           type="application/ld+json"

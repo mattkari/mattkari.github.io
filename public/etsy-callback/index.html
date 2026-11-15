@@ -6,17 +6,21 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>Etsy connection – copy this address</title>
-<meta name="theme-color" content="#020617">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbf8f3">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617">
 <!-- Styled to match the rest of the site, with system fonts only: this page
      must load nothing from anywhere else, because its address carries a
      one-time login code. -->
 <style>
-body{max-width:640px;margin:0 auto;padding:56px 24px;background:#020617;color:#cbd5e1;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:18px;line-height:1.6}
-h1{margin:0 0 24px;color:#f8fafc;font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:2rem;line-height:1.2}
-strong{color:#f8fafc}
-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;background:rgba(148,163,184,.14);border:1px solid rgba(255,255,255,.1);border-radius:4px;padding:1px 5px;color:#e2e8f0;overflow-wrap:anywhere}
-.box{background:#0b1220;border:1px solid rgba(255,255,255,.1);border-left:3px solid #fcd34d;padding:6px 20px;border-radius:10px}
-.box+p{color:#94a3b8;font-size:15px;margin-top:20px}
+:root{color-scheme:light;--bg:#fbf8f3;--surface:#f4ede1;--text:#2b241e;--strong:#1c1917;--muted:#4f4a45;--accent:#78350f;--line:rgba(28,25,23,.14);--code-bg:rgba(120,113,108,.14)}
+@media (prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#020617;--surface:#0b1220;--text:#cbd5e1;--strong:#f8fafc;--muted:#94a3b8;--accent:#fcd34d;--line:rgba(255,255,255,.1);--code-bg:rgba(148,163,184,.14)}}
+body{max-width:640px;margin:0 auto;padding:56px 24px;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:18px;line-height:1.6}
+h1{margin:0 0 24px;color:var(--strong);font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:2rem;line-height:1.2}
+strong{color:var(--strong)}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.86em;background:var(--code-bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--strong);overflow-wrap:anywhere}
+.box{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);padding:6px 20px;border-radius:10px}
+.box+p{color:var(--muted);font-size:15px;margin-top:20px}
 </style>
 </head>
 <body>

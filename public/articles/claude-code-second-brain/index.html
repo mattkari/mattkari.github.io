@@ -35,7 +35,55 @@
  }
 }
 </script>
-<meta name="theme-color" content="#020617">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbf8f3">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617">
+<script data-theme-init>
+// Runs in <head>, before the page paints, on every page of the site: the app
+// (inlined by src/app/layout.tsx) and the standalone articles (inlined by
+// scripts/apply-article-chrome.py). Plain ES5, no build step.
+//
+// It decides the theme once, so the page never flashes the wrong colours:
+// a choice made with the toggle wins; otherwise the system setting decides.
+(function () {
+  var KEY = 'theme';
+  var root = document.documentElement;
+  var system = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function chosen() {
+    try {
+      var value = localStorage.getItem(KEY);
+      return value === 'light' || value === 'dark' ? value : null;
+    } catch (error) {
+      return null; // storage blocked: follow the system setting
+    }
+  }
+
+  function apply() {
+    root.setAttribute('data-theme', chosen() || (system.matches ? 'dark' : 'light'));
+  }
+
+  apply();
+
+  // Follow the system if it changes, unless the reader has chosen for themselves.
+  system.addEventListener('change', function () {
+    if (!chosen()) apply();
+  });
+
+  // One listener serves every toggle on the page, however it was rendered.
+  document.addEventListener('click', function (event) {
+    var toggle = event.target.closest && event.target.closest('[data-theme-toggle]');
+    if (!toggle) return;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try {
+      localStorage.setItem(KEY, next);
+    } catch (error) {
+      /* the choice still applies to this page */
+    }
+    root.setAttribute('data-theme', next);
+  });
+})();
+</script>
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/articles/_article.css">
@@ -46,6 +94,10 @@
 <a class="mark" href="/" aria-label="Home">MK</a>
 <a class="name" href="/">Matt Karimov</a>
 <a class="nav" href="/writing">All writing</a>
+<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch between light and dark theme" title="Switch between light and dark theme">
+<svg class="to-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+<svg class="to-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+</button>
 </div>
 </header>
 <article>

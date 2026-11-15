@@ -58,15 +58,41 @@ FONTS = (
 
 STYLESHEET = '<link rel="stylesheet" href="/articles/_article.css">'
 
-THEME_META = '<meta name="theme-color" content="#020617">'
+# The browser chrome follows the system setting, like the page does by default.
+THEME_META = (
+    '<meta name="color-scheme" content="light dark">\n'
+    '<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbf8f3">\n'
+    '<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617">'
+)
+
+# The same script the app inlines: it settles the theme before the first paint.
+THEME_SCRIPT = (
+    "<script data-theme-init>\n"
+    + (ROOT / "src" / "lib" / "theme-init.js").read_text(encoding="utf-8").strip()
+    + "\n</script>"
+)
+
+TOGGLE = (
+    '<button class="theme-toggle" type="button" data-theme-toggle '
+    'aria-label="Switch between light and dark theme" title="Switch between light and dark theme">\n'
+    '<svg class="to-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>\n'
+    '<svg class="to-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+    'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+    '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41'
+    'M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>\n'
+    "</button>"
+)
 
 HEADER = """<header class="site-header">
 <div class="inner">
 <a class="mark" href="/" aria-label="Home">MK</a>
 <a class="name" href="/">Matt Karimov</a>
 <a class="nav" href="/writing">All writing</a>
+{toggle}
 </div>
-</header>"""
+</header>""".format(toggle=TOGGLE)
 
 FOOTER = """<footer class="site-footer">
 <div class="inner">
@@ -94,7 +120,8 @@ FONTS_RE = re.compile(
     r'|[ \t]*<link rel="preload" href="/fonts/[^"]*"[^>]*>\n?'
 )
 SHEET_RE = re.compile(r'[ \t]*<link rel="stylesheet" href="/articles/_article\.css">\n?')
-THEME_RE = re.compile(r'[ \t]*<meta name="theme-color"[^>]*>\n?')
+THEME_RE = re.compile(r'[ \t]*<meta name="(?:theme-color|color-scheme)"[^>]*>\n?')
+THEME_SCRIPT_RE = re.compile(r"[ \t]*<script data-theme-init>.*?</script>\n?", re.DOTALL)
 # every byline form used so far: with or without the class, either name
 BYLINE_RE = re.compile(r'[ \t]*<p(?: class="meta")?>(?:Dusmamat \(Matt\)|Matt) Karimov · [^<]*</p>\n?')
 FEED_LINK = (
@@ -161,6 +188,7 @@ def transform(html: str, slug: str, entry: dict) -> str:
     html = FONTS_RE.sub("", html)
     html = SHEET_RE.sub("", html)
     html = THEME_RE.sub("", html)
+    html = THEME_SCRIPT_RE.sub("", html)
     html = FEED_RE.sub("", html)
     html = PUBLISHED_RE.sub("", html)
     html = JSONLD_RE.sub("", html)
@@ -185,7 +213,7 @@ def transform(html: str, slug: str, entry: dict) -> str:
     published = f'<meta property="article:published_time" content="{entry["iso"]}">'
     head_block = (
         f"{published}\n{FEED_LINK}\n{structured_data(html, slug, entry)}\n"
-        f"{THEME_META}\n{FONTS}\n{STYLESHEET}\n"
+        f"{THEME_META}\n{THEME_SCRIPT}\n{FONTS}\n{STYLESHEET}\n"
     )
     if "</head>" not in html:
         raise ValueError("no </head> found")
