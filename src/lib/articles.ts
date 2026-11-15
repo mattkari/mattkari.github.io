@@ -17,6 +17,16 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'twelve-articles-thirty-seven-tags',
+    title: 'Twelve Articles, Thirty-Seven Tags: Auditing a Writing Section Against the Research',
+    summary:
+      'A personal writing section audited against research on long pages: no contents lists, dead-end endings and 37 tags, fixed and shown before and after.',
+    date: '2026-11-15',
+    readingMinutes: 6,
+    topic: 'Testing',
+    tags: ['Web design', 'Accessibility', 'Testing', 'AI agents'],
+  },
+  {
     slug: 'contrast-audit-that-could-not-fail',
     title: 'A Contrast Audit That Could Not Fail: Testing the Colours of a Small Shop',
     summary:
