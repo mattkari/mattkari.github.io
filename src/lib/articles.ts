@@ -17,6 +17,16 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'workflow-not-agent',
+    title: 'Workflow, Not Agent: Building a Source-Grounded Article Writer for a Doctoral Thesis',
+    summary:
+      'A source-grounded article writer for a doctoral thesis, built as a workflow rather than an agent: why, how, and what its first drafts got wrong.',
+    date: '2026-11-15',
+    readingMinutes: 10,
+    topic: 'LLMs and RAG',
+    tags: ['RAG', 'AI agents', 'Claude Code', 'Testing'],
+  },
+  {
     slug: 'twelve-articles-thirty-seven-tags',
     title: 'Twelve Articles, Thirty-Seven Tags: Auditing a Writing Section Against the Research',
     summary:
