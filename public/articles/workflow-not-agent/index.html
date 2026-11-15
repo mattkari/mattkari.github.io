@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workflow, Not Agent: Building a Source-Grounded Article Writer for a Doctoral Thesis</title>
+<meta name="description" content="A source-grounded article writer for a doctoral thesis, built as a workflow rather than an agent: why, how, and what its first drafts got wrong.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/workflow-not-agent/">
+<meta property="og:title" content="Workflow, Not Agent: Building a Source-Grounded Article Writer for a Doctoral Thesis">
+<meta property="og:description" content="A source-grounded article writer for a doctoral thesis, built as a workflow rather than an agent: why, how, and what its first drafts got wrong.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://mattkari.github.io/og/workflow-not-agent.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Workflow, Not Agent: Building a Source-Grounded Article Writer for a Doctoral Thesis">
+<meta name="twitter:description" content="A source-grounded article writer for a doctoral thesis, built as a workflow rather than an agent: why, how, and what its first drafts got wrong.">
+<meta name="twitter:image" content="https://mattkari.github.io/og/workflow-not-agent.png">
+<meta property="article:published_time" content="2026-11-15">
+<link rel="alternate" type="application/rss+xml" title="Matt Karimov: Writing" href="https://mattkari.github.io/feed.xml">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BlogPosting",
+ "headline": "Workflow, Not Agent: Building a Source-Grounded Article Writer for a Doctoral Thesis",
+ "description": "A source-grounded article writer for a doctoral thesis, built as a workflow rather than an agent: why, how, and what its first drafts got wrong.",
+ "datePublished": "2026-11-15",
+ "inLanguage": "en-GB",
+ "url": "https://mattkari.github.io/articles/workflow-not-agent/",
+ "mainEntityOfPage": "https://mattkari.github.io/articles/workflow-not-agent/",
+ "image": "https://mattkari.github.io/og/workflow-not-agent.png",
+ "author": {
+  "@type": "Person",
+  "name": "Matt Karimov",
+  "url": "https://mattkari.github.io"
+ }
+}
+</script>
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbf8f3">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617">
+<script data-theme-init>
+// Runs in <head>, before the page paints, on every page of the site: the app
+// (inlined by src/app/layout.tsx) and the standalone articles (inlined by
+// scripts/apply-article-chrome.py). Plain ES5, no build step.
+//
+// It decides the theme once, so the page never flashes the wrong colours:
+// a choice made with the toggle wins; otherwise the system setting decides.
+(function () {
+  var KEY = 'theme';
+  var root = document.documentElement;
+  var system = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function chosen() {
+    try {
+      var value = localStorage.getItem(KEY);
+      return value === 'light' || value === 'dark' ? value : null;
+    } catch (error) {
+      return null; // storage blocked: follow the system setting
+    }
+  }
+
+  function apply() {
+    root.setAttribute('data-theme', chosen() || (system.matches ? 'dark' : 'light'));
+  }
+
+  apply();
+
+  // Follow the system if it changes, unless the reader has chosen for themselves.
+  system.addEventListener('change', function () {
+    if (!chosen()) apply();
+  });
+
+  // One listener serves every toggle on the page, however it was rendered.
+  document.addEventListener('click', function (event) {
+    var toggle = event.target.closest && event.target.closest('[data-theme-toggle]');
+    if (!toggle) return;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try {
+      localStorage.setItem(KEY, next);
+    } catch (error) {
+      /* the choice still applies to this page */
+    }
+    root.setAttribute('data-theme', next);
+  });
+})();
+</script>
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/articles/_article.css">
+<script src="/articles/_article.js" defer></script>
+</head>
+<body id="top">
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch between light and dark theme" title="Switch between light and dark theme">
+<svg class="to-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+<svg class="to-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+</button>
+</div>
+</header>
+<article>
+<h1>Workflow, Not Agent: Building a Source-Grounded Article Writer for a Doctoral Thesis</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 15 November 2026 · 10 min read</p>
+<nav class="toc" aria-label="On this page">
+<details open>
+<summary>On this page</summary>
+<ol>
+<li><a href="#1-agent-or-workflow">1. Agent or workflow?</a></li>
+<li><a href="#2-five-systems-that-do-similar-work">2. Five systems that do similar work</a></li>
+<li><a href="#3-how-the-workflow-was-built">3. How the workflow was built</a></li>
+<li><a href="#4-what-the-first-drafts-revealed">4. What the first drafts revealed</a></li>
+<li><a href="#5-a-published-example">5. A published example</a></li>
+<li><a href="#6-limits">6. Limits</a></li>
+<li><a href="#summary-and-conclusion">Summary and conclusion</a></li>
+<li><a href="#references">References</a></li>
+</ol>
+</details>
+</nav>
+<p>Language models are now routinely described as agents, and almost any system that calls a model more than once is presented as agentic. This article does not argue that agents are the wrong tool. Rather, it argues that a writing tool whose purpose is to be checked against its source is better built as a workflow, and it shows what such a workflow looks like in practice. The system in question drafts short articles from one source only, the author's 2017 doctoral thesis, and every sentence it prints must point to a printed page of that thesis. To this end, the article is organised as follows. The first section settles the question of whether the system is an agent. The second section compares it with five published systems that do similar work. The third section describes how the workflow was built, and the fourth reports what its first real drafts revealed. The fifth section presents a published example, and the last section states the limits of the claim.</p>
+<h2 id="1-agent-or-workflow">1. Agent or workflow?</h2>
+<p>The clearest distinction comes from Anthropic's guide <em>Building effective agents</em>. According to the guide, "workflows are systems where LLMs and tools are orchestrated through predefined code paths", whereas agents "are systems where LLMs dynamically direct their own processes and tool usage, maintaining control over how they accomplish tasks" [1]. It should be noted that the guide places both under the wider heading of agentic systems, so the useful question is not whether a system is agentic in some loose sense but which of the two architectures it follows.</p>
+<p>Measured against that distinction, the article writer is a workflow. The author writes the title and the outline, and each outline line becomes one question to the thesis. Each question receives one retrieval and one model call, after which a programmatic gate either accepts the section or blocks it with a stated reason. The model never chooses a tool, never decides to search again and never decides when the article is finished. In other words, the pattern is what the guide calls prompt chaining with a gate, and the guide's own example of that pattern is almost a description of this tool: "writing an outline of a document, checking that the outline meets certain criteria, then writing the document based on the outline" [1].</p>
+<p>The survey literature on agentic retrieval draws the same line. Singh and colleagues describe agentic retrieval-augmented generation as systems in which agents "dynamically manage retrieval strategies" and "iteratively refine contextual understanding" [2]. The article writer does neither, and this is deliberate. Interestingly, the guide itself observes that "workflows offer predictability and consistency for well-defined tasks" [1], and a task whose output must be traced, priced in advance and reproduced from a record is exactly such a task. Taken together, the accurate description is therefore a grounded, human-in-the-loop drafting workflow over a retrieval pipeline, not an agent.</p>
+<h2 id="2-five-systems-that-do-similar-work">2. Five systems that do similar work</h2>
+<p>The closest system in shape is STORM, developed at Stanford and published at NAACL 2024 [3]. STORM writes Wikipedia-like articles in two stages: it first researches a topic and builds an outline, and it then writes the article section by section, retrieving material for each section by its headings. However, STORM builds the outline itself, by simulating conversations between writers with different perspectives and a question-answering component grounded on the web. The article writer, by contrast, takes the outline from the author and searches one document only. It is also worth noting what STORM's authors found when they examined unsupported sentences: the main problems were "drawing improper inferences and inaccurate paraphrasing, rather than hallucinating non-existent contents" [3]. As section 4 shows, the same kind of error appeared in this project.</p>
+<p>The closest system in method is WikiCrow, built on PaperQA2 by FutureHouse [4]. According to its authors, each PaperQA2 query "created a different article section", which is the same one-question-per-section design used here. WikiCrow's articles had fewer cited but unsupported statements than the matching human-written Wikipedia articles (13.5% against 24.9%), at an average cost of $4.48 per article [4]. Nevertheless, PaperQA2 itself is an agent in the sense defined above, because it chooses among tools to find papers, gather evidence and explore citations.</p>
+<p>OpenScholar, published in <em>Nature</em> in 2026, synthesises answers from 45 million open-access papers and refines its own draft "by means of a self-feedback loop" that includes citation verification [5]. That loop is precisely what the article writer avoids: a section that fails is recorded and shown, not regenerated. GPT Researcher, a widely used open-source project, goes further still, since planner and execution agents generate their own research questions, search the web and assemble a report [6].</p>
+<p>Finally, ALCE, a benchmark from Princeton presented at EMNLP 2023, offers a way of measuring citation quality automatically: citation recall asks whether each statement is supported by its citations, and citation precision asks whether each citation is needed [7]. According to its authors, the automatic scores agreed substantially with human judges on recall (Cohen's kappa 0.698) and moderately on precision (0.525) [7]. From the above it can be assumed that the article writer is not novel in its parts. What appears to be less common is the combination: one author's own corpus, opaque handles resolved to printed pages, sections refused when support is weak, and a recorded human verdict on every note. It should be noted, however, that the search behind this comparison was not exhaustive.</p>
+<h2 id="3-how-the-workflow-was-built">3. How the workflow was built</h2>
+<p>The project began as a question-answering assistant over the thesis, and its central rule was set before the article writer existed. The thesis is split into 294 passages, each stored with the printed page it came from, and a question retrieves the five closest passages. The model sees those passages only under opaque handles such as [E1] and never sees a page number. Consequently, a page number in the output can only come from the stored record, so the model cannot invent one. A validation step then checks that every handle exists, that no page number was written by the model, and that a weak answer says so rather than pretending to be complete.</p>
+<p>The article writer was added in three planned stages, each written as a plan, approved and then built by Claude Code sessions working from written briefs, with every change reviewed before it was merged and deployed to a Raspberry Pi. The essential design decision was that the writer would not be a second pipeline. Each section brief is sent through the same question-answering path and the same validation as an ordinary question, so a section that the thesis cannot support is not written at all. In addition, the writer leaves out reference-list passages and cuts footnote text before drafting, because a footnote that cites another scholar would otherwise be presented as the author's own view; of the 294 passages, 262 remain available to an article.</p>
+<p>The first real draft, discussed below, led to seven further changes, each introduced with a test that failed on the old code [8]. A note marker must close the clause it supports and may never act as a word of the sentence, so "[5] states that" now blocks a section. Limitations are gathered into one closing list, "What this article does not cover", instead of appearing in the body. The model's own commentary is switched off by default and, when switched on, needs the author's separate verdict. A direct quotation may not exceed 25 words, and quotations may not exceed one fifth of a section. An optional editorial pass may rewrite a section for flow, but the rewrite is kept only if every paragraph carries exactly the same notes as before, no new name, number or transliterated term appears, and no em dash is introduced. Moreover, every finished step is now saved at once, so a restart can no longer lose a paid draft, and a command-line tool can plan an article and print its model calls before anything is sent.</p>
+<p>It is equally important to record what was rejected. An automatic entailment model was considered as a gate and rejected, because it could not run in the project's offline tests and because the evaluation literature reports such checks at their weakest on changed entities and subtle inconsistencies [8], [9]. Therefore the final judgement on each note remains with the author, who marks it in the application as supporting, partly supporting or not supporting the sentence. Until every note is judged, the article remains marked as a draft. On Claude Haiku 4.5, the model used here, each section costs roughly one US cent.</p>
+<h2 id="4-what-the-first-drafts-revealed">4. What the first drafts revealed</h2>
+<p>The first real draft, made on 15 November 2026, passed every automatic check and still did not read as an article. Note numbers stood as the subjects of sentences ("[5] describes three faculties"), five lines beginning "The evidence does not" sat in the body, and five commentary paragraphs appeared in three sections. More seriously, one commentary sentence spoke of "Nursi's decision to endow humans with unlimited faculties", whereas the thesis attributes that act to God; in other words, the model had changed who acts in the source. Measured against the author's own writing, the draft also used 6.2 connectives per 1,000 words, against a target of at least 12.</p>
+<p>After the seven changes, two further drafts were made from the same outline, one with the editorial pass and one without. Both passed validation, and both printed a raw handle where a note number should have been: "[E1, E2]" in one and "[E1, E4]" in the other. The cause was small but instructive. The pattern that recognises handles matched only single handles such as [E1], and validation combined the handles it found with the model's own list of the citations it had used, which did list E1 and E2. As a result, nothing failed, and an unresolved handle reached the reader with no page behind it. The fix makes any joined bracket a validation failure and adds a final guard in both renderers, so that no raw handle can be printed [10]. When the two earlier drafts were reopened under the new code, each showed one blocked section with the reason "one handle per bracket"; the full offline suite reported 468 tests passed and one expected failure.</p>
+<p>The editorial pass also produced a useful negative result. In one section the rewrite was rejected because it introduced an em dash, and the original stood. However, the original itself contained four em dashes, because the rule applied only to the rewrite. That is to say, a check that guards one step does not guard the text that the step leaves untouched, and the project now reports such dashes for every section.</p>
+<h2 id="5-a-published-example">5. A published example</h2>
+<p>A clean draft was then made from the same outline under the corrected code, on the faculties of the soul and the doctrine of the mean in the thought of Said Nursi. All three sections were written, none was blocked, no raw handle was printed, and the six notes resolved to printed pages. The draft is published on Medium, with an AI disclosure at the top, as <a href="https://dkarimov.medium.com/three-powers-and-a-middle-way-nursi-on-the-faculties-of-the-soul-a456cac6384f"><em>Three Powers and a Middle Way: Nursi on the Faculties of the Soul</em></a>.</p>
+<p>Interestingly, the most important correction was one that no automatic check could have caught. The draft stated that "like Plato and al-Ghazzālī, Nursi identifies three primary faculties of the soul" and cited the correct pages. Yet the cited page says that al-Ghazzālī "mentions the four faculties"; Nursi agrees with him only on the three possible states of each faculty. The note was real, the page was right, and the sentence was wrong. Five further corrections were of the same kind. Two claims that the thesis reports from other scholars, Ozdemir and Quasem, had been presented as the thesis's own; one term, "animal passion", named the faculty of anger in one section and the faculty of desire in the next; one sentence inverted what the source says about the consequences of excess; and one closing sentence carried no note at all. Each was corrected against the cited page before publication. Taken together, these corrections illustrate the limit stated in the project from the start: a checked note proves that a passage exists, not that it supports the sentence.</p>
+<h2 id="6-limits">6. Limits</h2>
+<p>The claim of this article is modest. The workflow guarantees that every printed page number comes from the stored record and that a section the thesis cannot support is refused; it does not guarantee that a cited passage supports the sentence that cites it. The support rate of the articles has not yet been measured over more than one article, and the corrections reported above come from one draft only. In addition, the system has been used on one corpus, written by one author, so nothing here shows how it behaves on a collection of sources that disagree. Medium's own policy also matters for anyone who publishes such text: writing that is mainly AI-generated may not be placed behind the paywall, whether or not it is disclosed, and a story that is fully AI-generated is not promoted beyond the author's own network [11].</p>
+<h2 id="summary-and-conclusion">Summary and conclusion</h2>
+<p>This article has set out to answer two questions: whether a source-grounded article writer should be called an agent, and how such a writer can be built so that its output can be checked. The main finding is that the article writer is a workflow in Anthropic's sense, a chain of fixed steps with programmatic gates, and that this is a strength for its purpose rather than a shortcoming. Systems such as STORM, WikiCrow and OpenScholar show what more autonomy can add in breadth and coverage; however, every degree of autonomy also adds a decision that the reader cannot trace. It can therefore be assumed that, where the purpose of a text is to be verified against one source, the more useful design keeps the model on fixed rails and leaves the last judgement to the person whose source it is. The next step, suggested by ALCE, is an automatic support check that proposes a verdict for each note while leaving the final verdict with the author.</p>
+<h2 id="references">References</h2>
+<p>[1] Schluntz, E. and Zhang, B. (2024). Building effective agents. Anthropic. <a href="https://www.anthropic.com/research/building-effective-agents">https://www.anthropic.com/research/building-effective-agents</a>.</p>
+<p>[2] Singh, A. et al. (2025). Agentic Retrieval-Augmented Generation: A Survey on Agentic RAG. arXiv:2501.09136.</p>
+<p>[3] Shao, Y., Jiang, Y., Kanell, T. A., Xu, P., Khattab, O. and Lam, M. S. (2024). Assisting in Writing Wikipedia-like Articles From Scratch with Large Language Models. NAACL 2024. <a href="https://aclanthology.org/2024.naacl-long.347">https://aclanthology.org/2024.naacl-long.347</a>.</p>
+<p>[4] Skarlinski, M. D. et al. (2024). Language agents achieve superhuman synthesis of scientific knowledge. arXiv:2409.13740.</p>
+<p>[5] Asai, A. et al. (2026). Synthesizing scientific literature with retrieval-augmented language models. Nature 650, 857-863. <a href="https://www.nature.com/articles/s41586-025-10072-4">https://www.nature.com/articles/s41586-025-10072-4</a>.</p>
+<p>[6] Elovic, A. GPT Researcher. <a href="https://github.com/assafelovic/gpt-researcher">https://github.com/assafelovic/gpt-researcher</a>.</p>
+<p>[7] Gao, T., Yen, H., Yu, J. and Chen, D. (2023). Enabling Large Language Models to Generate Text with Citations. EMNLP 2023. <a href="https://aclanthology.org/2023.emnlp-main.398">https://aclanthology.org/2023.emnlp-main.398</a>.</p>
+<p>[8] source-grounded-rag. Decision record 0005: Making a drafted article readable without weakening its grounding. <a href="https://github.com/mattkari/source-grounded-rag/blob/main/docs/decisions/0005-article-quality.md">https://github.com/mattkari/source-grounded-rag/blob/main/docs/decisions/0005-article-quality.md</a>.</p>
+<p>[9] Honovich, O. et al. (2022). TRUE: Re-evaluating Factual Consistency Evaluation. NAACL 2022. arXiv:2204.04991.</p>
+<p>[10] source-grounded-rag. Decision record 0006: One handle per bracket. <a href="https://github.com/mattkari/source-grounded-rag/blob/main/docs/decisions/0006-one-handle-per-bracket.md">https://github.com/mattkari/source-grounded-rag/blob/main/docs/decisions/0006-one-handle-per-bracket.md</a>.</p>
+<p>[11] Medium Help Center. Artificial Intelligence (AI) content policy. <a href="https://help.medium.com/hc/en-us/articles/22576852947223">https://help.medium.com/hc/en-us/articles/22576852947223</a>.</p>
+<nav class="more" aria-label="Keep reading">
+<p class="more-heading">Keep reading</p>
+<div class="more-cards">
+<a class="more-card" href="/articles/twelve-articles-thirty-seven-tags/"><span class="more-label">Older</span><span class="more-title">Twelve Articles, Thirty-Seven Tags: Auditing a Writing Section Against the Research</span></a>
+</div>
+<a class="more-all" href="/writing">All 14 essays</a>
+</nav>
+</article>
+<a class="to-top" href="#top">Back to top</a>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep" aria-hidden="true">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep" aria-hidden="true">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep" aria-hidden="true">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
+</body>
+</html>
