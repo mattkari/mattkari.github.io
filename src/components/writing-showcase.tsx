@@ -17,10 +17,10 @@ export function WritingShowcase() {
     <section
       id="writing"
       aria-labelledby="writing-heading"
-      className="relative overflow-hidden border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
+      className="relative overflow-hidden border-t border-line/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
     >
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-600/20 blur-3xl" />
+        <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-glow-a/20 blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-7xl">
@@ -33,13 +33,13 @@ export function WritingShowcase() {
               italic="from the workbench"
               sub="Tested, step-by-step essays on AI quality, AI agents and test automation. Everything described was built and measured by me, and the limits are stated."
             />
-            <p className="mb-6 text-xs uppercase leading-relaxed tracking-[0.2em] text-slate-400 max-sm:hidden lg:mb-0">
+            <p className="mb-6 text-xs uppercase leading-relaxed tracking-[0.2em] text-ink-muted max-sm:hidden lg:mb-0">
               {sortedArticles.length} essays
-              <span aria-hidden="true" className="mx-3 text-slate-700">
+              <span aria-hidden="true" className="mx-3 text-ink-faint">
                 ◆
               </span>
               {totalMinutes} minutes of reading
-              <span aria-hidden="true" className="mx-3 text-slate-700">
+              <span aria-hidden="true" className="mx-3 text-ink-faint">
                 ◆
               </span>
               Latest {formatDate(latest[0].date)}
@@ -47,7 +47,7 @@ export function WritingShowcase() {
           </div>
 
           <div>
-            <ul className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-slate-900/60 px-1 py-1 sm:px-2">
+            <ul className="divide-y divide-line/5 rounded-2xl border border-line/10 bg-surface/60 px-1 py-1 sm:px-2">
               {latest.map((article, i) => (
                 <li key={article.slug}>
                   <ArticleRow article={article} index={i} compact />
@@ -56,7 +56,7 @@ export function WritingShowcase() {
             </ul>
             <Link
               href="/writing"
-              className="group mt-4 flex min-h-14 items-center justify-between gap-4 rounded-2xl border border-input bg-white/[0.03] px-5 text-sm font-medium text-amber-300 transition-colors hover:border-amber-300/40 hover:text-amber-200 sm:px-6"
+              className="group mt-4 flex min-h-14 items-center justify-between gap-4 rounded-2xl border border-input bg-line/[0.03] px-5 text-sm font-medium text-brand transition-colors hover:border-brand/40 hover:text-brand-hover sm:px-6"
             >
               All {sortedArticles.length} essays
               <ArrowRight

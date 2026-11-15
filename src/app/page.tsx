@@ -33,6 +33,7 @@ import { Alert } from '@/components/ui/alert';
 import { CheckItem, SectionHeading, Tag } from '@/components/primitives';
 import { ScreenshotFrame } from '@/components/screenshot-frame';
 import { SiteFooter } from '@/components/site-footer';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { WritingShowcase } from '@/components/writing-showcase';
 import { sortedArticles } from '@/lib/articles';
 import { projects } from '@/lib/projects';
@@ -310,10 +311,10 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-page">
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-amber-300 focus:text-slate-950 focus:px-4 focus:py-2 focus:rounded-md"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:bg-brand-fill focus:text-brand-ink focus:px-4 focus:py-2 focus:rounded-md"
       >
         Skip to main content
       </a>
@@ -321,15 +322,15 @@ export default function Home() {
       {/* Navigation */}
       <nav
         aria-label="Primary"
-        className="sticky top-0 z-50 border-b border-white/10 bg-slate-950/90 backdrop-blur-sm"
+        className="sticky top-0 z-50 border-b border-line/10 bg-page/90 backdrop-blur-sm"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <a href="#home" className="flex min-h-11 items-center space-x-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-amber-300/50 font-display text-lg text-amber-300">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full border border-brand/50 font-display text-lg text-brand">
                 MK
               </span>
-              <span className="hidden text-lg font-semibold text-white sm:block">Matt Karimov</span>
+              <span className="hidden text-lg font-semibold text-ink sm:block">Matt Karimov</span>
             </a>
 
             <div className="hidden md:flex items-center space-x-7">
@@ -342,8 +343,8 @@ export default function Home() {
                     aria-current={isActive ? 'location' : undefined}
                     className={`border-b-2 pb-0.5 text-sm font-medium transition-colors ${
                       isActive
-                        ? 'border-amber-300 text-amber-300'
-                        : 'border-transparent text-slate-300 hover:text-amber-300'
+                        ? 'border-brand text-brand'
+                        : 'border-transparent text-ink-body hover:text-brand'
                     }`}
                   >
                     {link.name}
@@ -353,15 +354,18 @@ export default function Home() {
               <Button
                 size="sm"
                 onClick={() => scrollTo('contact-form')}
-                className="bg-amber-300 text-slate-950 hover:bg-amber-200"
+                className="bg-brand-fill text-brand-ink hover:bg-brand-fill-hover"
               >
                 Get in touch
               </Button>
+              <ThemeToggle />
             </div>
 
+            <div className="flex items-center gap-1 md:hidden">
+              <ThemeToggle />
             <button
               ref={menuButtonRef}
-              className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md text-slate-200 hover:text-amber-300 md:hidden"
+              className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md text-ink-soft hover:text-brand"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
@@ -369,11 +373,12 @@ export default function Home() {
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
+            </div>
           </div>
         </div>
 
         {isMobileMenuOpen && (
-          <div id="mobile-menu" className="md:hidden border-t border-white/10 bg-slate-950">
+          <div id="mobile-menu" className="md:hidden border-t border-line/10 bg-page">
             <div className="px-4 pt-2 pb-4 space-y-1">
               {navLinks.map((link) => (
                 <a
@@ -381,14 +386,14 @@ export default function Home() {
                   href={link.href}
                   aria-current={link.href === `#${activeNavSection}` ? 'location' : undefined}
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block px-3 py-2.5 rounded-md text-base font-medium text-slate-200 hover:text-amber-300 hover:bg-white/5 aria-[current]:text-amber-300"
+                  className="block px-3 py-2.5 rounded-md text-base font-medium text-ink-soft hover:text-brand hover:bg-line/5 aria-[current]:text-brand"
                 >
                   {link.name}
                 </a>
               ))}
               <div className="px-3 pt-2">
                 <Button
-                  className="w-full bg-amber-300 text-slate-950 hover:bg-amber-200"
+                  className="w-full bg-brand-fill text-brand-ink hover:bg-brand-fill-hover"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     scrollTo('contact-form');
@@ -409,19 +414,19 @@ export default function Home() {
           className="relative overflow-hidden px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <div className="absolute -left-32 -top-40 h-[32rem] w-[32rem] rounded-full bg-blue-600/20 blur-3xl" />
-            <div className="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
-            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <div className="absolute -left-32 -top-40 h-[32rem] w-[32rem] rounded-full bg-glow-a/20 blur-3xl" />
+            <div className="absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-glow-b/10 blur-3xl" />
+            <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-line/20 to-transparent" />
           </div>
 
           <div className="relative mx-auto max-w-5xl text-center">
-            <p className="mb-6 text-xs font-medium uppercase leading-relaxed tracking-[0.22em] text-slate-300 sm:tracking-[0.3em]">
+            <p className="mb-6 text-xs font-medium uppercase leading-relaxed tracking-[0.22em] text-ink-body sm:tracking-[0.3em]">
               Matt Karimov · Test Automation Engineer · PhD, Durham
             </p>
-            <h1 className="font-display text-4xl leading-[1.15] text-white sm:text-6xl">
-              Answers that <span className="italic text-amber-300">show their evidence.</span>
+            <h1 className="font-display text-4xl leading-[1.15] text-ink sm:text-6xl">
+              Answers that <span className="italic text-brand">show their evidence.</span>
             </h1>
-            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-slate-300">
+            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-ink-body">
               I build source-grounded AI tools for banking test teams. They cite their sources,
               refuse when the evidence runs out, and prove what they claim.
             </p>
@@ -429,7 +434,7 @@ export default function Home() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:mt-10 sm:gap-4">
               <Button
                 size="lg"
-                className="bg-amber-300 px-6 text-base font-semibold text-slate-950 hover:bg-amber-200 sm:px-8"
+                className="bg-brand-fill px-6 text-base font-semibold text-brand-ink hover:bg-brand-fill-hover sm:px-8"
                 onClick={() => scrollTo('contact-form')}
               >
                 Get in touch
@@ -437,21 +442,21 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-input px-6 text-base text-white hover:border-amber-300/60 hover:bg-white/5 sm:px-8"
+                className="border-input px-6 text-base text-ink hover:border-brand/60 hover:bg-line/5 sm:px-8"
                 onClick={() => scrollTo('writing')}
               >
                 Read the writing
               </Button>
             </div>
 
-            <div className="mx-auto mt-10 grid max-w-3xl grid-cols-3 items-start gap-4 border-t border-white/10 pt-6 sm:mt-12 sm:gap-6 sm:pt-8">
+            <div className="mx-auto mt-10 grid max-w-3xl grid-cols-3 items-start gap-4 border-t border-line/10 pt-6 sm:mt-12 sm:gap-6 sm:pt-8">
               {stats.map((stat) => {
                 // Gold marks an action, so only the two stats that lead somewhere use it.
                 const body = (
                   <>
                     <span
                       className={`block font-display text-4xl sm:text-5xl ${
-                        stat.href ? 'text-amber-300' : 'text-white'
+                        stat.href ? 'text-brand' : 'text-ink'
                       }`}
                     >
                       {stat.value}
@@ -459,8 +464,8 @@ export default function Home() {
                     <span
                       className={`mt-2 block text-sm leading-snug sm:text-base ${
                         stat.href
-                          ? 'text-slate-200 underline decoration-amber-300/50 underline-offset-4 group-hover:text-amber-200'
-                          : 'text-slate-200'
+                          ? 'text-ink-soft underline decoration-brand/50 underline-offset-4 group-hover:text-brand-hover'
+                          : 'text-ink-soft'
                       }`}
                     >
                       {stat.label}
@@ -490,7 +495,7 @@ export default function Home() {
         </section>
 
         {/* About */}
-        <section id="about" className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16">
+        <section id="about" className="border-t border-line/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-x-12 gap-y-2 lg:grid-cols-[1fr,2fr]">
               <div className="flex items-start justify-between gap-5 lg:block">
@@ -505,15 +510,15 @@ export default function Home() {
                     width={880}
                     height={1100}
                     loading="lazy"
-                    className="w-full rounded-2xl border border-white/10 object-cover shadow-2xl shadow-slate-950/60"
+                    className="w-full rounded-2xl border border-line/10 object-cover shadow-xl shadow-shade/25"
                   />
-                  <figcaption className="mt-3 text-sm text-slate-400 max-lg:hidden">
+                  <figcaption className="mt-3 text-sm text-ink-muted max-lg:hidden">
                     Matt Karimov, {LOCATION}
                   </figcaption>
                 </figure>
               </div>
               <div className="max-w-2xl">
-                <p className="leading-relaxed text-slate-300 sm:text-lg">
+                <p className="leading-relaxed text-ink-body sm:text-lg">
                   My path to AI engineering runs through evidence. A PhD in governance and
                   international affairs (Durham, 2018) trained me to work the way a
                   trustworthy LLM system must: read sources closely, separate what a source
@@ -521,7 +526,7 @@ export default function Home() {
                   financial services taught me what regulated systems demand: traceability,
                   reconciliation, and claims you can verify.
                 </p>
-                <p className="mt-5 leading-relaxed text-slate-300 sm:mt-6 sm:text-lg">
+                <p className="mt-5 leading-relaxed text-ink-body sm:mt-6 sm:text-lg">
                   Day to day I am a Test Automation Engineer at Barclays Investment Bank,
                   connecting LLM tooling to internal systems over MCP and building a RAG test
                   assistant for API test authoring. Outside work I build and self-host my own
@@ -537,7 +542,7 @@ export default function Home() {
                   {differentiators.map((item) => (
                     <li
                       key={item}
-                      className="text-sm text-slate-300 max-sm:before:mr-2 max-sm:before:text-slate-500 max-sm:before:content-['·'] sm:rounded-full sm:border sm:border-white/15 sm:px-3.5 sm:py-1.5"
+                      className="text-sm text-ink-body max-sm:before:mr-2 max-sm:before:text-ink-faint max-sm:before:content-['·'] sm:rounded-full sm:border sm:border-line/15 sm:px-3.5 sm:py-1.5"
                     >
                       {item}
                     </li>
@@ -548,7 +553,7 @@ export default function Home() {
                     href={LINKEDIN_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center gap-2 text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
+                    className="inline-flex min-h-11 items-center gap-2 text-brand underline decoration-brand/40 underline-offset-4 hover:text-brand-hover"
                   >
                     <Linkedin size={16} aria-hidden="true" /> LinkedIn
                   </a>
@@ -556,7 +561,7 @@ export default function Home() {
                     href={GITHUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center gap-2 text-amber-300 underline decoration-amber-300/40 underline-offset-4 hover:text-amber-200"
+                    className="inline-flex min-h-11 items-center gap-2 text-brand underline decoration-brand/40 underline-offset-4 hover:text-brand-hover"
                   >
                     <Github size={16} aria-hidden="true" /> GitHub
                   </a>
@@ -569,7 +574,7 @@ export default function Home() {
         {/* Projects */}
         <section
           id="projects"
-          className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
+          className="border-t border-line/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
         >
           <div className="mx-auto max-w-7xl">
             <SectionHeading
@@ -583,7 +588,7 @@ export default function Home() {
               {projects.map((project) => (
                 <article
                   key={project.name}
-                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-slate-900/60 transition-colors duration-300 hover:border-amber-300/30"
+                  className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line/10 bg-surface/60 transition-colors duration-300 hover:border-brand/30"
                 >
                   <ScreenshotFrame
                     src={project.cardImage}
@@ -591,14 +596,14 @@ export default function Home() {
                     label={project.frameLabel}
                   />
                   <div className="flex flex-1 flex-col p-5 pb-2.5 sm:p-6 sm:pb-3">
-                    <p className="mb-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-amber-300/90">
+                    <p className="mb-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-kicker">
                       {project.tag}
                     </p>
-                    <h3 className="font-display text-xl leading-snug text-white transition-colors group-hover:text-amber-100 sm:text-2xl">
+                    <h3 className="font-display text-xl leading-snug text-ink transition-colors group-hover:text-ink-hover sm:text-2xl">
                       {project.name}
                     </h3>
                     {/* Phones show the opening lines; the case study carries the detail. */}
-                    <p className="mt-3 max-w-prose text-sm leading-relaxed text-slate-300 max-sm:line-clamp-4">
+                    <p className="mt-3 max-w-prose text-sm leading-relaxed text-ink-body max-sm:line-clamp-4">
                       {project.description}
                     </p>
                     {/* One proof line here; every other line is on the case-study page. */}
@@ -613,11 +618,11 @@ export default function Home() {
                       ))}
                     </ul>
                     <div className="mt-auto pt-5">
-                      <div className="flex flex-wrap items-center justify-between gap-x-6 border-t border-white/10 pt-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-x-6 border-t border-line/10 pt-1.5">
                         <Link
                           href={`/projects/${project.slug}`}
                           aria-label={`${project.name}: read the case study`}
-                          className="group/link inline-flex min-h-11 items-center gap-2 text-sm font-medium text-amber-300 after:absolute after:inset-0 hover:text-amber-200"
+                          className="group/link inline-flex min-h-11 items-center gap-2 text-sm font-medium text-brand after:absolute after:inset-0 hover:text-brand-hover"
                         >
                           Read the case study
                           <ArrowRight
@@ -632,7 +637,7 @@ export default function Home() {
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`${project.name}: repository on GitHub`}
-                            className="relative z-10 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-sm font-medium text-amber-300 hover:text-amber-200"
+                            className="relative z-10 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-sm font-medium text-brand hover:text-brand-hover"
                           >
                             <Github size={15} aria-hidden="true" /> Repo
                           </a>
@@ -642,12 +647,12 @@ export default function Home() {
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`${project.name}: visit the live site`}
-                            className="relative z-10 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-sm font-medium text-amber-300 hover:text-amber-200"
+                            className="relative z-10 inline-flex min-h-11 items-center gap-1.5 whitespace-nowrap text-sm font-medium text-brand hover:text-brand-hover"
                           >
                             <Globe size={15} aria-hidden="true" /> Visit
                           </a>
                         ) : (
-                          <span className="inline-flex items-center gap-2 py-1.5 text-xs text-slate-400">
+                          <span className="inline-flex items-center gap-2 py-1.5 text-xs text-ink-muted">
                             <Lock size={13} aria-hidden="true" className="shrink-0" />
                             {project.status}
                           </span>
@@ -667,7 +672,7 @@ export default function Home() {
         {/* Experience */}
         <section
           id="experience"
-          className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
+          className="border-t border-line/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
         >
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-x-12 gap-y-2 lg:grid-cols-[1fr,2fr]">
@@ -679,7 +684,7 @@ export default function Home() {
                   rel="noopener noreferrer"
                   type="application/pdf"
                   download
-                  className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full border border-input px-5 text-sm font-medium text-slate-200 transition-colors hover:border-amber-300/60 hover:text-amber-300 lg:mb-0"
+                  className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full border border-input px-5 text-sm font-medium text-ink-soft transition-colors hover:border-brand/60 hover:text-brand lg:mb-0"
                 >
                   <Download size={15} aria-hidden="true" />
                   Download CV (PDF, {CV_VERSION})
@@ -693,14 +698,14 @@ export default function Home() {
                   return (
                     <article
                       key={roleKey}
-                      className="rounded-2xl border border-white/10 bg-slate-900/60 p-5 transition-colors duration-300 hover:border-white/20 sm:p-6"
+                      className="rounded-2xl border border-line/10 bg-surface/60 p-5 transition-colors duration-300 hover:border-line/20 sm:p-6"
                     >
                       <div className="mb-3.5 flex flex-wrap items-start justify-between gap-3">
                         <div>
-                          <h3 className="font-display text-xl text-white">{role.title}</h3>
-                          <p className="mt-1 text-sm font-medium text-amber-300/90">{role.company}</p>
+                          <h3 className="font-display text-xl text-ink">{role.title}</h3>
+                          <p className="mt-1 text-sm font-medium text-kicker">{role.company}</p>
                         </div>
-                        <span className="rounded-full border border-white/15 px-3 py-1 text-xs tracking-wide text-slate-300">
+                        <span className="rounded-full border border-line/15 px-3 py-1 text-xs tracking-wide text-ink-body">
                           {role.period}
                         </span>
                       </div>
@@ -722,14 +727,14 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={() => setExpandedRoles((keys) => [...keys, roleKey])}
-                          className="mt-1 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-amber-300 hover:text-amber-200 sm:hidden"
+                          className="mt-1 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-brand hover:text-brand-hover sm:hidden"
                         >
                           Show more
                           <ChevronDown size={16} aria-hidden="true" />
                         </button>
                       )}
                       <ul
-                        className={`mt-4 flex flex-wrap gap-2 border-t border-white/10 pt-4 ${
+                        className={`mt-4 flex flex-wrap gap-2 border-t border-line/10 pt-4 ${
                           isExpanded ? '' : 'max-sm:hidden'
                         }`}
                       >
@@ -743,18 +748,18 @@ export default function Home() {
                   );
                 })}
 
-                <details className="group rounded-2xl border border-white/10 bg-slate-900/40">
+                <details className="group rounded-2xl border border-line/10 bg-surface/40">
                   <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-6 py-3 sm:px-7 [&::-webkit-details-marker]:hidden">
                     <span className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                      <span className="text-xs font-medium uppercase tracking-[0.2em] text-slate-300">
+                      <span className="text-xs font-medium uppercase tracking-[0.2em] text-ink-body">
                         Earlier roles
                       </span>
-                      <span className="text-sm text-slate-400">{EARLIER_ROLES_SUMMARY}</span>
+                      <span className="text-sm text-ink-muted">{EARLIER_ROLES_SUMMARY}</span>
                     </span>
                     <ChevronDown
                       size={18}
                       aria-hidden="true"
-                      className="shrink-0 text-amber-300 transition-transform duration-300 group-open:rotate-180"
+                      className="shrink-0 text-brand transition-transform duration-300 group-open:rotate-180"
                     />
                   </summary>
                   <ul className="space-y-5 px-6 pb-6 pt-1 sm:px-7">
@@ -763,14 +768,14 @@ export default function Home() {
                         key={role.company}
                         className="grid gap-x-6 gap-y-1 sm:grid-cols-[1fr,auto] sm:items-baseline"
                       >
-                        <p className="font-medium text-slate-200">
+                        <p className="font-medium text-ink-soft">
                           {role.title}
-                          <span className="font-normal text-slate-400"> · {role.company}</span>
+                          <span className="font-normal text-ink-muted"> · {role.company}</span>
                         </p>
-                        <span className="whitespace-nowrap text-xs tracking-wide text-slate-400">
+                        <span className="whitespace-nowrap text-xs tracking-wide text-ink-muted">
                           {role.period}
                         </span>
-                        <p className="max-w-prose text-sm text-slate-400 sm:col-span-2">
+                        <p className="max-w-prose text-sm text-ink-muted sm:col-span-2">
                           {role.scope}
                         </p>
                       </li>
@@ -783,28 +788,28 @@ export default function Home() {
         </section>
 
         {/* Stack and education */}
-        <section id="skills" className="border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16">
+        <section id="skills" className="border-t border-line/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-x-12 gap-y-12 lg:grid-cols-[2fr,1fr]">
               <div>
                 <SectionHeading kicker="Capabilities" title="The stack" />
-                <dl className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-slate-900/60 px-6">
+                <dl className="divide-y divide-line/10 rounded-2xl border border-line/10 bg-surface/60 px-6">
                   {skillGroups.map((group) => (
                     <div
                       key={group.title}
                       className="py-2.5 text-sm leading-relaxed sm:grid sm:grid-cols-[14.5rem,1fr] sm:gap-x-6 sm:py-3"
                     >
                       {/* Label and list run on as one paragraph on phones. */}
-                      <dt className="inline font-semibold text-white sm:flex sm:items-center sm:gap-2.5">
+                      <dt className="inline font-semibold text-ink sm:flex sm:items-center sm:gap-2.5">
                         <group.icon
                           size={16}
                           aria-hidden="true"
-                          className="hidden shrink-0 text-amber-300 sm:block"
+                          className="hidden shrink-0 text-brand sm:block"
                         />
                         {group.title}
                         <span className="sm:hidden">: </span>
                       </dt>
-                      <dd className="inline text-slate-300 sm:block">{group.items.join(' · ')}</dd>
+                      <dd className="inline text-ink-body sm:block">{group.items.join(' · ')}</dd>
                     </div>
                   ))}
                 </dl>
@@ -812,11 +817,11 @@ export default function Home() {
 
               <div>
                 <SectionHeading kicker="Background" title="Education" />
-                <ul className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-slate-900/60 px-6">
+                <ul className="divide-y divide-line/10 rounded-2xl border border-line/10 bg-surface/60 px-6">
                   {education.map((item) => (
                     <li key={item.program} className="py-3 sm:py-3.5">
-                      <p className="text-sm font-semibold text-white">{item.program}</p>
-                      <p className="mt-1 text-sm text-slate-400">
+                      <p className="text-sm font-semibold text-ink">{item.program}</p>
+                      <p className="mt-1 text-sm text-ink-muted">
                         {item.school} · {item.year}
                       </p>
                     </li>
@@ -830,10 +835,10 @@ export default function Home() {
         {/* Contact */}
         <section
           id="contact"
-          className="relative overflow-hidden border-t border-white/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
+          className="relative overflow-hidden border-t border-line/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16"
         >
           <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-            <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
+            <div className="absolute -right-32 bottom-0 h-96 w-96 rounded-full bg-glow-b/10 blur-3xl" />
           </div>
           <div className="relative mx-auto max-w-7xl">
             <div className="grid gap-x-12 gap-y-8 lg:grid-cols-[1fr,1.15fr]">
@@ -844,19 +849,19 @@ export default function Home() {
                   italic="conversation"
                   sub="Open to conversations about AI engineering and AI quality roles. The form goes straight to my inbox."
                 />
-                <ul className="divide-y divide-white/10 rounded-2xl border border-white/10 bg-slate-900/60">
+                <ul className="divide-y divide-line/10 rounded-2xl border border-line/10 bg-surface/60">
                   {contactRows.map((row) => {
                     const body = (
                       <>
-                        <row.icon size={18} aria-hidden="true" className="shrink-0 text-slate-400" />
-                        <span className="w-20 shrink-0 text-xs uppercase tracking-[0.18em] text-slate-400">
+                        <row.icon size={18} aria-hidden="true" className="shrink-0 text-ink-muted" />
+                        <span className="w-20 shrink-0 text-xs uppercase tracking-[0.18em] text-ink-muted">
                           {row.label}
                         </span>
                         <span
                           className={`min-w-0 break-words text-sm ${
                             row.href
-                              ? 'font-medium text-amber-300 underline decoration-amber-300/40 underline-offset-4 group-hover:text-amber-200'
-                              : 'text-slate-300'
+                              ? 'font-medium text-brand underline decoration-brand/40 underline-offset-4 group-hover:text-brand-hover'
+                              : 'text-ink-body'
                           }`}
                         >
                           {row.value}
@@ -880,18 +885,18 @@ export default function Home() {
                     );
                   })}
                 </ul>
-                <p className="mt-5 text-sm leading-relaxed text-slate-400">
+                <p className="mt-5 text-sm leading-relaxed text-ink-muted">
                   Typically replies within 24 hours. For anything sensitive, email is best.
                 </p>
               </div>
 
               <Card
                 id="contact-form"
-                className="scroll-mt-24 rounded-2xl border-white/10 bg-slate-900/60"
+                className="scroll-mt-24 rounded-2xl border-line/10 bg-surface/60"
               >
                 <CardHeader>
-                  <CardTitle className="font-display text-2xl text-white">Get in touch</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardTitle className="font-display text-2xl text-ink">Get in touch</CardTitle>
+                  <CardDescription className="text-ink-muted">
                     All three fields are required.
                   </CardDescription>
                 </CardHeader>
@@ -900,7 +905,7 @@ export default function Home() {
                     <Alert
                       role="status"
                       aria-live="polite"
-                      className="mb-6 border-emerald-800 bg-emerald-950/50 text-emerald-200"
+                      className="notice-ok mb-6"
                     >
                       <p className="font-medium">Message sent</p>
                       <p>Thanks for getting in touch — I&apos;ll reply to you by email.</p>
@@ -910,7 +915,7 @@ export default function Home() {
                   {status === 'error' && (
                     <Alert
                       aria-live="assertive"
-                      className="mb-6 border-red-900 bg-red-950/50 text-red-200"
+                      className="notice-bad mb-6"
                     >
                       <p className="font-medium">Message not sent</p>
                       <p>
@@ -926,7 +931,7 @@ export default function Home() {
                   {!isFormEnabled && (
                     <Alert
                       aria-live="polite"
-                      className="mb-6 border-amber-800 bg-amber-950/40 text-amber-200"
+                      className="notice-warn mb-6"
                     >
                       <p className="font-medium">Contact form unavailable</p>
                       <p>
@@ -949,7 +954,7 @@ export default function Home() {
                       autoComplete="off"
                     />
                     <div className="space-y-2">
-                      <Label htmlFor="name" className="text-slate-300">
+                      <Label htmlFor="name" className="text-ink-body">
                         Name *
                       </Label>
                       <Input
@@ -961,11 +966,11 @@ export default function Home() {
                         autoComplete="name"
                         disabled={!isFormEnabled || status === 'submitting'}
                         placeholder="Your name"
-                        className="h-11 bg-slate-950/60 text-white"
+                        className="h-11 bg-page/60 text-ink"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email" className="text-slate-300">
+                      <Label htmlFor="email" className="text-ink-body">
                         Email *
                       </Label>
                       <Input
@@ -978,11 +983,11 @@ export default function Home() {
                         autoComplete="email"
                         disabled={!isFormEnabled || status === 'submitting'}
                         placeholder="you@example.com"
-                        className="h-11 bg-slate-950/60 text-white"
+                        className="h-11 bg-page/60 text-ink"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="message" className="text-slate-300">
+                      <Label htmlFor="message" className="text-ink-body">
                         Message *
                       </Label>
                       <Textarea
@@ -993,14 +998,14 @@ export default function Home() {
                         required
                         disabled={!isFormEnabled || status === 'submitting'}
                         rows={3}
-                        className="resize-none bg-slate-950/60 text-white"
+                        className="resize-none bg-page/60 text-ink"
                         placeholder="Your message..."
                       />
                     </div>
                     <Button
                       type="submit"
                       disabled={!isFormEnabled || status === 'submitting'}
-                      className="w-full bg-amber-300 py-6 text-base font-semibold text-slate-950 hover:bg-amber-200"
+                      className="w-full bg-brand-fill py-6 text-base font-semibold text-brand-ink hover:bg-brand-fill-hover"
                     >
                       {status === 'submitting' ? (
                         <>

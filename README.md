@@ -35,6 +35,44 @@ npm run build    # static export to ./out
 npm test         # browser tests against ./out (build first)
 ```
 
+## Colour and themes
+
+The site has a light theme and a dark theme. It opens in the one the reader's
+system asks for, light when there is no preference, and the round button in
+every header switches between them and remembers the choice.
+
+This follows what the research says about page backgrounds:
+
+- **Light pages read better for most people.** A review by Nielsen Norman Group
+  concludes that with normal vision "visual performance tends to be better with
+  light mode", and that the advantage grows as text gets smaller. It does not
+  recommend dark mode as the default for a general audience, and it strongly
+  recommends letting readers switch
+  ([Budiu, 2020](https://www.nngroup.com/articles/dark-mode/)).
+- **Glance legibility agrees.** In a study of 48 adults aged 20 to 75, black on
+  white was significantly more legible than white on black
+  ([Dobres et al., 2016](https://pmc.ncbi.nlm.nih.gov/articles/PMC5213401)).
+- **Many people still prefer dark.** In a survey of 115 mobile users, about a
+  third used dark mode, a third light and a third both. People think of it as a
+  system setting and expect sites to follow it: "Mirror the device's operating
+  system dark mode settings by default"
+  ([Kohler and Zhang, 2023](https://www.nngroup.com/articles/dark-mode-users-issues/)).
+- **Some readers need dark.** People with cataracts and similar conditions may
+  read better on a dark page, which is a reason to offer the choice (Budiu, 2020).
+- **Follow the system first, then allow an override**, which is also the
+  browser guidance ([web.dev](https://web.dev/articles/prefers-color-scheme)).
+- **WCAG states no preference** between light on dark and dark on light; it sets
+  minimum contrast ratios, which both themes are tested against (see Tests).
+
+The light page is a warm off-white (`#FBF8F3`) with near-black text. The gold
+accent becomes a deep gold on the light page, because the bright gold is only
+1.4:1 against it.
+
+How it works: every colour is a named token with a light and a dark value
+(`src/app/globals.css` for the app, `public/articles/_article.css` for the
+articles). `src/lib/theme-init.js` runs in `<head>` on every page, sets
+`data-theme` on `<html>` before the first paint, and handles the toggle.
+
 ## Tests
 
 `tests/site.spec.ts` runs in Playwright against the built site, served the way
@@ -65,7 +103,7 @@ the article [A Contrast Audit That Could Not Fail](https://mattkari.github.io/ar
   the colours read from `globals.css`, Tailwind and `_article.css`.
 - **The pages on screen.** Every piece of text and every control edge on every
   page is measured in the browser against the pixels actually behind it, so
-  glows, cards and images are counted.
+  glows, cards and images are counted. This runs in both themes.
 - **The audit itself.** One test plants faint text and a faint field edge and
   requires the audit to report them. A check that has never failed proves
   nothing.

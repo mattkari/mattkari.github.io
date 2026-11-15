@@ -40,17 +40,70 @@
 }
 /* fonts:end */
 
+/* Two themes, the same ones as the rest of the site (src/app/globals.css):
+   light by default, dark when the system asks for it, and either one when the
+   reader uses the toggle, which sets data-theme on <html>. The dark values
+   appear twice; keep them identical (a test checks). */
 :root {
-  --bg: #020617;          /* slate-950, same as the app */
-  --surface: #0b1220;     /* slate-900-ish surface */
-  --text: #cbd5e1;        /* slate-300 body */
-  --text-strong: #f8fafc; /* headings */
-  --muted: #94a3b8;       /* slate-400 captions/meta */
-  --accent: #fcd34d;      /* amber-300, actions and links only */
-  --line: rgba(255, 255, 255, 0.1);
+  color-scheme: light;
+  --bg: #fbf8f3;          /* warm off-white */
+  --surface: #f4ede1;     /* code blocks and table headings */
+  --text: #2b241e;        /* body */
+  --text-strong: #1c1917; /* headings */
+  --muted: #4f4a45;       /* captions and bylines */
+  --accent: #78350f;      /* deep gold, links and actions only */
+  --accent-hover: #451a03;
+  --accent-soft: rgba(120, 53, 15, 0.45);
+  --accent-edge: rgba(120, 53, 15, 0.75); /* the ring round the monogram */
+  --line: rgba(28, 25, 23, 0.14);
+  --edge: #78716c;        /* the edge of a control */
+  --code-bg: rgba(120, 113, 108, 0.14);
+  --code-text: #1c1917;
+  --header-bg: rgba(251, 248, 243, 0.9);
+  --selection-text: #fffbeb;
   --display: "Playfair Display", Georgia, serif;
   --body: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #020617;          /* slate-950 */
+    --surface: #0b1220;     /* code blocks and table headings */
+    --text: #cbd5e1;        /* slate-300 body */
+    --text-strong: #f8fafc; /* headings */
+    --muted: #94a3b8;       /* slate-400 captions and bylines */
+    --accent: #fcd34d;      /* amber-300, links and actions only */
+    --accent-hover: #fde68a;
+    --accent-soft: rgba(252, 211, 77, 0.45);
+    --accent-edge: rgba(252, 211, 77, 0.5);
+    --line: rgba(255, 255, 255, 0.1);
+    --edge: #65758b;        /* the edge of a control */
+    --code-bg: rgba(148, 163, 184, 0.14);
+    --code-text: #e2e8f0;
+    --header-bg: rgba(2, 6, 23, 0.9);
+    --selection-text: #020617;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #020617;          /* slate-950 */
+  --surface: #0b1220;     /* code blocks and table headings */
+  --text: #cbd5e1;        /* slate-300 body */
+  --text-strong: #f8fafc; /* headings */
+  --muted: #94a3b8;       /* slate-400 captions and bylines */
+  --accent: #fcd34d;      /* amber-300, links and actions only */
+  --accent-hover: #fde68a;
+  --accent-soft: rgba(252, 211, 77, 0.45);
+  --accent-edge: rgba(252, 211, 77, 0.5);
+  --line: rgba(255, 255, 255, 0.1);
+  --edge: #65758b;        /* the edge of a control */
+  --code-bg: rgba(148, 163, 184, 0.14);
+  --code-text: #e2e8f0;
+  --header-bg: rgba(2, 6, 23, 0.9);
+  --selection-text: #020617;
 }
 
 * { box-sizing: border-box; }
@@ -73,7 +126,7 @@ body {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(2, 6, 23, 0.9);
+  background: var(--header-bg);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--line);
@@ -108,7 +161,7 @@ body {
   width: 44px;
   height: 44px;
   flex: 0 0 44px;
-  border: 1px solid rgba(252, 211, 77, 0.5);
+  border: 1px solid var(--accent-edge);
   border-radius: 999px;
   font-family: var(--display);
   color: var(--accent);
@@ -128,11 +181,34 @@ body {
   color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 4px;
-  text-decoration-color: rgba(252, 211, 77, 0.45);
+  text-decoration-color: var(--accent-soft);
 }
 
 .site-header a.nav:hover,
-.site-footer a:hover { color: #fde68a; }
+.site-footer a:hover { color: var(--accent-hover); }
+
+/* The theme toggle: a round button that shows the icon for the theme it
+   switches to. It needs the script in <head>, so it is hidden until that runs. */
+.theme-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+}
+:root[data-theme] .theme-toggle { display: inline-flex; }
+.theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+.theme-toggle svg { width: 18px; height: 18px; }
+.theme-toggle .to-light,
+:root[data-theme="dark"] .theme-toggle .to-dark { display: none; }
+:root[data-theme="dark"] .theme-toggle .to-light { display: block; }
 
 .site-footer {
   border-top: 1px solid var(--line);
@@ -172,8 +248,8 @@ h1 { font-size: 2.3rem; line-height: 1.2; margin: 0 0 18px; }
 h2 { font-size: 1.6rem; line-height: 1.3; margin: 56px 0 16px; }
 h3 { font-size: 1.25rem; line-height: 1.35; margin: 36px 0 12px; }
 
-a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(252, 211, 77, 0.45); }
-a:hover { color: #fde68a; }
+a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--accent-soft); }
+a:hover { color: var(--accent-hover); }
 
 strong { color: var(--text-strong); }
 
@@ -189,11 +265,11 @@ code, pre { font-family: var(--mono); }
 
 code {
   font-size: 0.86em;
-  background: rgba(148, 163, 184, 0.14);
+  background: var(--code-bg);
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 1px 5px;
-  color: #e2e8f0;
+  color: var(--code-text);
 }
 
 pre {
@@ -214,7 +290,7 @@ pre code {
   border: 0;
   padding: 0;
   font-size: inherit;
-  color: #e2e8f0;
+  color: var(--code-text);
 }
 
 blockquote {
@@ -263,7 +339,7 @@ img {
 /* figure captions: a lone italic paragraph under an image */
 p em:only-child { font-size: 15px; color: var(--muted); font-style: italic; }
 
-::selection { background: rgba(252, 211, 77, 0.9); color: #020617; }
+::selection { background: var(--accent); color: var(--selection-text); }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
 
