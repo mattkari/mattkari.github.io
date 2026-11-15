@@ -9,7 +9,7 @@ export const EMAIL = 'mattkarimov@outlook.com';
 // code when the site is added (Google: the "HTML tag" method, the value of
 // content="..."). Paste it here and deploy; the tag appears on the home page.
 // These codes are public by design: they sit in the page's HTML.
-export const GOOGLE_SITE_VERIFICATION = '';
+export const GOOGLE_SITE_VERIFICATION = 'q6Mha7DH70AeYWHlCReDFEN9Dt76vtxmBjZWfExAiIA';
 export const BING_SITE_VERIFICATION = '';
 
 // One sentence about the site, reused by the structured data and /llms.txt.
