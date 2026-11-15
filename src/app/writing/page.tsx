@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { ArticleRow } from '@/components/article-row';
 import { SiteFooter } from '@/components/site-footer';
 import { SubpageHeader } from '@/components/subpage-header';
+import { WritingList } from '@/components/writing-list';
 import { formatDate, sortedArticles } from '@/lib/articles';
 import { SITE_URL } from '@/lib/site';
 
@@ -71,13 +71,7 @@ export default function WritingPage() {
           Latest {formatDate(sortedArticles[0].date)}
         </p>
 
-        <ul className="mt-14 divide-y divide-line/5 rounded-2xl border border-line/10 bg-surface/60 px-1 py-3 backdrop-blur-sm sm:px-3">
-          {sortedArticles.map((a, i) => (
-            <li key={a.slug}>
-              <ArticleRow article={a} index={i} />
-            </li>
-          ))}
-        </ul>
+        <WritingList articles={sortedArticles} />
       </main>
 
       <SiteFooter />

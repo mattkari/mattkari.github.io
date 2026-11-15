@@ -242,6 +242,9 @@ const PREPARE = `
   *, *::before, *::after { transition: none !important; animation: none !important; }
   /* a sticky header would cover whatever scrolls under it */
   nav[aria-label="Primary"], .site-header { position: static !important; }
+  /* so would the floating "Back to top" button: put it in the flow, always
+     shown, so that it is measured once and covers nothing */
+  .to-top { position: static !important; display: inline-flex !important; }
 `;
 
 // Everything that is text or drawn in the text colour disappears, leaving

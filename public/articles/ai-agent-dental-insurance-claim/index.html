@@ -87,8 +87,9 @@
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/articles/_article.css">
+<script src="/articles/_article.js" defer></script>
 </head>
-<body>
+<body id="top">
 <header class="site-header">
 <div class="inner">
 <a class="mark" href="/" aria-label="Home">MK</a>
@@ -103,6 +104,22 @@
 <article>
 <h1>How I let an AI agent file my dental insurance claim (without giving it my password)</h1>
 <p class="meta">Dusmamat (Matt) Karimov · 18 October 2026 · 8 min read</p>
+<nav class="toc" aria-label="On this page">
+<details open>
+<summary>On this page</summary>
+<ol>
+<li><a href="#what-you-need">What you need</a></li>
+<li><a href="#step-1-let-the-agent-read-the-policy-before-it-touches-the-portal">Step 1: Let the agent read the policy before it touches the portal</a></li>
+<li><a href="#step-2-put-the-login-in-a-vault-never-in-the-chat">Step 2: Put the login in a vault, never in the chat</a></li>
+<li><a href="#step-3-expect-the-login-to-fight-back-a-bit">Step 3: Expect the login to fight back a bit</a></li>
+<li><a href="#step-4-enter-one-statement-line-per-claim-line-using-the-statement-s-own-wording">Step 4: Enter one statement line per claim line, using the statement's own wording</a></li>
+<li><a href="#step-5-don-t-stretch-the-categories">Step 5: Don't stretch the categories</a></li>
+<li><a href="#step-6-uploading-evidence-check-the-formats-and-save-often">Step 6: Uploading evidence: check the formats and save often</a></li>
+<li><a href="#step-7-the-human-submits">Step 7: The human submits</a></li>
+<li><a href="#the-rules-i-d-keep">The rules I'd keep</a></li>
+</ol>
+</details>
+</nav>
 
 <p><strong>Disclaimer: this article is for educational purposes only.</strong> It describes a personal experiment with AI agents and browser automation. It isn't financial, legal or insurance advice, and it isn't endorsed by any insurer. Always check your own policy terms and your insurer's rules on automated access, and make sure everything you submit is accurate. You are responsible for any claim made in your name.</p>
 
@@ -110,7 +127,7 @@
 
 <p>So I handed it to the AI agent I run at home. It did most of the work, and it left me a saved draft where all I had to do was enter my bank details and press Submit. This guide covers how I set that up, what went wrong along the way, and the rules I'd keep next time. I've left out the insurer's name and any personal details. Most claim portals work in a similar way, so the steps should carry over.</p>
 
-<h2>What you need</h2>
+<h2 id="what-you-need">What you need</h2>
 <ul>
 <li><strong>An agent that can drive a real browser.</strong> I use a self-hosted agent on a Raspberry Pi with a browser automation tool. Any agent that can open pages, read the DOM, fill fields and upload files will do.</li>
 <li><strong>A password vault the agent can use but can't read.</strong> This is the important part, and step 2 covers it.</li>
@@ -118,12 +135,12 @@
 <li><strong>About 30 minutes of your attention</strong>, mostly at the start and at the end.</li>
 </ul>
 
-<h2>Step 1: Let the agent read the policy before it touches the portal</h2>
+<h2 id="step-1-let-the-agent-read-the-policy-before-it-touches-the-portal">Step 1: Let the agent read the policy before it touches the portal</h2>
 <p>Give the agent the policy terms and the dentist's statement first, and ask for a written plan before it does anything: which statement line goes under which benefit, at what percentage, against how much of each annual limit you have left, and what refund to expect.</p>
 <p>For us, the plan put the first appointment under the <em>emergency</em> benefit (paid at 100%, because it was for pain and hadn't been booked in advance) and the rest of the root canal under <em>routine and restorative</em> (paid at 80%, up to what was left of the annual limit). Having the expected refund written down at the start gave me something to check the insurer's eventual payout against.</p>
 <p>The emergency benefit needed proof that the visit really was an emergency, and the dentist's statement didn't say so. I asked the agent to draft a short, polite email to the practice requesting written confirmation, which I sent myself. The dentist replied the same evening. <strong>Sort out missing evidence before you start the claim, not halfway through it.</strong></p>
 
-<h2>Step 2: Put the login in a vault, never in the chat</h2>
+<h2 id="step-2-put-the-login-in-a-vault-never-in-the-chat">Step 2: Put the login in a vault, never in the chat</h2>
 <p>This is the rule I care about most. <strong>Never type your password into the conversation with your agent.</strong> Chat history gets logged, summarised, sent to model providers and kept for a long time.</p>
 <p>My agent has a local encrypted vault. I add a login on the Pi's terminal, and the password goes into a hidden prompt:</p>
 <pre>hermes vault add --kind login
@@ -139,11 +156,11 @@ Password: ********</pre>
 <li><strong>Use the bare origin, not the full login URL.</strong> <code>https://www.example-insurer.co.uk</code>, not <code>…/employees/default.aspx</code>. The vault matches on the origin.</li>
 </ul>
 
-<h2>Step 3: Expect the login to fight back a bit</h2>
+<h2 id="step-3-expect-the-login-to-fight-back-a-bit">Step 3: Expect the login to fight back a bit</h2>
 <p>The first time the agent asked the vault to fill the password, it came back with "no fillable login field matched". The portal had marked its login boxes as <code>autocomplete="new-password"</code>, which made them look like a sign-up form. The agent changed the attributes on the page to <code>username</code> and <code>current-password</code>, and the fill then worked. All this changes is the label the browser uses to classify the field. It doesn't get around any security, and the server sees an ordinary login.</p>
 <p>The next attempt failed with "we cannot match the details you have entered". I'd changed my password on the website but hadn't updated the vault. <strong>Rule: two failed logins and the agent stops.</strong> A third could lock the account. It told me what it thought was wrong and waited. I logged in by hand on my phone to confirm the new password, saved it in the vault again, and the next attempt worked first time.</p>
 
-<h2>Step 4: Enter one statement line per claim line, using the statement's own wording</h2>
+<h2 id="step-4-enter-one-statement-line-per-claim-line-using-the-statement-s-own-wording">Step 4: Enter one statement line per claim line, using the statement's own wording</h2>
 <p>The portal wanted every treatment as a separate line: name, type (routine, injury or emergency), NHS or private, date, amount. The agent typed in each line from the dentist's statement. Some points I'd recommend:</p>
 <ul>
 <li><strong>Use the statement's exact names</strong> ("Endodontic exploratory appointment fee", not "root canal assessment"). The person assessing the claim compares your lines with the receipt, and identical wording makes that quick.</li>
@@ -154,11 +171,11 @@ Password: ********</pre>
 </ul>
 <p>Before you move on, check that the claim total exactly matches what you paid on the statement.</p>
 
-<h2>Step 5: Don't stretch the categories</h2>
+<h2 id="step-5-don-t-stretch-the-categories">Step 5: Don't stretch the categories</h2>
 <p>Partway through, I asked the agent whether the second appointment could also go in as an emergency, since emergencies pay 100%. It said no, and quoted the policy back to me: the emergency benefit covers "treatment carried out at an emergency appointment which was not pre-planned" and excludes "any treatment carried out at a follow up appointment."</p>
 <p>It also did the sums. Our restorative allowance was already used up by the main treatment, and the emergency benefit has its own cap, so moving the line would have gained us about £120 at most, and that was the sort of change that gets a whole claim queried. I was glad it said no. <strong>An agent that only does what you ask isn't enough. You want one that checks your request against the policy wording and pushes back.</strong></p>
 
-<h2>Step 6: Uploading evidence: check the formats and save often</h2>
+<h2 id="step-6-uploading-evidence-check-the-formats-and-save-often">Step 6: Uploading evidence: check the formats and save often</h2>
 <p>This step took the longest:</p>
 <ul>
 <li>The original PDF was rejected as "potentially malicious content". Scanned PDFs often trip these filters. We used an image of the statement instead.</li>
@@ -167,7 +184,7 @@ Password: ********</pre>
 <li>The agent's browser crashed once and we lost the unsaved draft. After that, it used the portal's <strong>"Save claim &amp; return later"</strong> button after each major step. Most portals have one.</li>
 </ul>
 
-<h2>Step 7: The human submits</h2>
+<h2 id="step-7-the-human-submits">Step 7: The human submits</h2>
 <p>When it got to the bank details page, the agent stopped. That was what we'd agreed at the start, for two reasons:</p>
 <ol>
 <li><strong>Bank details stay with me.</strong> I don't type my sort code and account number into the chat, for the same reason as the password.</li>
@@ -175,7 +192,7 @@ Password: ********</pre>
 </ol>
 <p>The agent saved the draft and sent me a summary: every line, the total, the two attached files, and what each portal page should show when I open it. I logged in, checked the four lines against the statement, added my bank details and pressed Submit. That took about two minutes.</p>
 
-<h2>The rules I'd keep</h2>
+<h2 id="the-rules-i-d-keep">The rules I'd keep</h2>
 <ol>
 <li>The agent reads the policy and writes a plan with an expected refund before opening the portal.</li>
 <li>Passwords go in a vault, never in the chat. Bank details are entered by you.</li>
@@ -191,8 +208,15 @@ Password: ********</pre>
 <p><em>Educational purposes only: this is an account of one experiment, not advice. Check your own policy and your insurer's terms before trying anything similar.</em></p>
 
 <p><em>I'm a test automation engineer working on how to check AI systems properly, so I treated this partly as a test of where an agent needs hard limits. The answers were the password, the bank details, the declaration, and the honesty of the claim itself.</em></p>
-<hr><p class="meta"><a href="/writing">More articles</a> · <a href="/">About me</a></p>
+<nav class="more" aria-label="Keep reading">
+<p class="more-heading">Keep reading</p>
+<div class="more-cards">
+<a class="more-card" href="/articles/claude-code-second-brain/"><span class="more-label">Newer</span><span class="more-title">How I built a "second brain" for test automation with Claude Code and Obsidian (and tested it like a QA engineer)</span></a>
+</div>
+<a class="more-all" href="/writing">All 12 essays</a>
+</nav>
 </article>
+<a class="to-top" href="#top">Back to top</a>
 <footer class="site-footer">
 <div class="inner">
 <a href="/">Home</a>
