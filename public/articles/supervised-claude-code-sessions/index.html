@@ -89,8 +89,9 @@
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/articles/_article.css">
+<script src="/articles/_article.js" defer></script>
 </head>
-<body>
+<body id="top">
 <header class="site-header">
 <div class="inner">
 <a class="mark" href="/" aria-label="Home">MK</a>
@@ -105,14 +106,29 @@
 <article>
 <h1>Three Claude Code Sessions, One Orchestrator, One Auditor: My Day-to-Day AI Workflow as a Test Automation Engineer</h1>
 <p class="meta">Dusmamat (Matt) Karimov · 24 October 2026 · 10 min read</p>
+<nav class="toc" aria-label="On this page">
+<details open>
+<summary>On this page</summary>
+<ol>
+<li><a href="#why-i-m-writing-this-down">Why I'm writing this down</a></li>
+<li><a href="#1-current-ai-tooling-setup">1. Current AI tooling setup</a></li>
+<li><a href="#2-second-brain-architecture-two-brains-two-jobs">2. Second-brain architecture: two brains, two jobs</a></li>
+<li><a href="#3-the-multi-session-claude-code-workflow-today-s-discovery">3. The multi-session Claude Code workflow (today's discovery)</a></li>
+<li><a href="#4-rules-that-make-it-work">4. Rules that make it work</a></li>
+<li><a href="#5-honest-limitations">5. Honest limitations</a></li>
+<li><a href="#6-key-takeaways">6. Key takeaways</a></li>
+<li><a href="#references">References</a></li>
+</ol>
+</details>
+</nav>
 <p><em>How I run Karate API and Playwright UI automation in parallel Claude Code sessions, let a third session orchestrate them, compile what each one learns into a shared wiki at the end of the day, and keep Microsoft Copilot as the auditor above it all.</em></p>
 <hr />
-<h2>Why I'm writing this down</h2>
+<h2 id="why-i-m-writing-this-down">Why I'm writing this down</h2>
 <p>On a normal day I work on two automation frameworks at once: a Karate suite for APIs and a Playwright suite for the UI. For a long time my AI help was one chat window and one coding assistant, and I spent half my effort re-explaining context.</p>
 <p>Then, in one working day, I found a setup that holds context for each workstream separately, lets the sessions coordinate, and leaves a written record of what was learned. This article is that full process: the tools, the two "second brains" behind it, the three-session workflow, and the end-of-day loop that ties it together.</p>
 <p>It is one engineer's setup, tested over its first full working day. Treat it as a pattern to adapt, not a product.</p>
 <hr />
-<h2>1. Current AI tooling setup</h2>
+<h2 id="1-current-ai-tooling-setup">1. Current AI tooling setup</h2>
 <p>I have three AI tools available at work, and each earned a different job:</p>
 <ul>
 <li><strong>Microsoft Copilot: my primary chatbot and auditor.</strong> Copilot supports several models, including other vendors' thinking models, but I run it with Claude models. I don't use it for agentic coding. Its strength is that it's integrated with work email, Confluence, OneDrive and OneNote through built-in retrieval (RAG). It can search across everything I have access to, so it already behaves like a "second brain" for organisational knowledge.</li>
@@ -121,26 +137,26 @@
 </ul>
 <p>The split matters: <strong>Copilot knows the organisation; Claude Code knows the code.</strong> Neither replaces the other.</p>
 <hr />
-<h2>2. Second-brain architecture: two brains, two jobs</h2>
-<h3>The Copilot brain (organisational knowledge)</h3>
+<h2 id="2-second-brain-architecture-two-brains-two-jobs">2. Second-brain architecture: two brains, two jobs</h2>
+<h3 id="the-copilot-brain-organisational-knowledge">The Copilot brain (organisational knowledge)</h3>
 <ul>
 <li><strong>OneNote:</strong> one section per project (Karate, Playwright), holding notes, decisions and how-tos.</li>
 <li><strong>Confluence:</strong> wiki pages written with deliberate keywords, so Copilot's search finds them as context.</li>
 <li><strong>Copilot memory:</strong> set up with my working preferences, so I don't repeat them in every chat.</li>
 </ul>
 <p>This brain is about <em>finding</em> things: a decision from last month, a page someone else wrote, an email thread.</p>
-<h3>The Claude Code brain (Karpathy-style markdown files)</h3>
+<h3 id="the-claude-code-brain-karpathy-style-markdown-files">The Claude Code brain (Karpathy-style markdown files)</h3>
 <p>Following Andrej Karpathy's idea that at personal scale an LLM reading well-kept markdown beats a search database (I set out a fuller version of this in an earlier article: Karimov, 2026c), Claude Code gets two plain files:</p>
 <ul>
 <li><strong><code>skills.md</code>:</strong> how I work and how to do recurring tasks (conventions, commands, the "right way" in each framework).</li>
 <li><strong><code>learnings.md</code>:</strong> what we discovered: fixes, gotchas, flaky-test causes, repeatable actions.</li>
 </ul>
 <p>Both are <strong>loaded into context at the start of every new session</strong>, so a fresh Claude Code session starts knowing what yesterday's session learned.</p>
-<h3>Before Claude Code</h3>
+<h3 id="before-claude-code">Before Claude Code</h3>
 <p>Before Claude Code, I ran all my "agentic" work through Copilot by having it generate PowerShell commands that I executed myself. It worked, but I was the loop: copy, run, paste back. Amazon Bedrock with Claude Code wasn't available to me at work, so Claude Code became the agentic layer.</p>
 <hr />
-<h2>3. The multi-session Claude Code workflow (today's discovery)</h2>
-<h3>The three sessions</h3>
+<h2 id="3-the-multi-session-claude-code-workflow-today-s-discovery">3. The multi-session Claude Code workflow (today's discovery)</h2>
+<h3 id="the-three-sessions">The three sessions</h3>
 <p>I run three Claude Code sessions in parallel, each in the tool that suits its workstream:</p>
 <table>
 <thead>
@@ -183,7 +199,7 @@
 <p>This is why the two sessions belong together. The Karate session knows the API contracts in depth. The Playwright session sees how the UI calls those microservices, and the network and routing logic behind each screen. Between them I understand how the UI integrates with the services underneath, which neither framework shows on its own.</p>
 <p>So the sessions are <strong>independent but learning from each other</strong>. Each works in its own repo and its own context, and what one discovers reaches the other through the shared wiki. When Karate maps a new endpoint, the Playwright session can use it to seed data. When Playwright captures an unexpected call or status code, the Karate session can turn it into an API test.</p>
 <p>I don't think of the two specialist sessions as junior assistants. Each is an <strong>independent coder that specialises in one area</strong>: it plans, writes, runs and fixes its own work inside its lane. The orchestrator coordinates them; it doesn't do their thinking for them.</p>
-<h3>Choosing the model per task</h3>
+<h3 id="choosing-the-model-per-task">Choosing the model per task</h3>
 <p>Every session plans on the strongest model and codes on the cheapest model that can do the job:</p>
 <ul>
 <li><strong>Claude Opus 5.5 for planning:</strong> breaking down a feature, designing a test strategy, deciding how a change fits the framework.</li>
@@ -191,10 +207,10 @@
 <li><strong>Claude Haiku 5.5 for simple, repetitive work:</strong> small edits, boilerplate, renames, quick lookups.</li>
 </ul>
 <p>I switch per task, not per day. Planning on a weaker model produces plans that fall apart halfway; coding everything on the strongest model wastes budget on work a smaller model does just as well.</p>
-<h3>How the sessions talk to each other</h3>
+<h3 id="how-the-sessions-talk-to-each-other">How the sessions talk to each other</h3>
 <p>Separate context windows don't mean separate islands. <strong>The sessions communicate via PowerShell commands</strong>: the orchestrator session passes instructions across to the other two, and they report back through files on disk.</p>
 <p>The rule that keeps this safe: <strong>one writer per file.</strong> Each worker session writes only its own notes; only the orchestrator writes the compiled wiki. Three agents writing to the same file is a merge conflict between agents, and it's worse than one between people.</p>
-<h3>End-of-day knowledge capture flow</h3>
+<h3 id="end-of-day-knowledge-capture-flow">End-of-day knowledge capture flow</h3>
 <p>This loop turns a busy day into something I keep:</p>
 <ol>
 <li><strong>Karate session (VS Code):</strong> asked to summarise the day's learnings and extract repeatable actions into a markdown file.</li>
@@ -210,7 +226,7 @@ IntelliJ (Playwright) ─summary.md─┘                (PowerShell session)
 </code></pre>
 <p>After compiling, <strong>the second brain can be queried from all sessions</strong>. Tomorrow's Playwright session can ask which endpoint today's Karate session used to create a test record, seed its data through that endpoint, and check the result in the UI. The answer comes from the wiki, not from my memory.</p>
 <p>This is the Karpathy pattern in practice: <code>raw/</code> is the source, the compile step is the build, and the wiki is the artefact. As a QA engineer I think of it like a build pipeline: notes go in, a tested, linked knowledge base comes out.</p>
-<h3>The supervision model: auditor, orchestrator, specialists</h3>
+<h3 id="the-supervision-model-auditor-orchestrator-specialists">The supervision model: auditor, orchestrator, specialists</h3>
 <ul>
 <li><strong>Microsoft Copilot, running Claude Opus, is the auditor.</strong> It has the most context of anything in the setup, because its built-in RAG reaches Confluence, OneNote, OneDrive and email. I take plans and finished work to it and ask whether they fit how things are actually done here. It checks; it doesn't build.</li>
 <li><strong>The standalone PowerShell session is the orchestrator.</strong> It passes instructions to the two specialists and owns the wiki.</li>
@@ -219,7 +235,7 @@ IntelliJ (Playwright) ─summary.md─┘                (PowerShell session)
 <p>The auditor's role may not be permanent. Copilot audits well today because it can see organisational knowledge the Claude Code sessions can't. As the compiled wiki grows and gets richer, more of that context will live in files every session can read, and I may retire Copilot from the auditor seat. The wiki is slowly replacing the reason the auditor exists.</p>
 <p>And above all of them: <strong>me.</strong> Merges, pushes and anything irreversible stay with the human.</p>
 <hr />
-<h2>4. Rules that make it work</h2>
+<h2 id="4-rules-that-make-it-work">4. Rules that make it work</h2>
 <ul>
 <li><strong>One workstream per session, shared knowledge.</strong> Each session owns its own framework and repo; they meet in the wiki, not in each other's code.</li>
 <li><strong>One writer per artefact.</strong> Workers write their own raw notes; only the orchestrator writes the wiki.</li>
@@ -229,7 +245,7 @@ IntelliJ (Playwright) ─summary.md─┘                (PowerShell session)
 <li><strong>The human presses merge.</strong> Agents propose; I approve.</li>
 </ul>
 <hr />
-<h2>5. Honest limitations</h2>
+<h2 id="5-honest-limitations">5. Honest limitations</h2>
 <ul>
 <li><strong>One day of evidence.</strong> The three-session pattern held up across a full working day, morning to evening. That is a promising start, not a long-term result.</li>
 <li><strong>The auditor depends on Copilot's RAG.</strong> Until the wiki holds that organisational context, removing Copilot would remove the widest view in the setup.</li>
@@ -239,7 +255,7 @@ IntelliJ (Playwright) ─summary.md─┘                (PowerShell session)
 <li><strong>Policy comes first.</strong> Use only tools your organisation has approved, on its accounts, and check what may go into notes before you start.</li>
 </ul>
 <hr />
-<h2>6. Key takeaways</h2>
+<h2 id="6-key-takeaways">6. Key takeaways</h2>
 <ul>
 <li><strong>Separate Claude Code sessions each have their own context window, but they can still communicate.</strong> The orchestrator passes instructions, and files on disk carry the results.</li>
 <li><strong>Copilot (with Claude models) acts as the auditor, because its RAG gives it the most context; the Claude Code sessions are independent specialists</strong>, with one session acting as orchestrator.</li>
@@ -252,14 +268,22 @@ IntelliJ (Playwright) ─summary.md─┘                (PowerShell session)
 <hr />
 <p><em>Tools: Microsoft Copilot with Claude models (chat, built-in RAG, auditor), Claude Code on Opus 5.5 / Sonnet 5.5 / Haiku 5.5 (three PowerShell sessions: standalone, inside VS Code, inside IntelliJ), GitLab Duo (IDE assistance), OneNote, Confluence, and two markdown files, <code>skills.md</code> and <code>learnings.md</code>. Related: my earlier article on building a Claude Code second brain with Obsidian, https://mattkari.github.io/articles/claude-code-second-brain/</em></p>
 <hr />
-<h2>References</h2>
+<h2 id="references">References</h2>
 <ul>
 <li>Karimov, D. (2026a). <em>Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java</em>. https://mattkari.github.io/articles/playwright-java-real-api-traffic/</li>
 <li>Karimov, D. (2026b). <em>Playwright Java: Real API Traffic Guide</em>. pricingtool repository. https://github.com/mattkari/pricingtool/blob/main/docs/playwright-java-real-api-traffic-guide.md</li>
 <li>Karimov, D. (2026c). <em>How I built a "second brain" for test automation with Claude Code and Obsidian (and tested it like a QA engineer)</em>. https://mattkari.github.io/articles/claude-code-second-brain/</li>
 </ul>
-<hr><p class="meta"><a href="/writing">More articles</a> · <a href="/">About me</a></p>
+<nav class="more" aria-label="Keep reading">
+<p class="more-heading">Keep reading</p>
+<div class="more-cards">
+<a class="more-card" href="/articles/uzbek-alphabet-ai-tokens/"><span class="more-label">Newer</span><span class="more-title">Does Uzbekistan's new alphabet make AI cheaper? I measured it</span></a>
+<a class="more-card" href="/articles/playwright-java-real-api-traffic/"><span class="more-label">Older</span><span class="more-title">Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java</span></a>
+</div>
+<a class="more-all" href="/writing">All 12 essays</a>
+</nav>
 </article>
+<a class="to-top" href="#top">Back to top</a>
 <footer class="site-footer">
 <div class="inner">
 <a href="/">Home</a>

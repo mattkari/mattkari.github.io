@@ -165,6 +165,12 @@ rule for `main` in the repository settings and require the "Checks" workflow.
 The sitemap and RSS feed pick the new article up from the registry on the next
 build.
 
+Give each article a `topic` from the short list in `src/lib/articles.ts`; the
+archive page filters by it. The chrome script also gives every heading an id,
+adds an "On this page" list to longer articles, links each article to the next
+and previous one, and adds the "Back to top" button. `_article.js` drives that
+button and the copy buttons on code blocks.
+
 ## Adding or editing a project
 
 Edit `src/lib/projects.ts`. Each entry feeds both the card on the home page and

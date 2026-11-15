@@ -89,8 +89,9 @@
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/articles/_article.css">
+<script src="/articles/_article.js" defer></script>
 </head>
-<body>
+<body id="top">
 <header class="site-header">
 <div class="inner">
 <a class="mark" href="/" aria-label="Home">MK</a>
@@ -108,7 +109,7 @@
 <p>On 21 October 2026, Uzbekistan adopted Law No. ÖRQ-1184. It amends the 1993 law on the Latin-based Uzbek alphabet (lex.uz, 2026). From 22 April 2027 the alphabet will have 28 letters and one apostrophe (tutuq belgisi), instead of 26 letters and three letter combinations. In other words, <em>oʻ</em>, <em>gʻ</em>, <em>sh</em> and <em>ch</em> become <em>ö</em>, <em>ğ</em>, <em>ş</em> and <em>ç</em>. The law also states its aim: to improve the alphabet and spelling rules, and to widen the use of the state language in digital systems.</p>
 <p>A natural question followed: if words get shorter, does AI get cheaper? Large language models charge by the token, so fewer characters might mean fewer tokens. If that were so, every chatbot, translation service and document pipeline in the country would save money.</p>
 <p>This article tests that claim. It does not argue that the reform is right or wrong. Rather, it asks a narrower question: what does the new spelling change, measurably, for AI systems?</p>
-<h2>How I tested it</h2>
+<h2 id="how-i-tested-it">How I tested it</h2>
 <p>To this end, I built a corpus of about 460,000 characters of real Uzbek text:</p>
 <ol>
 <li>Ten long articles from Uzbek Wikipedia (Alisher Navoiy, Amir Temur, Buxoro, Samarqand, Toshkent and others).</li>
@@ -116,7 +117,7 @@
 </ol>
 <p>I converted each text to the new alphabet by the law's own mapping: <em>oʻ → ö</em>, <em>gʻ → ğ</em>, <em>sh → ş</em>, <em>ch → ç</em>. <em>ng</em> stays as written, because the new alphabet no longer lists it as a letter combination. I then counted tokens in both versions with seven tokenizers: OpenAI's GPT-4 and GPT-4o, Meta's Llama 3, Google's Gemma 2, Alibaba's Qwen 2.5, Mistral v0.3, and Anthropic's Claude (Sonnet 4.5, measured through the API's usage figures on the news set).</p>
 <p>I also tested a second variable that people rarely notice: <em>which apostrophe</em> is used. The official character for <em>oʻ</em> is U+02BB (ʻ). In practice, Uzbek writers use at least four: ʻ, ‘, ' and `. Wikipedia uses the first; gazeta.uz uses the second.</p>
-<h2>What I found</h2>
+<h2 id="what-i-found">What I found</h2>
 <p>The new alphabet is 3.6% shorter in characters. The token effect is a different matter:</p>
 <table>
 <thead>
@@ -184,7 +185,7 @@
 <p><strong>First, the saving is small, and it shrinks with newer models.</strong> The range runs from 7.4% on Llama 3 to almost zero on GPT-4o, and Mistral uses slightly <em>more</em> tokens. On GPT-4o the news set also grew by 1.1%. It seems that newer tokenizers, trained on more multilingual text, had already learned Uzbek's frequent chunks.</p>
 <p><strong>Second, a token is not a letter.</strong> Tokenizers split text into common pieces, not characters. <em>ishlatiladi</em> and <em>işlatiladi</em> are both three tokens on GPT-4o, because "ish" was already a single token. The real saving comes from the apostrophe: the old <em>toʻgʻrisida</em> splits the rare quote mark off as a separate piece, while <em>töğrisida</em> does not.</p>
 <p><strong>Third, and interestingly, the apostrophe matters as much as the reform.</strong> On GPT-4 and Llama 3, simply changing which apostrophe a text uses moves the token count by up to 4%. That is about as large as the whole alphabet change. In other words, the old system's real cost was not length but <em>inconsistency</em>: the same word, <em>oʻzbek</em>, can be written four ways and becomes four different token sequences.</p>
-<h2>Where the real value is</h2>
+<h2 id="where-the-real-value-is">Where the real value is</h2>
 <p>From the above, it can be assumed that the reform will not cut AI bills in any meaningful way. A business spending £1,000 a month on an Uzbek chatbot might save between £0 and £70, depending on the model, and the saving falls as models improve.</p>
 <p>The value lies elsewhere:</p>
 <ol>
@@ -192,14 +193,22 @@
 <li><strong>Shared letters with Turkish.</strong> <em>Ş</em>, <em>Ç</em>, <em>Ö</em> and <em>Ğ</em> are standard Turkish letters, so models have seen them in large volumes of training data. This may help models transfer what they know from Turkish to Uzbek.</li>
 <li><strong>Fewer technical faults.</strong> Apostrophes break URLs, database queries, keyboards and file names. Letters do not.</li>
 </ol>
-<h2>Limits of this test</h2>
+<h2 id="limits-of-this-test">Limits of this test</h2>
 <p>This study does not claim to be complete. It covers two text types, about 460,000 characters, and seven tokenizers. The Claude figure covers the news set only and was measured indirectly, through usage reporting. The automatic conversion may mishandle rare loanwords that contain <em>sh</em> or <em>ch</em> across a syllable boundary. Finally, token count measures cost, not quality: whether models <em>understand</em> the new spelling better is a separate question, and a better one to test next.</p>
-<h2>Summary and conclusion</h2>
+<h2 id="summary-and-conclusion">Summary and conclusion</h2>
 <p>The aim of this article was to test a popular assumption: that Uzbekistan's new alphabet will make AI cheaper. The main finding is that it will not, in any material sense. Token savings range from about 7% on older tokenizers to effectively zero on newer ones. To put it simply, the reform does not shorten what models read.</p>
 <p>What it does is give each word one spelling. For AI systems that depend on exact matching, that is the more durable gain, and one that no tokenizer upgrade will erase.</p>
 <p><strong>Sources:</strong> Law of the Republic of Uzbekistan No. ÖRQ-1184, 21 October 2026, <a href="https://lex.uz/docs/-8548754">lex.uz/docs/-8548754</a>. Corpus: Uzbek Wikipedia (10 articles) and gazeta.uz (20 news articles, 26 October 2026). Code and results: available on request.</p>
-<hr><p class="meta"><a href="/writing">More articles</a> · <a href="/">About me</a></p>
+<nav class="more" aria-label="Keep reading">
+<p class="more-heading">Keep reading</p>
+<div class="more-cards">
+<a class="more-card" href="/articles/gated-rag-test-generation/"><span class="more-label">Newer</span><span class="more-title">Two Gates and a Rule: Building a Review-Only RAG Pipeline That Drafts API and UI Tests</span></a>
+<a class="more-card" href="/articles/supervised-claude-code-sessions/"><span class="more-label">Older</span><span class="more-title">Three Claude Code Sessions, One Orchestrator, One Auditor: My Day-to-Day AI Workflow as a Test Automation Engineer</span></a>
+</div>
+<a class="more-all" href="/writing">All 12 essays</a>
+</nav>
 </article>
+<a class="to-top" href="#top">Back to top</a>
 <footer class="site-footer">
 <div class="inner">
 <a href="/">Home</a>

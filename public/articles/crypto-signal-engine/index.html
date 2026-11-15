@@ -89,8 +89,9 @@
 <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/articles/_article.css">
+<script src="/articles/_article.js" defer></script>
 </head>
-<body>
+<body id="top">
 <header class="site-header">
 <div class="inner">
 <a class="mark" href="/" aria-label="Home">MK</a>
@@ -105,12 +106,28 @@
 <article>
 <h1>I turned my crypto trading bot into a signal engine that cannot trade. Here's how it reads BTC, ETH and ADA</h1>
 <p class="meta">Dusmamat (Matt) Karimov · 23 October 2026 · 11 min read</p>
+<nav class="toc" aria-label="On this page">
+<details open>
+<summary>On this page</summary>
+<ol>
+<li><a href="#from-trading-bot-to-signal-engine">From trading bot to signal engine</a></li>
+<li><a href="#live-data-first">Live data first</a></li>
+<li><a href="#how-it-works">How it works</a></li>
+<li><a href="#talking-to-it-on-telegram">Talking to it on Telegram</a></li>
+<li><a href="#the-dashboard-and-api">The dashboard and API</a></li>
+<li><a href="#making-it-cannot-trade-a-test-not-a-promise">Making "it cannot trade" a test, not a promise</a></li>
+<li><a href="#can-it-predict-the-market">Can it predict the market?</a></li>
+<li><a href="#what-i-found-while-writing-this">What I found while writing this</a></li>
+<li><a href="#rules-i-d-keep">Rules I'd keep</a></li>
+</ol>
+</details>
+</nav>
 <p><em>A test automation engineer's walkthrough of a read-only market signal engine on a Raspberry Pi: the indicators, the gates, the Telegram bot, the live data, and what it can and cannot tell you about the market.</em></p>
 <blockquote>
 <p><strong>Not financial advice.</strong> This is a personal engineering project. It reads public market data and prints technical indicators. It doesn't predict prices, its strategy has only been tested in-sample, and nothing below is a recommendation to buy or sell anything.</p>
 </blockquote>
 <hr />
-<h2>From trading bot to signal engine</h2>
+<h2 id="from-trading-bot-to-signal-engine">From trading bot to signal engine</h2>
 <p>This project started as a live Binance trading bot written in Python. It watched Bitcoin, Ethereum and Cardano on four-hour candles and placed real orders when its rules lined up.</p>
 <p>When I closed the exchange account, I had a choice. I could add a <code>DRY_RUN = True</code> flag and keep the order code "just in case", or I could delete the trading capability completely.</p>
 <p>I deleted it. A repository that is one boolean away from placing an order is a risk, not a feature. What's left is a <strong>read-only signal engine</strong>:</p>
@@ -120,7 +137,7 @@
 <li>It reports them three ways: a Telegram bot, a web dashboard, and a JSON API.</li>
 </ul>
 <p>The last trading-capable version is preserved at a git tag, so the history is honest and nothing is lost.</p>
-<h2>Live data first</h2>
+<h2 id="live-data-first">Live data first</h2>
 <p>This is the dashboard, captured from the running container on my Raspberry Pi on <strong>23 October 2026 at 19:43 UK time</strong>:</p>
 <p><img loading="lazy" alt="Live dashboard on 23 Oct 2026: BTC, ETH and ADA all on HOLD" src="img/01-dashboard-live-2026-10-23.png" /></p>
 <p>At that moment:</p>
@@ -159,8 +176,8 @@
 </tbody>
 </table>
 <p>All three say <strong>HOLD</strong>, and the reason is the same: the 4-hour trend gate (the red <code>✕ HTF</code> badge) is blocked because the short-term average is below the longer one. The rest of this article explains what that means and how the engine arrives at it.</p>
-<h2>How it works</h2>
-<h3>The pipeline</h3>
+<h2 id="how-it-works">How it works</h2>
+<h3 id="the-pipeline">The pipeline</h3>
 <pre><code>Public Binance market data (no API key)
    └─ 4h candles (300), daily candles (250), 24h ticker, order book
         └─ indicators: RSI, EMA9/EMA21, MACD, Bollinger Bands, ATR, volume, buyer %
@@ -170,7 +187,7 @@
                             └─ Telegram · web dashboard · JSON API
 </code></pre>
 <p>One function, <code>evaluate_symbol()</code>, does the whole computation and returns a plain dictionary. The Telegram bot, the dashboard, the API and the tests all read that same dictionary, so the three outputs can never disagree about the logic.</p>
-<h3>Step 1: the indicators</h3>
+<h3 id="step-1-the-indicators">Step 1: the indicators</h3>
 <p>For each coin, the engine looks at the <strong>last closed</strong> 4-hour candle (the current one is still moving, so its values would change under you) and calculates:</p>
 <ul>
 <li><strong>RSI (14):</strong> how stretched recent moves are. Below 35 is usually called oversold, above 65 overbought.</li>
@@ -179,7 +196,7 @@
 <li><strong>Bollinger Bands:</strong> a band two standard deviations around the 20-period average. Touching the lower band is a common "stretched down" sign.</li>
 <li><strong>Volume against its average,</strong> and <strong>buyer %</strong>: the share of volume that came from buyers (Binance's taker-buy volume).</li>
 </ul>
-<h3>Step 2: three gates that must all pass</h3>
+<h3 id="step-2-three-gates-that-must-all-pass">Step 2: three gates that must all pass</h3>
 <p>Before any BUY is considered, three gates act like a pre-flight check:</p>
 <table>
 <thead>
@@ -208,7 +225,7 @@
 </tbody>
 </table>
 <p>On 23 October, the regime gate passed for all three coins (the market was "ranging", not wild), but the 4h trend gate was blocked for all three. That alone is enough to force HOLD.</p>
-<h3>Step 3: trend mode or mean-reversion mode</h3>
+<h3 id="step-3-trend-mode-or-mean-reversion-mode">Step 3: trend mode or mean-reversion mode</h3>
 <p>The engine runs in one of two modes:</p>
 <ul>
 <li><strong>Trend-following:</strong> used when the daily chart is in a golden cross and the 4h trend isn't bearish. A BUY needs 5 of 8 conditions, including EMA9 above EMA21 and a positive MACD.</li>
@@ -223,7 +240,7 @@
 </ul>
 <p>Ethereum and Cardano each scored <strong>4 of 7</strong>, so all three fell short of five even before the trend gate. Cardano was the closest to a textbook oversold setup (RSI 32.2), but its RSI was still falling.</p>
 <p>This is the part I like most as a tester: every decision is traceable. You can see exactly which conditions passed and failed, and why the answer is HOLD. Nothing is a black box.</p>
-<h2>Talking to it on Telegram</h2>
+<h2 id="talking-to-it-on-telegram">Talking to it on Telegram</h2>
 <p>The engine runs a small Telegram bot through the <code>python-telegram-bot</code> library. It only answers four commands, all read-only:</p>
 <table>
 <thead>
@@ -259,7 +276,7 @@
 <p>This is the reply to <code>/signal btc</code>, rendered from the bot's own formatting function with the same live data:</p>
 <p><img loading="lazy" alt="Telegram reply to /signal btc, rendered from the bot's formatter with live data" src="img/04-telegram-signal-btc-rendered.png" /></p>
 <p><em>Note: this image is rendered from the bot's real output text, not a phone screenshot.</em></p>
-<h3>Set up your own bot (5 minutes)</h3>
+<h3 id="set-up-your-own-bot-5-minutes">Set up your own bot (5 minutes)</h3>
 <ol>
 <li>In Telegram, message <strong>@BotFather</strong>, send <code>/newbot</code>, and pick a name. BotFather gives you a <strong>bot token</strong>. Treat it like a password.</li>
 <li>Send any message to your new bot, then open <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code> in a browser. Your <strong>chat ID</strong> is the <code>chat.id</code> number in the reply.</li>
@@ -276,7 +293,7 @@ ZAI_API_KEY=...          # optional, only for the LLM analyst
 curl -s localhost:8300/api/health
 </code></pre>
 <p>The health check answers with <code>"trading_enabled": false</code>, plus how old the cached data is.</p>
-<h3>The bot code in brief</h3>
+<h3 id="the-bot-code-in-brief">The bot code in brief</h3>
 <p>Commands map to small async handlers. The <code>/signal</code> handler calls the same <code>scan()</code> function the command line uses:</p>
 <pre><code class="language-python">async def _cmd_signal(update, context):
     symbol_arg = context.args[0].lower() if context.args else None
@@ -290,7 +307,7 @@ app.add_handler(CommandHandler(&quot;help&quot;, _cmd_help))
 app.run_polling(drop_pending_updates=True)
 </code></pre>
 <p>A Raspberry Pi drops its connection now and then, so startup retries with a back-off (5s, 10s, 15s...). A global error handler logs Telegram's occasional "Bad Gateway" errors as one line rather than letting them crash the bot.</p>
-<h2>The dashboard and API</h2>
+<h2 id="the-dashboard-and-api">The dashboard and API</h2>
 <p>The second container is a small FastAPI app on port 8300, reachable only on my home network:</p>
 <p><img loading="lazy" alt="Auto-generated API docs: four GET routes and nothing else" src="img/02-api-docs.png" /></p>
 <p>Every route is a GET. Sending a POST to <code>/api/signals</code> returns <strong>405 Method Not Allowed</strong>, which I checked on the running container. A background loop refreshes the signals every 5 minutes and stores them in memory, so page views never multiply calls to the exchange.</p>
@@ -304,7 +321,7 @@ app.run_polling(drop_pending_updates=True)
             &quot;regime&quot;: {&quot;value&quot;: &quot;ranging&quot;, &quot;blocked&quot;: false}}
 }
 </code></pre>
-<h2>Making "it cannot trade" a test, not a promise</h2>
+<h2 id="making-it-cannot-trade-a-test-not-a-promise">Making "it cannot trade" a test, not a promise</h2>
 <p>I'm a test automation engineer, so "trust me, the trading code is gone" wasn't good enough. The repository has a test suite that <strong>reads the source code of every first-party file</strong> (using Python's <code>ast</code> module) and fails the build if any of these come back:</p>
 <ul>
 <li>an authenticated exchange call or any order method (<code>create_order</code>, <code>cancel_order</code>...)</li>
@@ -335,7 +352,7 @@ docker exec crypto-signal-web python -c &quot;import analysis.ai_analyst as a; p
 curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8300/api/signals   # 405
 </code></pre>
 <p>One detail that matters: the suite walks an <strong>allowlist</strong> of my own folders. A denylist over every <code>.py</code> file in the project would also walk <code>.venv</code>, find the order methods inside the installed <code>ccxt</code> library, and fail on code I didn't write.</p>
-<h2>Can it predict the market?</h2>
+<h2 id="can-it-predict-the-market">Can it predict the market?</h2>
 <p>Short answer: <strong>no, and it isn't designed to.</strong> What it can honestly do is narrower:</p>
 <ul>
 <li><strong>It describes the current state</strong> of BTC, ETH and ADA in a consistent, rule-based way: trend, momentum, how stretched the price is, and whether its own entry conditions are met.</li>
@@ -348,14 +365,14 @@ curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8300/api/signals   # 40
 <li><strong>It lags.</strong> Signals come from the last closed 4-hour candle, so a sharp move inside the current candle won't show until it closes.</li>
 <li><strong>Live values move between calls.</strong> The order-book "buy pressure" is a snapshot. It read 6% on the dashboard and 41% in a scan a minute later. Treat it as noise, not a signal.</li>
 </ul>
-<h2>What I found while writing this</h2>
+<h2 id="what-i-found-while-writing-this">What I found while writing this</h2>
 <p>Writing about a system makes you look at it more closely than running it does. Two honest findings:</p>
 <ol>
 <li><strong>The daily-trend gate never fires live.</strong> The code that builds the daily averages names the columns <code>SMA_50</code> and <code>SMA_200</code>, but the signal service looks them up as <code>sma_50</code> and <code>sma_200</code>. The lookup always misses, so the daily trend shows as "unknown". The gate therefore never blocks, and trend-following mode never switches on. On 23 October the daily 50-day average (about 81,800) was above the 200-day (about 72,900), so Bitcoin was actually in a golden cross the engine couldn't see. It made no difference that day, because the 4h gate was blocked anyway, but it's a real bug, and the dashboard's green "Daily ✓" badge hides it. The fix is a one-line change plus a test that asserts the daily trend is never "unknown" when 250 days of data are present.</li>
 <li><strong>The LLM analyst isn't wired in.</strong> The code that asks a language model (Z.AI GLM) for market commentary still exists, but nothing calls it in the live path. <code>/ai</code> reports zero calls. That's safe, because the model was never allowed to make decisions, but the README's "LLM analyst layer" overstates what's running today.</li>
 </ol>
 <p>Both are exactly what a QA review should find: the system worked, its health checks were green, and it was still quietly doing less than it said.</p>
-<h2>Rules I'd keep</h2>
+<h2 id="rules-i-d-keep">Rules I'd keep</h2>
 <ul>
 <li><strong>Delete dangerous capability rather than disabling it,</strong> and keep the history in a git tag.</li>
 <li><strong>Enforce safety claims with tests</strong> that read the code, and check the running container, not just the repository.</li>
@@ -365,8 +382,16 @@ curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8300/api/signals   # 40
 </ul>
 <hr />
 <p><em>I'm a test automation engineer working towards AI quality and LLM evaluation. The next step for this project is an evaluation harness for the LLM analyst, scored on schema validity, refusal on bad input and self-consistency rather than on market returns.</em></p>
-<hr><p class="meta"><a href="/writing">More articles</a> · <a href="/">About me</a></p>
+<nav class="more" aria-label="Keep reading">
+<p class="more-heading">Keep reading</p>
+<div class="more-cards">
+<a class="more-card" href="/articles/playwright-java-real-api-traffic/"><span class="more-label">Newer</span><span class="more-title">Testing the Screen and the Services Behind It: Real API Traffic in Playwright Java</span></a>
+<a class="more-card" href="/articles/claude-code-second-brain/"><span class="more-label">Older</span><span class="more-title">How I built a "second brain" for test automation with Claude Code and Obsidian (and tested it like a QA engineer)</span></a>
+</div>
+<a class="more-all" href="/writing">All 12 essays</a>
+</nav>
 </article>
+<a class="to-top" href="#top">Back to top</a>
 <footer class="site-footer">
 <div class="inner">
 <a href="/">Home</a>

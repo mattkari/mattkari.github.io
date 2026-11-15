@@ -30,7 +30,7 @@ export function ArticleRow({
       </span>
 
       <div className="min-w-0">
-        <p className="mb-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] text-ink-muted">
+        <p className="mb-2 text-[0.7rem] font-medium uppercase tracking-[0.18em] text-ink-body">
           <time dateTime={article.date}>{formatDate(article.date)}</time>
           <span aria-hidden="true" className="mx-2 text-ink-faint">
             /

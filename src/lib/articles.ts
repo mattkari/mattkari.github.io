@@ -1,11 +1,17 @@
 // Single source of truth for the Writing section. Add a new article here after
 // placing its static HTML at public/articles/<slug>/index.html.
+// A short, fixed list. Tags describe one article; topics group several.
+export const TOPICS = ['AI agents', 'LLMs and RAG', 'Testing', 'Self-hosting'] as const;
+export type Topic = (typeof TOPICS)[number];
+
 export type Article = {
   slug: string;
   title: string;
   summary: string;
   date: string; // ISO yyyy-mm-dd
   readingMinutes: number;
+  /** One broad subject per article; the archive filters by it. */
+  topic: Topic;
   tags: string[];
 };
 
@@ -17,6 +23,7 @@ export const articles: Article[] = [
       "A small shop's colours treated as a test target: the brand brown failed the contrast minimum, and the audit only counted once it was shown to fail.",
     date: '2026-11-14',
     readingMinutes: 5,
+    topic: 'Testing',
     tags: ['Accessibility', 'Testing', 'Web design', 'AI agents'],
   },
   {
@@ -26,6 +33,7 @@ export const articles: Article[] = [
       'A five-person hackathon team supervised five AI coding agents for 24 hours: one supervisor, specialised workers, and reviewers who never mark their own work. The constraint was not agent speed but the handoffs between them.',
     date: '2026-11-12',
     readingMinutes: 3,
+    topic: 'AI agents',
     tags: ['AI agents', 'Claude Code', 'Code review', 'RAG'],
   },
   {
@@ -35,6 +43,7 @@ export const articles: Article[] = [
       'A shop self-hosted on a Raspberry Pi 5, measured: the domain costs £3.97 a year, the whole Pi about £6.82 in electricity, and the real risks sit in availability, shared hosting and neglected updates.',
     date: '2026-11-08',
     readingMinutes: 8,
+    topic: 'Self-hosting',
     tags: ['Self-hosting', 'Raspberry Pi', 'Cloudflare', 'Risk'],
   },
   {
@@ -44,6 +53,7 @@ export const articles: Article[] = [
       'Step by step: a Next.js shop packaged with Docker, published through a Cloudflare Tunnel with no port opened for the site, and administered from a phone over WireGuard and Termux. Every file is the real one.',
     date: '2026-11-08',
     readingMinutes: 20,
+    topic: 'Self-hosting',
     tags: ['Docker', 'Cloudflare Tunnel', 'WireGuard', 'Raspberry Pi'],
   },
   {
@@ -53,6 +63,7 @@ export const articles: Article[] = [
       'Eight scheduled AI jobs on a Raspberry Pi ran 293.71 times a day, and a single job accounted for 98.1 per cent of that. The audit cut the system to 4.71 runs a day, and found that the verification method failed four times before any job did.',
     date: '2026-11-07',
     readingMinutes: 7,
+    topic: 'AI agents',
     tags: ['AI agents', 'Automation', 'Observability', 'Decision models'],
   },
   {
@@ -62,6 +73,7 @@ export const articles: Article[] = [
       'A LangGraph pipeline that gathers test evidence through local, read-only MCP servers in Docker, puts two human gates around it and blocks generation when evidence is missing. The open questions it writes turned out to be a ready agenda for the business analyst.',
     date: '2026-10-30',
     readingMinutes: 20,
+    topic: 'LLMs and RAG',
     tags: ['LangGraph', 'RAG', 'MCP', 'Test automation', 'AI quality'],
   },
   {
@@ -71,6 +83,7 @@ export const articles: Article[] = [
       "The new 28-letter Uzbek alphabet swaps oʻ, gʻ, sh and ch for ö, ğ, ş and ç. Across seven AI tokenizers the token saving is 0 to 7%, and which apostrophe you type matters as much as the reform. The real gain is one spelling per word.",
     date: '2026-10-27',
     readingMinutes: 5,
+    topic: 'LLMs and RAG',
     tags: ['LLM', 'Tokenization', 'Uzbek', 'AI cost'],
   },
   {
@@ -80,6 +93,7 @@ export const articles: Article[] = [
       'Three parallel Claude Code sessions (a PowerShell orchestrator plus Karate and Playwright specialists), Opus for planning and Sonnet or Haiku for coding, an end-of-day compile into a shared wiki, and Microsoft Copilot as the auditor.',
     date: '2026-10-24',
     readingMinutes: 10,
+    topic: 'AI agents',
     tags: ['Claude Code', 'AI workflow', 'Test automation', 'Second brain'],
   },
   {
@@ -89,6 +103,7 @@ export const articles: Article[] = [
       'waitForResponse, a NetworkRecorder and ten API + UI patterns against real microservices, organised around three ways of working: seed via API and validate via UI, trigger via UI and capture the call, seed via UI and validate the flow.',
     date: '2026-10-24',
     readingMinutes: 29,
+    topic: 'Testing',
     tags: ['Playwright', 'Java', 'API testing', 'Test automation'],
   },
   {
@@ -99,6 +114,7 @@ export const articles: Article[] = [
       'A read-only signal engine on a Raspberry Pi: indicators, three gates and a condition score, a Telegram bot, live data from 23 Oct 2026, tests that prove it cannot trade, and two bugs found while writing it up.',
     date: '2026-10-23',
     readingMinutes: 11,
+    topic: 'Testing',
     tags: ['Python', 'Telegram bot', 'Testing', 'Crypto'],
   },
   {
@@ -109,6 +125,7 @@ export const articles: Article[] = [
       'A Karpathy-style LLM knowledge base: rough notes compiled into a linked, cited wiki, a guard that stops secrets reaching the model, and the seven QA checks I ran on it.',
     date: '2026-10-22',
     readingMinutes: 20,
+    topic: 'LLMs and RAG',
     tags: ['Claude Code', 'Obsidian', 'LLM evaluation', 'Test automation'],
   },
   {
@@ -118,6 +135,7 @@ export const articles: Article[] = [
       'Letting a browser agent fill in a claim portal safely: a password vault the agent can use but never read, evidence first, honest classification, and a human on the Submit button.',
     date: '2026-10-18',
     readingMinutes: 8,
+    topic: 'AI agents',
     tags: ['AI agents', 'Browser automation', 'Security'],
   },
 ];

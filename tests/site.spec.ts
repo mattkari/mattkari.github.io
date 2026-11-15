@@ -228,6 +228,63 @@ test.describe('links and registries', () => {
   });
 });
 
+test.describe('writing', () => {
+  const sorted = [...articles].sort((a, b) => b.date.localeCompare(a.date));
+  const longest = [...articles].sort((a, b) => b.readingMinutes - a.readingMinutes)[0];
+
+  test('the archive filters by topic and can show everything again', async ({ page }) => {
+    await page.goto('/writing');
+    const rows = page.locator('main a[href^="/articles/"]');
+    await expect(rows).toHaveCount(articles.length);
+
+    const topic = articles[0].topic;
+    const expected = articles.filter((article) => article.topic === topic).length;
+    await page.getByRole('button', { name: new RegExp(`^${topic}`) }).click();
+    await expect(rows).toHaveCount(expected);
+    await expect(page.getByRole('button', { name: new RegExp(`^${topic}`) })).toHaveAttribute('aria-pressed', 'true');
+
+    await page.getByRole('button', { name: /^All/ }).click();
+    await expect(rows).toHaveCount(articles.length);
+  });
+
+  test('every topic has at least one essay', () => {
+    for (const topic of new Set(articles.map((article) => article.topic))) {
+      expect(articles.some((article) => article.topic === topic)).toBe(true);
+    }
+  });
+
+  test('a long article has a contents list whose links land on their headings', async ({ page }) => {
+    await page.goto(`/articles/${longest.slug}/`);
+    const links = page.locator('nav.toc a');
+    expect(await links.count()).toBeGreaterThanOrEqual(5);
+    const third = links.nth(2);
+    const target = (await third.getAttribute('href'))!.slice(1);
+    await third.click();
+    await expect(page.locator(`[id="${target}"]`)).toBeInViewport();
+    await expect(page.locator(`[id="${target}"]`)).toHaveText((await third.textContent())!);
+  });
+
+  test('every article ends with its neighbours and the way back to the list', async ({ request }) => {
+    for (const [i, article] of sorted.entries()) {
+      const html = await (await request.get(`/articles/${article.slug}/`)).text();
+      const end = html.slice(html.indexOf('<nav class="more"'));
+      if (i > 0) expect(end, `${article.slug} newer`).toContain(`href="/articles/${sorted[i - 1].slug}/"`);
+      if (i < sorted.length - 1) expect(end, `${article.slug} older`).toContain(`href="/articles/${sorted[i + 1].slug}/"`);
+      expect(end).toContain(`All ${articles.length} essays`);
+    }
+  });
+
+  test('"Back to top" appears after scrolling and returns to the top', async ({ page }) => {
+    await page.goto(`/articles/${longest.slug}/`);
+    const button = page.getByRole('link', { name: 'Back to top' });
+    await expect(button).toBeHidden();
+    await page.evaluate(() => window.scrollTo(0, window.innerHeight * 3));
+    await expect(button).toBeVisible();
+    await button.click();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  });
+});
+
 test.describe('light and dark themes', () => {
   const pageColour = (page: Page) => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   const LIGHT = 'rgb(251, 248, 243)';
