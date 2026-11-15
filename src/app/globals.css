@@ -21,7 +21,9 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
     --border: 218 30% 18%;
-    --input: 218 30% 22%;
+    /* The edge of anything a person taps or types in: slate-500, which is at
+       least 3:1 against the page, the cards and the glows (tests/contrast.spec.ts). */
+    --input: 215 16% 47%;
     --ring: 45 96% 62%;
     --radius: 0.75rem;
   }

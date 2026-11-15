@@ -415,7 +415,7 @@ export default function Home() {
           </div>
 
           <div className="relative mx-auto max-w-5xl text-center">
-            <p className="mb-6 text-xs font-medium uppercase leading-relaxed tracking-[0.22em] text-slate-400 sm:tracking-[0.3em]">
+            <p className="mb-6 text-xs font-medium uppercase leading-relaxed tracking-[0.22em] text-slate-300 sm:tracking-[0.3em]">
               Matt Karimov · Test Automation Engineer · PhD, Durham
             </p>
             <h1 className="font-display text-4xl leading-[1.15] text-white sm:text-6xl">
@@ -437,7 +437,7 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-white/30 px-6 text-base text-white hover:border-amber-300/60 hover:bg-white/5 sm:px-8"
+                className="border-input px-6 text-base text-white hover:border-amber-300/60 hover:bg-white/5 sm:px-8"
                 onClick={() => scrollTo('writing')}
               >
                 Read the writing
@@ -679,7 +679,7 @@ export default function Home() {
                   rel="noopener noreferrer"
                   type="application/pdf"
                   download
-                  className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-5 text-sm font-medium text-slate-200 transition-colors hover:border-amber-300/60 hover:text-amber-300 lg:mb-0"
+                  className="mb-8 inline-flex min-h-11 items-center gap-2 rounded-full border border-input px-5 text-sm font-medium text-slate-200 transition-colors hover:border-amber-300/60 hover:text-amber-300 lg:mb-0"
                 >
                   <Download size={15} aria-hidden="true" />
                   Download CV (PDF, {CV_VERSION})
@@ -961,7 +961,7 @@ export default function Home() {
                         autoComplete="name"
                         disabled={!isFormEnabled || status === 'submitting'}
                         placeholder="Your name"
-                        className="h-11 border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
+                        className="h-11 bg-slate-950/60 text-white"
                       />
                     </div>
                     <div className="space-y-2">
@@ -978,7 +978,7 @@ export default function Home() {
                         autoComplete="email"
                         disabled={!isFormEnabled || status === 'submitting'}
                         placeholder="you@example.com"
-                        className="h-11 border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
+                        className="h-11 bg-slate-950/60 text-white"
                       />
                     </div>
                     <div className="space-y-2">
@@ -993,7 +993,7 @@ export default function Home() {
                         required
                         disabled={!isFormEnabled || status === 'submitting'}
                         rows={3}
-                        className="resize-none border-white/15 bg-slate-950/60 text-white placeholder:text-slate-500"
+                        className="resize-none bg-slate-950/60 text-white"
                         placeholder="Your message..."
                       />
                     </div>

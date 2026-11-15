@@ -52,6 +52,27 @@ without touching the tests. It checks that:
 - the contact form validates, confirms a sent message and reports failures.
   The mail service is answered by the tests, so nothing is sent.
 
+### Colour contrast
+
+`tests/contrast.spec.ts` treats colour as a test target, following the method in
+the article [A Contrast Audit That Could Not Fail](https://mattkari.github.io/articles/contrast-audit-that-could-not-fail/):
+
+- **Thresholds.** 4.5:1 for text and 3:1 for large text and for the edge of
+  anything a person taps or types in (WCAG 2.2). Text under 16px must reach
+  7:1: the site is light text on a dark page, and the research finds that
+  polarity costs the most at small sizes.
+- **The palette on paper.** Each pairing the design relies on is checked, with
+  the colours read from `globals.css`, Tailwind and `_article.css`.
+- **The pages on screen.** Every piece of text and every control edge on every
+  page is measured in the browser against the pixels actually behind it, so
+  glows, cards and images are counted.
+- **The audit itself.** One test plants faint text and a faint field edge and
+  requires the audit to report them. A check that has never failed proves
+  nothing.
+
+Decoration marked `aria-hidden` and disabled controls are exempt, as they are
+in WCAG.
+
 The form tests need the form enabled, so build with a placeholder key:
 
 ```bash
