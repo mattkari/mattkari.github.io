@@ -13,7 +13,7 @@ disagree with the listing on the home page and the archive:
   - the links at the end of each article to the next and previous one
 
 And it adds the reading aids every article shares: an id on each heading, an
-"On this page" list at the top of longer articles, a "Back to top" button, and
+"On this page" list at the top, a "Back to top" button, and
 the small script that drives that button and the copy buttons on code blocks.
   - the machine-readable metadata in <head>: the publication date, a link to
     the RSS feed, and a schema.org BlogPosting block for search engines
@@ -182,9 +182,9 @@ def read_registry() -> dict[str, dict]:
 
 # ---------- reading aids ----------
 
-# Longer articles get an "On this page" list. Short ones do not need one.
-TOC_MIN_SECTIONS = 5
-TOC_MIN_WORDS = 1500
+# Every article with at least this many sections gets an "On this page" list,
+# so all articles open the same way, short or long.
+TOC_MIN_SECTIONS = 3
 
 HEADING_RE = re.compile(r'<h([23])(?: id="[^"]*")?>(.*?)</h\1>', re.DOTALL)
 TOC_RE = re.compile(r'[ \t]*<nav class="toc".*?</nav>\n?', re.DOTALL)
@@ -309,8 +309,7 @@ def transform(html: str, slug: str, entry: dict, registry: dict[str, dict]) -> s
 
     # headings get ids; a long enough article gets a contents list under the byline
     html, sections = add_heading_ids(html)
-    body = html[html.index("<article>"):html.index("</article>")]
-    long_enough = len(sections) >= TOC_MIN_SECTIONS and len(plain(body).split()) >= TOC_MIN_WORDS
+    long_enough = len(sections) >= TOC_MIN_SECTIONS
     title = H1_RE.search(html)
     html = html[: title.end()] + byline + (contents(sections) if long_enough else "") + html[title.end():]
 
