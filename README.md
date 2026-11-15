@@ -35,6 +35,36 @@ npm run build    # static export to ./out
 npm test         # browser tests against ./out (build first)
 ```
 
+## Search engines and AI search
+
+What the site provides, all generated at build time:
+
+- `/robots.txt` allows every crawler, names the AI search crawlers (ChatGPT
+  search, Claude and Perplexity) explicitly, and points to the sitemap.
+- `/sitemap.xml` lists every page; `/feed.xml` lists every article.
+- `/llms.txt` is a plain-Markdown map of the site for AI assistants, in the
+  format proposed at https://llmstxt.org. No major provider has said it reads
+  this file; it is offered because it costs nothing.
+- Every page is static HTML with a canonical address, a description and
+  structured data (`WebSite` and `Person` on every page, `BlogPosting` on
+  articles), so it can be read without running JavaScript.
+
+What only the site owner can do:
+
+1. **Google.** Add the site at https://search.google.com/search-console as a
+   "URL prefix" property (`https://mattkari.github.io/`), choose the "HTML tag"
+   method, and paste the code into `GOOGLE_SITE_VERIFICATION` in
+   `src/lib/site.ts`. After the next deploy, press Verify, then submit
+   `sitemap.xml` under Sitemaps and request indexing of the home page with URL
+   Inspection. Google says crawling "can take anywhere from a few days to a few
+   weeks" and that a request does not guarantee inclusion.
+2. **Bing.** Add the site at https://www.bing.com/webmasters and put its code
+   in `BING_SITE_VERIFICATION` the same way, then submit the sitemap.
+
+Google states there are "no additional requirements to appear in AI Overviews
+or AI Mode": a page has to be indexed and eligible for a snippet. So being
+indexed by Google and Bing is the main step for AI search as well.
+
 ## Colour and themes
 
 The site has a light theme and a dark theme. It opens in the one the reader's

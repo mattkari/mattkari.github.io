@@ -149,6 +149,34 @@ test.describe('links and registries', () => {
     expect(await (await request.get('/robots.txt')).text()).toContain(`${SITE_URL}/sitemap.xml`);
   });
 
+  test('crawlers are invited, and llms.txt maps every project and article', async ({ request }) => {
+    const robots = await (await request.get('/robots.txt')).text();
+    expect(robots).not.toMatch(/^Disallow:\s*\S/m);
+    for (const crawler of ['OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot']) {
+      expect(robots).toContain(`User-Agent: ${crawler}`);
+    }
+
+    const response = await request.get('/llms.txt');
+    expect(response.status()).toBe(200);
+    const llms = await response.text();
+    expect(llms.startsWith('# Matt Karimov\n')).toBe(true);
+    for (const path of [...projectPaths, ...articlePaths]) {
+      expect(llms).toContain(`(${SITE_URL}${path})`);
+    }
+  });
+
+  test('the home page can be indexed and read without JavaScript', async ({ request }) => {
+    const html = await (await request.get('/')).text();
+    expect(html).not.toMatch(/<meta name="robots" content="[^"]*noindex/);
+    expect(html).toContain(`<link rel="canonical" href="${SITE_URL}"`);
+    expect(html).toContain('"@type":"WebSite"');
+    expect(html).toContain('"@type":"Person"');
+    // the words a search engine needs are in the HTML itself
+    for (const text of ['show their evidence', projects[0].name, 'Test Automation Engineer']) {
+      expect(html).toContain(text);
+    }
+  });
+
   test('an unknown address shows the branded 404 page', async ({ page }) => {
     const response = await page.goto('/no-such-page');
     expect(response?.status()).toBe(404);

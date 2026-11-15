@@ -7,7 +7,15 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 const display = Playfair_Display({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
-import { EMAIL, GITHUB_URL, LINKEDIN_URL, SITE_URL } from "@/lib/site";
+import {
+  BING_SITE_VERIFICATION,
+  EMAIL,
+  GITHUB_URL,
+  GOOGLE_SITE_VERIFICATION,
+  LINKEDIN_URL,
+  SITE_DESCRIPTION,
+  SITE_URL,
+} from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -36,6 +44,12 @@ export const metadata: Metadata = {
     },
   },
   manifest: "/site.webmanifest",
+  // Proves ownership to Google Search Console and Bing Webmaster Tools once
+  // the codes are filled in (src/lib/site.ts).
+  verification: {
+    ...(GOOGLE_SITE_VERIFICATION ? { google: GOOGLE_SITE_VERIFICATION } : {}),
+    ...(BING_SITE_VERIFICATION ? { other: { "msvalidate.01": BING_SITE_VERIFICATION } } : {}),
+  },
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },
@@ -81,15 +95,26 @@ export const viewport: Viewport = {
 // Inlined into <head> so the theme is settled before the first paint.
 const themeInit = readFileSync(join(process.cwd(), "src/lib/theme-init.js"), "utf8");
 
+// Tells search engines what the site is called and who it is by.
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Matt Karimov",
+  url: SITE_URL,
+  description: SITE_DESCRIPTION,
+  inLanguage: "en-GB",
+  author: { "@type": "Person", name: "Matt Karimov", url: SITE_URL },
+};
+
 const personSchema = {
   "@context": "https://schema.org",
   "@type": "Person",
   name: "Matt Karimov",
   url: SITE_URL,
+  image: `${SITE_URL}/images/matt-karimov.jpg`,
   email: `mailto:${EMAIL}`,
   jobTitle: "Test Automation Engineer",
-  description:
-    "Builds source-grounded AI tools for banking test teams. They cite their sources, refuse when the evidence runs out, and prove what they claim.",
+  description: SITE_DESCRIPTION,
   address: {
     "@type": "PostalAddress",
     addressLocality: "Liverpool",
@@ -128,6 +153,10 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body className={`${inter.className} ${display.variable}`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
