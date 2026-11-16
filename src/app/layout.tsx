@@ -19,7 +19,7 @@ import {
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
+  title: "Matt Karimov | Test Automation Engineer and AI Engineering: RAG, LLM Evaluation, MCP",
   description:
     "Source-grounded AI tools for banking test teams: page-level citations, honest refusal and measured results. Test automation engineer based in Liverpool, UK.",
   keywords: [
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
         alt: "Matt Karimov — answers that show their evidence",
       },
     ],
-    title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
+    title: "Matt Karimov | Test Automation Engineer and AI Engineering: RAG, LLM Evaluation, MCP",
     description:
       "Banking test automation (API, Kafka, DB, UI) + hands-on LLM engineering: a source-grounded RAG research assistant with page-level citations and honest refusal. PhD, Durham. Presented at ITCC-2026.",
     locale: "en_GB",
@@ -78,7 +78,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     images: [`${SITE_URL}/og/default.png`],
-    title: "Matt Karimov | AI Engineering with Source-Grounded Evidence",
+    title: "Matt Karimov | Test Automation Engineer and AI Engineering: RAG, LLM Evaluation, MCP",
     description:
       "Banking QA + source-grounded RAG with page-level citations and honest refusal. PhD, Durham. ITCC-2026.",
   },
@@ -114,6 +114,7 @@ const personSchema = {
   image: `${SITE_URL}/images/matt-karimov.jpg`,
   email: `mailto:${EMAIL}`,
   jobTitle: "Test Automation Engineer",
+  worksFor: { "@type": "Organization", name: "Barclays Investment Bank" },
   description: SITE_DESCRIPTION,
   address: {
     "@type": "PostalAddress",
