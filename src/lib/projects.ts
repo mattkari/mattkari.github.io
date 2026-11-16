@@ -135,6 +135,15 @@ export const projects: Project[] = [
           ],
         },
         {
+          heading: 'Four checks every answer must pass',
+          items: [
+            'Citation check: every source the answer cites must be one of the passages it was given, or the answer fails as a hallucinated citation',
+            'Grounding check: an answer that claims its evidence is sufficient but cites nothing fails as ungrounded',
+            'Page check: the model is never shown a page number, so any page number it writes is treated as invented and fails',
+            'Contract check: a refusal must carry no answer and no citations, and a partial answer must state its limits',
+          ],
+        },
+        {
           heading: 'Checked against the source',
           items: [
             'Provenance audited against the PDF itself: all 266 chunks carry the page label printed on their pages',
@@ -155,6 +164,7 @@ export const projects: Project[] = [
       limits: [
         'The collection is one thesis, in English only',
         'It is a demonstration slice: the fuller plan in the repository is not yet built',
+        'There is no scored evaluation yet. The checks above run on every answer, but a question set with known answers and a scorer are planned in the repository, not built',
         'Similarity scores are diagnostics, never a measure of confidence, and never the sole basis for a refusal',
         'Generated prose varies between runs; the retrieval diagnostics and sufficiency verdict do not',
       ],
