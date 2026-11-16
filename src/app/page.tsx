@@ -44,7 +44,6 @@ const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
 // Keep CV_VERSION in step with CV_VERSION in that script.
 const CV_URL = '/cv/matt-karimov-cv.pdf';
 const CV_VERSION = 'November 2026';
-const LOCATION = 'Liverpool, UK';
 const LOCATION_LONG = 'Liverpool, UK \u00b7 North West England';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
@@ -165,13 +164,53 @@ export default function Home() {
     }
   };
 
-  const differentiators = [
-    'Source-grounded RAG with page-level citations',
-    'LLM tooling wired to real systems over MCP',
-    'LLM evaluation and grounding checks',
-    'Banking QA: API, Kafka, database and UI',
-    'Payments domain (SEPA and instant payments)',
-    'CI/CD, Docker and self-hosting on ARM',
+  // What AI and test-automation hiring asks for, each tied to somewhere on this
+  // site where it can be checked. A claim without a link does not go in.
+  const proof: { skill: string; links: { label: string; href: string }[] }[] = [
+    {
+      skill: 'Evaluation',
+      links: [
+        { label: 'RAG validation and audit', href: '/projects/source-grounded-rag' },
+        { label: 'an audit proven able to fail', href: '/articles/contrast-audit-that-could-not-fail/' },
+        { label: 'QA checks on an LLM wiki', href: '/articles/claude-code-second-brain/' },
+      ],
+    },
+    {
+      skill: 'RAG and grounding',
+      links: [
+        { label: 'page-level citations and refusal', href: '/projects/source-grounded-rag' },
+        { label: 'evidence-gated generation', href: '/articles/gated-rag-test-generation/' },
+      ],
+    },
+    {
+      skill: 'Agents and tool use',
+      links: [
+        { label: 'MCP servers at Barclays', href: '#experience' },
+        { label: 'five coding agents', href: '/articles/supervising-an-ai-coding-team/' },
+        { label: 'eight scheduled AI jobs', href: '/articles/auditing-scheduled-ai-jobs/' },
+      ],
+    },
+    {
+      skill: 'Guardrails',
+      links: [
+        { label: '"cannot trade", enforced by tests', href: '/projects/crypto-signal-engine' },
+        { label: 'a password the agent cannot read', href: '/articles/ai-agent-dental-insurance-claim/' },
+      ],
+    },
+    {
+      skill: 'Shipping and operating',
+      links: [
+        { label: 'CI tests and nightly backups', href: '/projects/family-finance' },
+        { label: 'Docker on a Raspberry Pi', href: '/articles/pi-shop-hosting-guide/' },
+      ],
+    },
+    {
+      skill: 'Test automation',
+      links: [
+        { label: 'banking API and UI testing', href: '#experience' },
+        { label: 'Playwright Java', href: '/articles/playwright-java-real-api-traffic/' },
+      ],
+    },
   ];
 
   const skillGroups = [
@@ -293,6 +332,13 @@ export default function Home() {
     { icon: Linkedin, label: 'LinkedIn', value: 'linkedin.com/in/mattkari', href: LINKEDIN_URL, external: true },
     { icon: Github, label: 'GitHub', value: 'github.com/mattkari', href: GITHUB_URL, external: true },
     { icon: MapPin, label: 'Location', value: LOCATION_LONG },
+  ];
+
+  const atAGlance = [
+    { label: 'Now', value: `${experience[0].title}, ${experience[0].company.replace(', UK', '')}` },
+    { label: 'Before', value: `${experience[1].title}, ${experience[1].company.replace(', UK', '')}` },
+    { label: 'Education', value: 'PhD, Durham University' },
+    { label: 'Open to', value: 'AI engineering and AI quality roles' },
   ];
 
   // Three parallel counts. The PhD moved into the About copy: a credential in
@@ -498,6 +544,7 @@ export default function Home() {
         <section id="about" className="border-t border-line/5 px-4 py-10 sm:px-6 sm:py-14 lg:px-8 scroll-mt-16">
           <div className="mx-auto max-w-7xl">
             <div className="grid gap-x-12 gap-y-2 lg:grid-cols-[1fr,2fr]">
+              <div>
               <div className="flex items-start justify-between gap-5 lg:block">
                 <SectionHeading kicker="About" title="Evidence is" italic="the discipline" />
                 <figure className="w-24 shrink-0 sm:w-40 lg:mt-2 lg:w-auto lg:max-w-[15rem]">
@@ -512,10 +559,20 @@ export default function Home() {
                     loading="lazy"
                     className="w-full rounded-2xl border border-line/10 object-cover shadow-xl shadow-shade/25"
                   />
-                  <figcaption className="mt-3 text-sm text-ink-muted max-lg:hidden">
-                    Matt Karimov, {LOCATION}
-                  </figcaption>
                 </figure>
+              </div>
+                {/* Current role, last role, education, place: what a reviewer checks first. */}
+                <dl className="mb-5 grid grid-cols-[auto,1fr] gap-x-4 gap-y-1.5 text-sm lg:mb-0 lg:mt-6 lg:max-w-[20rem]">
+                  {atAGlance.map((row) => (
+                    // the previous role is in Experience; phones leave it there
+                    <div key={row.label} className={`contents ${row.label === 'Before' ? 'max-sm:hidden' : ''}`}>
+                      <dt className="text-xs uppercase leading-5 tracking-[0.14em] text-ink-muted">
+                        {row.label}
+                      </dt>
+                      <dd className="leading-5 text-ink-soft">{row.value}</dd>
+                    </div>
+                  ))}
+                </dl>
               </div>
               <div className="max-w-2xl">
                 <p className="leading-relaxed text-ink-body sm:text-lg">
@@ -533,22 +590,54 @@ export default function Home() {
                   systems on a Raspberry Pi 5. I am looking for an AI engineering role where
                   source grounding, evaluation and honesty about limits are the product.
                 </p>
-                {/* Pills from the small breakpoint up; a plain list on phones, where
-                    six pills would take six full rows. */}
-                <ul
-                  className="mt-6 flex flex-col gap-1.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:gap-2.5"
-                  aria-label="What I bring"
-                >
-                  {differentiators.map((item) => (
-                    <li
-                      key={item}
-                      className="text-sm text-ink-body max-sm:before:mr-2 max-sm:before:text-ink-faint max-sm:before:content-['·'] sm:rounded-full sm:border sm:border-line/15 sm:px-3.5 sm:py-1.5"
-                    >
-                      {item}
+                {/* Each skill links to where it can be seen, instead of a row of claims. */}
+                <h3 className="mt-6 text-xs font-medium uppercase tracking-[0.2em] text-ink-muted">
+                  Where to see it
+                </h3>
+                {/* Phones: one 44px row per skill, linking to its first piece of proof. */}
+                <ul className="mt-3 divide-y divide-line/10 border-y border-line/10 text-sm sm:hidden">
+                  {proof.map((row) => (
+                    <li key={row.skill}>
+                      <a href={row.links[0].href} className="flex min-h-11 items-center justify-between gap-3 py-1.5">
+                        <span>
+                          <span className="font-semibold text-ink">{row.skill}</span>
+                          <span className="text-ink-body">: {row.links[0].label}</span>
+                        </span>
+                        <ArrowRight size={15} aria-hidden="true" className="shrink-0 text-brand" />
+                      </a>
                     </li>
                   ))}
                 </ul>
-                <div className="mt-3 flex flex-wrap gap-x-6 text-sm font-medium sm:mt-5">
+                <dl className="mt-3 divide-y divide-line/10 border-y border-line/10 text-sm max-sm:hidden">
+                  {proof.map((row) => (
+                    <div key={row.skill} className="py-1.5 sm:grid sm:grid-cols-[11.5rem,1fr] sm:gap-x-4">
+                      <dt className="font-semibold text-ink">{row.skill}</dt>
+                      <dd className="leading-relaxed text-ink-body">
+                        {row.links.map((link, i) => (
+                          <React.Fragment key={link.href + link.label}>
+                            {i > 0 && <span aria-hidden="true"> · </span>}
+                            {link.href.startsWith('#') || link.href.startsWith('/articles/') ? (
+                              <a
+                                href={link.href}
+                                className="text-brand underline decoration-brand/40 underline-offset-4 hover:text-brand-hover"
+                              >
+                                {link.label}
+                              </a>
+                            ) : (
+                              <Link
+                                href={link.href}
+                                className="text-brand underline decoration-brand/40 underline-offset-4 hover:text-brand-hover"
+                              >
+                                {link.label}
+                              </Link>
+                            )}
+                          </React.Fragment>
+                        ))}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-4 flex flex-wrap gap-x-6 text-sm font-medium max-sm:hidden">
                   <a
                     href={LINKEDIN_URL}
                     target="_blank"
