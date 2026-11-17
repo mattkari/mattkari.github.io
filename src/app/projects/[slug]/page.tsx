@@ -7,7 +7,7 @@ import { CheckItem, Kicker, Tag } from '@/components/primitives';
 import { SiteFooter } from '@/components/site-footer';
 import { SubpageHeader } from '@/components/subpage-header';
 import { articles } from '@/lib/articles';
-import { getProject, projects } from '@/lib/projects';
+import { getProject, listedProjects, projects } from '@/lib/projects';
 import { SITE_URL } from '@/lib/site';
 
 type Params = { params: Promise<{ slug: string }> };
@@ -52,9 +52,10 @@ export default async function ProjectPage({ params }: Params) {
   if (!project) notFound();
 
   const study = project.caseStudy;
-  const index = projects.indexOf(project);
-  const previous = projects[(index - 1 + projects.length) % projects.length];
-  const next = projects[(index + 1) % projects.length];
+  // previous and next move through the projects shown on the home page
+  const index = Math.max(listedProjects.indexOf(project), 0);
+  const previous = listedProjects[(index - 1 + listedProjects.length) % listedProjects.length];
+  const next = listedProjects[(index + 1) % listedProjects.length];
   const related = (study.relatedArticles ?? [])
     .map((articleSlug) => articles.find((article) => article.slug === articleSlug))
     .filter((article) => article !== undefined);
@@ -126,17 +127,19 @@ export default async function ProjectPage({ params }: Params) {
           </ul>
         </header>
 
-        <figure className="mt-12">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={project.image}
-            alt={project.imageAlt}
-            className="w-full rounded-2xl border border-line/10 shadow-xl shadow-shade/25"
-          />
-          <figcaption className="mt-3 text-sm leading-relaxed text-ink-muted">
-            {study.imageCaption}
-          </figcaption>
-        </figure>
+        {project.image && (
+          <figure className="mt-12">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={project.image}
+              alt={project.imageAlt}
+              className="w-full rounded-2xl border border-line/10 shadow-xl shadow-shade/25"
+            />
+            <figcaption className="mt-3 text-sm leading-relaxed text-ink-muted">
+              {study.imageCaption}
+            </figcaption>
+          </figure>
+        )}
 
         <section className="mt-16" aria-labelledby="background">
           <SectionTitle>

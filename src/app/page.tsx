@@ -36,7 +36,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { WritingShowcase } from '@/components/writing-showcase';
 import { sortedArticles } from '@/lib/articles';
-import { projects } from '@/lib/projects';
+import { listedProjects as projects } from '@/lib/projects';
 import { EMAIL, GITHUB_URL, LINKEDIN_URL } from '@/lib/site';
 
 const WEB3FORMS_ENDPOINT = 'https://api.web3forms.com/submit';
@@ -170,9 +170,9 @@ export default function Home() {
     {
       skill: 'Evaluation',
       links: [
+        { label: 'scoring against an answer key', href: '/projects/evidence-grounded-assistant' },
         { label: 'RAG validation and audit', href: '/projects/source-grounded-rag' },
         { label: 'an audit proven able to fail', href: '/articles/contrast-audit-that-could-not-fail/' },
-        { label: 'QA checks on an LLM wiki', href: '/articles/claude-code-second-brain/' },
       ],
     },
     {
@@ -680,9 +680,9 @@ export default function Home() {
                   className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-line/10 bg-surface/60 transition-colors duration-300 hover:border-brand/30"
                 >
                   <ScreenshotFrame
-                    src={project.cardImage}
-                    alt={project.imageAlt}
-                    label={project.frameLabel}
+                    src={project.cardImage!}
+                    alt={project.imageAlt!}
+                    label={project.frameLabel!}
                   />
                   <div className="flex flex-1 flex-col p-5 pb-2.5 sm:p-6 sm:pb-3">
                     <p className="mb-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-kicker">

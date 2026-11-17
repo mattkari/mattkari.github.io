@@ -13,16 +13,21 @@ export type Project = {
   slug: string;
   name: string;
   tag: string;
-  /** The full capture, shown on the case-study page. */
-  image: string;
+  /**
+   * False for a project that has a case-study page but no card on the home
+   * page, for example one with nothing that can be shown.
+   */
+  listed?: boolean;
+  /** The full capture, shown on the case-study page. Absent when nothing can be shown. */
+  image?: string;
   /**
    * A 2:1 crop of `image` for the home-page card, cut where the text is
    * readable. Crops only: nothing is drawn or added.
    */
-  cardImage: string;
+  cardImage?: string;
   /** The text in the card's window title bar. */
-  frameLabel: string;
-  imageAlt: string;
+  frameLabel?: string;
+  imageAlt?: string;
   repo: string | null;
   liveUrl?: string;
   description: string;
@@ -34,7 +39,7 @@ export type Project = {
     summary: string;
     /** Where the facts on the page come from. */
     source: string;
-    imageCaption: string;
+    imageCaption?: string;
     background: string[];
     /** An ordered pipeline, when the order is documented. */
     steps?: { heading: string; intro?: string; items: ProjectStep[] };
@@ -135,6 +140,15 @@ export const projects: Project[] = [
           ],
         },
         {
+          heading: 'Four checks every answer must pass',
+          items: [
+            'Citation check: every source the answer cites must be one of the passages it was given, or the answer fails as a hallucinated citation',
+            'Grounding check: an answer that claims its evidence is sufficient but cites nothing fails as ungrounded',
+            'Page check: the model is never shown a page number, so any page number it writes is treated as invented and fails',
+            'Contract check: a refusal must carry no answer and no citations, and a partial answer must state its limits',
+          ],
+        },
+        {
           heading: 'Checked against the source',
           items: [
             'Provenance audited against the PDF itself: all 266 chunks carry the page label printed on their pages',
@@ -155,6 +169,7 @@ export const projects: Project[] = [
       limits: [
         'The collection is one thesis, in English only',
         'It is a demonstration slice: the fuller plan in the repository is not yet built',
+        'There is no scored evaluation yet. The checks above run on every answer, but a question set with known answers and a scorer are planned in the repository, not built',
         'Similarity scores are diagnostics, never a measure of confidence, and never the sole basis for a refusal',
         'Generated prose varies between runs; the retrieval diagnostics and sufficiency verdict do not',
       ],
@@ -355,6 +370,95 @@ export const projects: Project[] = [
       ],
     },
   },
+  {
+    slug: 'evidence-grounded-assistant',
+    name: 'Evidence-Grounded Assistant, Hackathon Build',
+    tag: 'Private repo · 24-hour hackathon',
+    // No card on the home page: the app and its data cannot be shown.
+    listed: false,
+    repo: null,
+    description:
+      'A document assistant built by a team of five in a 24-hour hackathon. It refuses without evidence, checks every citation, scores its output against a reviewed answer key, and records each decision.',
+    evidence: [
+      'More than 1,100 automated tests in 74 test files, with a CI pipeline',
+      'Generated items scored against a reviewed answer key: matched, missed and extra, with precision and recall',
+      'The refusal threshold is set from measured retrieval scores, not chosen by feel',
+    ],
+    status: 'Private repository: the hackathon data cannot be shared',
+    technologies: ['Python', 'LangGraph', 'PostgreSQL', 'Streamlit', 'MCP', 'pytest'],
+    caseStudy: {
+      summary:
+        'A document assistant built in a 24-hour hackathon by a team of five, where the controls were the product: it refuses without evidence, checks every citation, scores its own output against an answer key, and records each decision.',
+      source:
+        'The project repository, which is private. The hackathon data and the organisers’ documents are not described here.',
+      background: [
+        'The brief was a document-intelligence assistant over a set of long PDF documents. The team was five people, engineers and subject matter experts, and the code was written by supervised AI coding agents.',
+        'The plan treated trust controls as demo features, not extras: the evidence guard, the approval step, redaction and the audit log all had to be visible on screen.',
+      ],
+      steps: {
+        heading: 'What happens to a question',
+        items: [
+          {
+            title: 'Redact',
+            detail:
+              'Emails, account-like numbers, phone numbers and token-like strings are replaced before anything is stored, embedded or searched. The question is redacted too.',
+          },
+          {
+            title: 'Retrieve and guard',
+            detail:
+              'Retrieved passages must score at or above a threshold. If too few do, the answer is blocked with a reason and the model is never called.',
+          },
+          {
+            title: 'Generate',
+            detail: 'Only the passages that cleared the threshold are handed to the model.',
+          },
+          {
+            title: 'Validate',
+            detail:
+              'Each generated item is checked against its evidence. An item that cites a passage it was not given is rejected. One whose supporting quote is not found in the passage it cites is flagged.',
+          },
+          {
+            title: 'Review',
+            detail:
+              'A person approves or rejects each drafted item, with a reason code for every rejection. An item that failed its automated check cannot be approved.',
+          },
+          {
+            title: 'Record',
+            detail:
+              'Every decision goes to an append-only audit log in the same transaction as the action, so a failed audit write fails the action. The log holds ids, counts and hashes, never document or prompt text.',
+          },
+        ],
+      },
+      details: [
+        {
+          heading: 'How it is evaluated',
+          items: [
+            'Generated items are compared with an answer key that a person has reviewed. An item matches when it cites the right document, has the expected type and contains every expected term',
+            'The report counts matched, missed and extra items, and gives precision and recall. Scoring is plain comparison, with no model call',
+            'The generator’s original output is scored, not a reviewer’s edits, so the result measures the generator',
+            'The refusal threshold comes from measurement: a script compares the best retrieval score for questions the documents can answer with questions they cannot, and proposes the midpoint',
+            'The reason codes recorded at review give an adoption rate and a list of failure types',
+          ],
+        },
+        {
+          heading: 'How it is tested',
+          items: [
+            'More than 1,100 automated tests in 74 test files, with a CI pipeline',
+            'Tests use short made-up snippets written in the test files, never the hackathon documents',
+          ],
+        },
+      ],
+      limits: [
+        'The repository is private and the data cannot be shared, so the scores themselves are not published here',
+        'It was built in 24 hours: there is no user sign-in and no production hardening',
+        'Matching on expected terms shows that an item contains the expected facts. It does not show that everything else in the item is right',
+      ],
+      relatedArticles: ['supervising-an-ai-coding-team', 'gated-rag-test-generation'],
+    },
+  },
 ];
+
+// The projects that have a card on the home page.
+export const listedProjects = projects.filter((project) => project.listed !== false);
 
 export const getProject = (slug: string) => projects.find((project) => project.slug === slug);
