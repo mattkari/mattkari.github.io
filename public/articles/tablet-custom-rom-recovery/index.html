@@ -1,0 +1,330 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recovering a 2015 Galaxy Tab A 9.7 LTE: how to debug a failed custom ROM and return to stock</title>
+<meta name="description" content="A step-by-step guide to recovering a 2015 Samsung Galaxy Tab A 9.7 LTE after failed custom ROM installs: how to check files and links, read recovery messages, and restore stock firmware with Heimdall.">
+<meta name="author" content="Matt Karimov">
+<link rel="canonical" href="https://mattkari.github.io/articles/tablet-custom-rom-recovery/">
+<meta property="og:title" content="Recovering a 2015 Galaxy Tab A 9.7 LTE: how to debug a failed custom ROM and return to stock">
+<meta property="og:description" content="A step-by-step guide to recovering a 2015 Samsung Galaxy Tab A 9.7 LTE after failed custom ROM installs: how to check files and links, read recovery messages, and restore stock firmware with Heimdall.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://mattkari.github.io/og/tablet-custom-rom-recovery.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Recovering a 2015 Galaxy Tab A 9.7 LTE: how to debug a failed custom ROM and return to stock">
+<meta name="twitter:description" content="A step-by-step guide to recovering a 2015 Samsung Galaxy Tab A 9.7 LTE after failed custom ROM installs: how to check files and links, read recovery messages, and restore stock firmware with Heimdall.">
+<meta name="twitter:image" content="https://mattkari.github.io/og/tablet-custom-rom-recovery.png">
+<meta property="article:published_time" content="2026-11-21">
+<link rel="alternate" type="application/rss+xml" title="Matt Karimov: Writing" href="https://mattkari.github.io/feed.xml">
+<script type="application/ld+json">
+{
+ "@context": "https://schema.org",
+ "@type": "BlogPosting",
+ "headline": "Recovering a 2015 Galaxy Tab A 9.7 LTE: how to debug a failed custom ROM and return to stock",
+ "description": "A step-by-step guide to recovering a 2015 Samsung Galaxy Tab A 9.7 LTE after failed custom ROM installs: how to check files and links, read recovery messages, and restore stock firmware with Heimdall.",
+ "datePublished": "2026-11-21",
+ "inLanguage": "en-GB",
+ "url": "https://mattkari.github.io/articles/tablet-custom-rom-recovery/",
+ "mainEntityOfPage": "https://mattkari.github.io/articles/tablet-custom-rom-recovery/",
+ "image": "https://mattkari.github.io/og/tablet-custom-rom-recovery.png",
+ "author": {
+  "@type": "Person",
+  "name": "Matt Karimov",
+  "url": "https://mattkari.github.io"
+ }
+}
+</script>
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#fbf8f3">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617">
+<script data-theme-init>
+// Runs in <head>, before the page paints, on every page of the site: the app
+// (inlined by src/app/layout.tsx) and the standalone articles (inlined by
+// scripts/apply-article-chrome.py). Plain ES5, no build step.
+//
+// It decides the theme once, so the page never flashes the wrong colours:
+// a choice made with the toggle wins; otherwise the system setting decides.
+(function () {
+  var KEY = 'theme';
+  var root = document.documentElement;
+  var system = window.matchMedia('(prefers-color-scheme: dark)');
+
+  function chosen() {
+    try {
+      var value = localStorage.getItem(KEY);
+      return value === 'light' || value === 'dark' ? value : null;
+    } catch (error) {
+      return null; // storage blocked: follow the system setting
+    }
+  }
+
+  function apply() {
+    root.setAttribute('data-theme', chosen() || (system.matches ? 'dark' : 'light'));
+  }
+
+  apply();
+
+  // Follow the system if it changes, unless the reader has chosen for themselves.
+  system.addEventListener('change', function () {
+    if (!chosen()) apply();
+  });
+
+  // One listener serves every toggle on the page, however it was rendered.
+  document.addEventListener('click', function (event) {
+    var toggle = event.target.closest && event.target.closest('[data-theme-toggle]');
+    if (!toggle) return;
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    try {
+      localStorage.setItem(KEY, next);
+    } catch (error) {
+      /* the choice still applies to this page */
+    }
+    root.setAttribute('data-theme', next);
+  });
+})();
+</script>
+<link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/playfair-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/articles/_article.css">
+<script src="/articles/_article.js" defer></script>
+</head>
+<body id="top">
+<header class="site-header">
+<div class="inner">
+<a class="mark" href="/" aria-label="Home">MK</a>
+<a class="name" href="/">Matt Karimov</a>
+<a class="nav" href="/writing">All writing</a>
+<button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch between light and dark theme" title="Switch between light and dark theme">
+<svg class="to-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+<svg class="to-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+</button>
+</div>
+</header>
+<article>
+<h1>Recovering a 2015 Galaxy Tab A 9.7 LTE: how to debug a failed custom ROM and return to stock</h1>
+<p class="meta">Dusmamat (Matt) Karimov · 21 November 2026 · 8 min read</p>
+<nav class="toc" aria-label="On this page">
+<details open>
+<summary>On this page</summary>
+<ol>
+<li><a href="#section">---</a></li>
+<li><a href="#what-you-need">What you need</a></li>
+<li><a href="#step-1-identify-the-device-before-anything-else">Step 1: identify the device before anything else</a></li>
+<li><a href="#step-2-check-the-file-before-the-transfer">Step 2: check the file before the transfer</a></li>
+<li><a href="#step-3-read-the-recovery-messages-not-the-progress-bar">Step 3: read the recovery messages, not the progress bar</a></li>
+<li><a href="#step-4-separate-a-bad-link-from-a-bad-file">Step 4: separate a bad link from a bad file</a></li>
+<li><a href="#step-5-stop-when-the-tablet-will-not-boot">Step 5: stop when the tablet will not boot</a></li>
+<li><a href="#step-6-restore-the-stock-firmware-with-heimdall">Step 6: restore the stock firmware with Heimdall</a></li>
+<li><a href="#step-7-when-download-mode-will-not-release">Step 7: when Download mode will not release</a></li>
+<li><a href="#pitfalls">Pitfalls</a></li>
+<li><a href="#testing-it-like-a-qa-engineer">Testing it like a QA engineer</a></li>
+<li><a href="#limits">Limits</a></li>
+<li><a href="#summary-and-conclusion">Summary and conclusion</a></li>
+<li><a href="#rules-i-would-keep">Rules I would keep</a></li>
+</ol>
+</details>
+</nav>
+<h2 id="section">---</h2>
+<p>This guide records one recovery attempt on a Samsung Galaxy Tab A 9.7 LTE (model SM-T555, codename gt510lte). The tablet had been running an unofficial LineageOS 18.1 build, and a series of failed installs left it unable to start. It was then restored to the Samsung stock firmware. The guide sets out how the faults were diagnosed, which checks separated a bad file from a bad link, and which method finally worked. The steps were run from a Raspberry Pi, although a Manjaro laptop was available as a fallback. The guide is organised as follows: what to prepare, how to identify the device, how to check files and links, and how to restore stock firmware.</p>
+<h2 id="what-you-need">What you need</h2>
+<ul>
+<li>The tablet, a charger and two USB data cables, one of which must be known to carry data.</li>
+<li>A computer running Linux, with <code>adb</code>, <code>heimdall</code>, <code>unzip</code>, <code>sha256sum</code> and <code>md5sum</code>.</li>
+<li>The firmware or ROM file, downloaded from a source you trust, with its published checksum.</li>
+<li>Time. A sideload of an 850 MB file took between 15 and 25 minutes, and a Heimdall flash of the stock partitions took about 15 minutes.</li>
+</ul>
+<h2 id="step-1-identify-the-device-before-anything-else">Step 1: identify the device before anything else</h2>
+<p>The codename decides which build is safe to install, because a zip built for another model can brick the device. It is therefore the first thing to confirm.</p>
+<pre><code>adb shell getprop ro.product.device
+adb shell getprop ro.build.version.release
+</code></pre>
+<p>On this tablet the codename was <code>gt510lte</code> and the release was <code>11</code>. Keep the serial number and IMEI out of any public post.</p>
+<h2 id="step-2-check-the-file-before-the-transfer">Step 2: check the file before the transfer</h2>
+<p>Checksums come first, because a bad file and a bad link produce the same symptom on the tablet. To tell them apart, the checks run in this order.</p>
+<ol>
+<li>Compare the file size with the published value.</li>
+<li>Compare the SHA256 or MD5 with the published value. Where the project publishes no checksum, record the size and the hash, and treat the test as a completeness check only.</li>
+<li>Run an integrity test on the archive:</li>
+</ol>
+<pre><code>unzip -tq file.zip
+</code></pre>
+<p>The output must read <code>No errors detected</code>. A zip with no end-of-central-directory record was produced by a download that stopped early. This happened once here, after a resumed download that ended at 892,633,088 bytes. The file looked complete by size, but the archive was not readable.</p>
+<p>The check that matters most is the one made on the copy you will send. Repeat the hash on the computer after every copy, because the copy can be damaged on its way to the device. Only a file that passes all three checks should go to the tablet.</p>
+<h2 id="step-3-read-the-recovery-messages-not-the-progress-bar">Step 3: read the recovery messages, not the progress bar</h2>
+<p>Recovery logs the install in order. Read each line before you choose anything.</p>
+<table>
+<thead>
+<tr>
+<th>Message on screen</th>
+<th>What it means</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>E:footer is wrong</code></td>
+<td>The zip failed its signature footer. The file is damaged or unsigned.</td>
+<td>Stop. Do not tap Install anyway.</td>
+</tr>
+<tr>
+<td><code>Signature verification failed. Install anyway?</code></td>
+<td>The same failure, offered as a choice.</td>
+<td>Tap No.</td>
+</tr>
+<tr>
+<td><code>E:failed to verify whole-file signature</code></td>
+<td>The archive does not match its signature.</td>
+<td>Stop. Re-download and re-check.</td>
+</tr>
+<tr>
+<td><code>E:error: 21</code> or <code>status 2</code> / <code>status 3</code></td>
+<td>The updater script aborted.</td>
+<td>Stop. Read the full log before retrying.</td>
+</tr>
+<tr>
+<td><code>adb: failed to read command: Success</code> (on the computer)</td>
+<td>The link dropped during the transfer.</td>
+<td>Check the link before you retry.</td>
+</tr>
+<tr>
+<td><code>Install completed</code> followed by a boot loop</td>
+<td>The install ran, but the result is not usable.</td>
+<td>Restore from a known-good image.</td>
+</tr>
+</tbody>
+</table>
+<p>A line such as <code>script succeeded: result was [1.000000]</code> shows that the script ran. It does not, however, show that the system is bootable. In this session the script reported success for two installs, and both returned to recovery at the first reboot. The status line is therefore a necessary result, not a sufficient one.</p>
+<h2 id="step-4-separate-a-bad-link-from-a-bad-file">Step 4: separate a bad link from a bad file</h2>
+<p>Several sideloads stopped between 44% and 47%, with the same error. The Pi's copy of the file passed its hash check each time, so the file on the computer was not the cause. The tablet side is the next suspect.</p>
+<p>Check the link while the transfer runs:</p>
+<pre><code>adb devices -l
+sudo dmesg | grep -i 'usb' | tail
+</code></pre>
+<p>The state <code>sideload</code> means the device is ready. The states <code>offline</code> and <code>unauthorized</code> mean the link has not completed its handshake. A <code>USB disconnect</code> line in the kernel log, during a transfer, confirms that the cable or port dropped out.</p>
+<p>Three actions were tried in this session. Replugging the cable at the tablet end, with the tablet kept on the sideload screen, often cleared the <code>offline</code> state. Changing the cable was followed by a transfer that reached the install stage, although one cable does not prove the cause. The logs alone cannot separate a cable fault from a connector fault, so this guide does not claim a root cause.</p>
+<p>Do not resume a partial transfer. In this session the resumed download was not used for the install, so each attempt should start from a fresh, fully checked file.</p>
+<h2 id="step-5-stop-when-the-tablet-will-not-boot">Step 5: stop when the tablet will not boot</h2>
+<p>A boot loop after a sideload means the system partition is damaged or inconsistent. Repeating the sideload usually makes the damage worse, so the method must change. In this session the tablet went back to recovery three times after an install reported success.</p>
+<p>The reliable way out was a full image restore, not another sideload. Samsung tablets have a separate flash mode, Download mode, which Heimdall can write to. Heimdall writes each partition directly, so it does not depend on the recovery menu or on an ADB session.</p>
+<h2 id="step-6-restore-the-stock-firmware-with-heimdall">Step 6: restore the stock firmware with Heimdall</h2>
+<p>Samsung's firmware is a set of images inside tar archives, each with a trailing MD5. Verify each archive before you flash it.</p>
+<ol>
+<li>Verify the package. For each <code>.tar.md5</code> file, the last line holds the expected hash. The hash covers every byte before that line. Compute the hash of the file without the trailer and compare. In this session three of four packages matched. The modem package did not, so it was not flashed.</li>
+<li>Extract the archives:</li>
+</ol>
+<pre><code>tar -xf BL_*.tar.md5
+tar -xf AP_*.tar.md5
+tar -xf CSC_*.tar.md5
+</code></pre>
+<ol>
+<li>Read the partition table to check the partition names:</li>
+</ol>
+<pre><code>heimdall print-pit --file GT510LTE_EUR_OPEN.pit
+</code></pre>
+<ol>
+<li>
+<p>Put the tablet in Download mode. Hold Volume Down, Home and Power until a warning screen appears, then press Volume Up.</p>
+</li>
+<li>
+<p>Check that the computer sees the tablet:</p>
+</li>
+</ol>
+<pre><code>heimdall detect
+</code></pre>
+<ol>
+<li>Flash the partitions. Use the names from the PIT file. A name that is not in the table stops the whole session before anything is written:</li>
+</ol>
+<pre><code>heimdall flash --SBL1 sbl1.mbn --ABOOT aboot.mbn --RPM rpm.mbn \
+  --QSEE tz.mbn --QHEE hyp.mbn --BOOT boot.img --RECOVERY recovery.img \
+  --SYSTEM system.img.ext4 --CACHE cache.img.ext4 \
+  --HIDDEN hidden.img.ext4 --USERDATA userdata.img.ext4 \
+  --PERSIST persist.img.ext4 --no-reboot
+</code></pre>
+<p>Heimdall v2.1.0 has no reboot subcommand. A flash session ends by rebooting the device, so the tablet leaves Download mode once the session closes.</p>
+<h2 id="step-7-when-download-mode-will-not-release">Step 7: when Download mode will not release</h2>
+<p>After the flash, the tablet stayed in Download mode with the message "Downloading… Do not turn off target". A long press of the Power button did not change that. The working fix was to reconnect the cable and open a new Heimdall session. The session wrote one partition again, from a verified image, and then ended with <code>Rebooting device</code>. The tablet then left Download mode and started the stock first boot.</p>
+<p>Use this method only with a verified image. Writing an unverified image in this state repeats the risk of the original install, and it removes the chance to correct the mistake before the tablet reboots.</p>
+<h2 id="pitfalls">Pitfalls</h2>
+<ul>
+<li><strong>The Google package and the ROM must match.</strong> An Android 11 Google package does not install on an Android 13 ROM. Check the release notes for both.</li>
+<li><strong>Do not trust a package name alone.</strong> A MindTheGapps arm64 package fails on a 32-bit device. This tablet runs <code>armeabi-v7a</code> only.</li>
+<li><strong>A failed install can still change the system partition.</strong> Recovery may format <code>/system</code> before it reports the error. Check the state of every partition before the next attempt.</li>
+<li><strong>The modem image is a separate risk.</strong> Skipping it gave a booting stock system here. Mobile calls on the restored system are not yet tested.</li>
+</ul>
+<h2 id="testing-it-like-a-qa-engineer">Testing it like a QA engineer</h2>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Expected result</th>
+<th>Result in this session</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Codename after restore</td>
+<td><code>gt510lte</code></td>
+<td>Not checked over adb. The tablet was offline after the restore.</td>
+</tr>
+<tr>
+<td>Stock first boot</td>
+<td>Setup screens appear</td>
+<td>Setup reached, mobile APN screen shown</td>
+</tr>
+<tr>
+<td>Play Store on the home screen</td>
+<td>Present</td>
+<td>Present on the home screen</td>
+</tr>
+<tr>
+<td>Mobile APN screen</td>
+<td>Shows carrier profiles</td>
+<td>Shown, default profile selected, not yet tested with a live SIM</td>
+</tr>
+<tr>
+<td>Calls and mobile data</td>
+<td>Work with a live SIM</td>
+<td>Not tested</td>
+</tr>
+</tbody>
+</table>
+<h2 id="limits">Limits</h2>
+<p>This guide does not argue that the method works for every unit. Rather, it claims that the checks above separated a bad file from a bad link on one tablet. The checks come from one tablet, and another unit can behave differently.
+- The archives were checked against published values from third-party sites. The original vendor's signature was not verified.
+- The modem image was skipped, so this guide does not cover mobile calls or data.
+- Stock Android 7.1.1 has no security updates. Use it on a trusted home network only.</p>
+<h2 id="summary-and-conclusion">Summary and conclusion</h2>
+<p>The recovery succeeded after the method changed. Stock firmware written through Heimdall restored a bootable system, whereas three custom ROM installs failed or boot-looped. The main findings are that the file was rarely the fault, that the transfer link was the most likely failure point, and that recovery messages must be read in full before any retry. Taken together, these points suggest that a verified image written in flash mode is the safest route back for a damaged device.</p>
+<h2 id="rules-i-would-keep">Rules I would keep</h2>
+<ol>
+<li>Identify the device by codename before you copy anything to it.</li>
+<li>Check the file on the computer that will send it, after every copy.</li>
+<li>Read each recovery message, and stop on any signature or footer error.</li>
+<li>Do not resume a partial transfer.</li>
+<li>When an install returns to recovery, change the method. Do not repeat the same install.</li>
+</ol>
+<nav class="more" aria-label="Keep reading">
+<p class="more-heading">Keep reading</p>
+<div class="more-cards">
+<a class="more-card" href="/articles/workflow-not-agent/"><span class="more-label">Older</span><span class="more-title">Workflow, Not Agent: Building a Source-Grounded Article Writer for a Doctoral Thesis</span></a>
+</div>
+<a class="more-all" href="/writing">All 15 essays</a>
+</nav>
+</article>
+<a class="to-top" href="#top">Back to top</a>
+<footer class="site-footer">
+<div class="inner">
+<a href="/">Home</a>
+<span class="sep" aria-hidden="true">&middot;</span>
+<a href="/writing">All writing</a>
+<span class="sep" aria-hidden="true">&middot;</span>
+<a href="https://www.linkedin.com/in/mattkari">LinkedIn</a>
+<span class="sep" aria-hidden="true">&middot;</span>
+<a href="https://github.com/mattkari">GitHub</a>
+</div>
+</footer>
+</body>
+</html>

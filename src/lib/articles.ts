@@ -17,6 +17,16 @@ export type Article = {
 
 export const articles: Article[] = [
   {
+    slug: 'tablet-custom-rom-recovery',
+    title: 'Recovering a 2015 Galaxy Tab A 9.7 LTE: how to debug a failed custom ROM and return to stock',
+    summary:
+      'A step-by-step guide to recovering a Samsung tablet after failed custom ROM installs: how to check files and links, read recovery messages, and restore stock firmware with Heimdall.',
+    date: '2026-11-21',
+    readingMinutes: 8,
+    topic: 'Self-hosting',
+    tags: ['Android', 'Heimdall', 'Raspberry Pi', 'Debugging'],
+  },
+  {
     slug: 'workflow-not-agent',
     title: 'Workflow, Not Agent: Building a Source-Grounded Article Writer for a Doctoral Thesis',
     summary:
